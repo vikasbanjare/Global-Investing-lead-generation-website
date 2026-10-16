@@ -881,8 +881,7 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .f-logos .logo::after { content: ''; position: absolute; inset: 7px; background: #fff; -webkit-mask: var(--logo) center / contain no-repeat; mask: var(--logo) center / contain no-repeat; }
 .f-logos .logo:first-child { margin-left: 0; }
 /* placement around the phone (desktop) */
-.f1 { left: 4%; top: 18%; } .f2 { left: 9%; top: 47%; } .f3 { left: 15%; top: 73%; }
-.f4 { right: 2%; top: 16%; } .f5 { right: 8%; top: 46%; } .f6 { right: 17%; top: 72%; }
+.f1 { left: -3%; top: 1%; } .f2 { left: -3%; top: 84%; } .f6 { right: 2%; top: 38%; } /* clear of the stock name, amount and total */
 .floater { animation: drift 6s ease-in-out infinite; }
 .f2, .f5 { animation-delay: -2s; } .f3, .f6 { animation-delay: -4s; }
 @keyframes drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
@@ -980,3 +979,37 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .session-plot { margin-top: 48px; }
   .session-axis .minor { display: none; }
 }
+
+/* iter-115: buy by amount, shown. The phone drives a fraction panel: one NVIDIA share as 100 squares, the same money elsewhere. */
+.buy-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; width: 100%; max-width: 1100px; margin: 0 auto; }
+.product .buy-grid .phone-stage { max-width: none; }
+.frac { padding: 32px; border-radius: 24px; background: #fff; box-shadow: var(--card-shadow); text-align: left; }
+.frac-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange-text); }
+.frac-big { margin: 6px 0 18px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.frac-big b { font-size: var(--figure); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.frac-big span { font-size: 16px; font-weight: 600; color: var(--slate); }
+.frac-tiles { display: flex; gap: 14px; flex-wrap: wrap; }
+.ftile { margin: 0; display: grid; gap: 6px; justify-items: center; }
+.fgrid { display: grid; grid-template-columns: repeat(10, 11px); gap: 2px; padding: 6px; border-radius: 10px; background: var(--tint); }
+.fgrid i { width: 11px; height: 11px; border-radius: 2px; background: rgba(7, 45, 94, 0.08); position: relative; overflow: hidden; }
+.fgrid i::after { content: ''; position: absolute; inset: 0; background: var(--orange); opacity: var(--o); transform-origin: left; transition: opacity 0.25s var(--d); }
+.ftile figcaption { font-size: 12px; font-weight: 700; color: var(--slate); font-variant-numeric: tabular-nums; }
+.frac-note { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.frac-h { margin: 26px 0 10px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 700; color: var(--ink); }
+.frac-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+.frac-list li { display: grid; grid-template-columns: 24px 1fr 90px 76px; align-items: center; gap: 12px; }
+.frac-list .logo { width: 22px; height: 22px; color: var(--navy); }
+.fl-name { display: grid; line-height: 1.25; }
+.fl-name b { font-size: 14px; color: var(--ink); }
+.fl-name small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fl-bar { height: 6px; border-radius: 3px; background: var(--tint); overflow: hidden; }
+.fl-bar i { display: block; height: 100%; width: calc(var(--f, 0) * 100%); background: var(--orange); border-radius: 3px; transition: width 0.5s var(--ease); }
+.fl-qty { text-align: right; font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.f1.pop { animation: pop 0.6s var(--ease), drift 6s ease-in-out 0.6s infinite; }
+@keyframes pop { 0% { scale: 0.85; opacity: 0.4; } 60% { scale: 1.06; opacity: 1; } 100% { scale: 1; } }
+@media (max-width: 900px) {
+  .buy-grid { grid-template-columns: 1fr; gap: 24px; }
+  .frac { padding: 22px 18px; }
+  .frac-list li { grid-template-columns: 22px 1fr 60px 72px; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .fgrid i::after, .fl-bar i { transition: none; } }

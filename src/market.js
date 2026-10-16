@@ -55,3 +55,7 @@ export function istClock(min) {
   const h = Math.floor(m / 60), mm = m % 60;
   return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, '0')}\u00a0${h < 12 ? 'am' : 'pm'}`; // nbsp keeps time and am/pm together
 }
+
+// Reference prices (USD) for the page's illustrations: the ticker's starting points and the fraction examples.
+// ponytail: fixed, illustrative; replace with a quotes API (needs a market-data provider key) before launch.
+export const REF_PRICES = { AAPL: 232.1, NVDA: 181.4, GOOGL: 196.2, AMZN: 224.6, TSLA: 318.9, META: 702.3, NFLX: 1185, V: 342.5, AVGO: 298.7, MA: 571.2, KO: 69.8, SBUX: 92.4, MCD: 301.6, GS: 712.8, AXP: 305.1, BAC: 47.9 };

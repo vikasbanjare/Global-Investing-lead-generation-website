@@ -1,5 +1,5 @@
 import './style.css';
-import { marketStatus, cityTime, usSessionInIST, istClock, formatWait } from './market.js';
+import { marketStatus, cityTime, usSessionInIST, istClock, formatWait, REF_PRICES } from './market.js';
 
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
@@ -59,8 +59,7 @@ const lazyLogos = new IntersectionObserver((entries, obs) => entries.forEach((e)
 document.querySelectorAll('.ticker, .tile-marks, .floaters').forEach((el) => lazyLogos.observe(el));
 
 // ---------- Ticker prices: an illustrative trading tape (no market-data feed is connected; the note on the page says so).
-// ponytail: random walk from fixed reference prices; swap PX for a quotes API (needs a data-provider key) before launch.
-const PX = { AAPL: 232.1, NVDA: 181.4, GOOGL: 196.2, AMZN: 224.6, TSLA: 318.9, META: 702.3, NFLX: 1185, V: 342.5, AVGO: 298.7, MA: 571.2, KO: 69.8, SBUX: 92.4, MCD: 301.6, GS: 712.8, AXP: 305.1, BAC: 47.9 };
+const PX = REF_PRICES;
 const quotes = Object.fromEntries(Object.entries(PX).map(([s, p]) => [s, { ref: p, px: p * (1 + (Math.random() - 0.45) * 0.03) }]));
 const tickerItems = [...document.querySelectorAll('.ticker-track li')].map((li) => {
   const sym = li.querySelector('.ticker-sym').textContent;
@@ -238,10 +237,33 @@ function renderAmount() {
 }
 chips.addEventListener('click', (e) => {
   const b = e.target.closest('button');
-  if (b) { amount = Number(b.dataset.v); renderAmount(); }
+  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); }
 });
 paintAmount(amount);
 renderAmount();
+
+// ---------- What the amount buys: one NVIDIA share as 100 squares, and the same money across other favourites.
+const qtyText = (q) => (q < 1 ? q.toFixed(4) : `${q.toFixed(2)}`);
+const FAVS = [['Apple', 'AAPL', 'apple'], ['Tesla', 'TSLA', 'tesla'], ['Meta', 'META', 'meta'], ['Netflix', 'NFLX', 'netflix'], ['Coca-Cola', 'KO', 'cocacola']];
+const fracList = $('#frac-list');
+fracList.innerHTML = FAVS.map(([name, sym, logo]) => `<li><span class="logo" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span><span class="fl-name"><b>${name}</b><small>${sym} · $${REF_PRICES[sym].toFixed(2)}</small></span><span class="fl-bar"><i></i></span><b class="fl-qty"></b></li>`).join('');
+function paintFrac(v, pop) {
+  const q = v / REF_PRICES.NVDA, whole = Math.floor(q), part = q - whole;
+  bind('nvdaQty', qtyText(q));
+  bind('nvdaPx', REF_PRICES.NVDA.toFixed(2));
+  bind('amtFinal', v);
+  bind('amtInrFinal', Math.round(v * FX).toLocaleString('en-IN'));
+  $('.frac-big span').textContent = q < 1 ? 'of an NVIDIA share' : 'NVIDIA shares';
+  const tile = (f, label) => `<figure class="ftile"><span class="fgrid">${Array.from({ length: 100 }, (_, i) => `<i style="--o:${Math.max(0, Math.min(1, f * 100 - i)).toFixed(2)};--d:${i * 6}ms"></i>`).join('')}</span><figcaption>${label}</figcaption></figure>`;
+  $('#frac-tiles').innerHTML = Array.from({ length: Math.min(whole, 3) }, () => tile(1, '1 share')).join('') + (part > 0.0005 ? tile(part, part.toFixed(4)) : '');
+  fracList.querySelectorAll('li').forEach((li, k) => {
+    const fq = v / REF_PRICES[FAVS[k][1]];
+    li.querySelector('.fl-bar i').style.setProperty('--f', Math.min(1, fq).toFixed(3));
+    li.querySelector('.fl-qty').textContent = fq < 1 ? `${fq.toFixed(4)} sh` : `${fq.toFixed(2)} sh`;
+  });
+  if (pop && !reducedMotion) { const f1 = $('.f1'); f1.classList.remove('pop'); void f1.offsetWidth; f1.classList.add('pop'); }
+}
+paintFrac(amount);
 
 // ---------- Diagrams (money routes, session timeline, protection layers) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {

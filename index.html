@@ -140,8 +140,9 @@
       <div class="section-head product-head">
           <p class="eyebrow">Fractional investing</p>
           <h2 class="h2">Buy by amount, not by share price.</h2>
-          <p class="lead">A $900 share is no longer a $900 decision. Type what you want to invest and own the exact fraction.</p>
+          <p class="lead">Expensive shares are no longer all-or-nothing. Pick an amount and own the exact fraction it buys.</p>
       </div>
+      <div class="buy-grid">
       <div class="phone-stage">
         <div class="phone" role="group" aria-label="Example order screen">
           <div class="phone-screen">
@@ -173,14 +174,21 @@
           </div>
         </div>
         <div class="floaters" aria-hidden="true">
-          <div class="floater f1"><span class="f-ok">✓</span><span><b>Order placed</b><small>0.0278 NVDA for $25</small></span></div>
-          <div class="floater f2"><span class="f-fx">₹2,100 <i>→</i> $25</span><small>Rupees in, dollars out</small></div>
-          <div class="floater f3"><b>0.25%</b><small>flat brokerage</small></div>
-          <div class="floater f4"><span class="live-dot" data-market-dot></span><span><small>US session tonight</small><b><span data-bind="sessionText">7:00&nbsp;pm – 1:30&nbsp;am</span> IST</b></span></div>
-          <div class="floater f5"><span class="f-logos"><span class="logo" data-logo="apple"></span><span class="logo" data-logo="tesla"></span><span class="logo" data-logo="meta"></span></span><small>5,000+ stocks</small></div>
+          <div class="floater f1"><span class="f-ok">✓</span><span><b>Order placed</b><small><span data-bind="nvdaQty">0.1378</span> NVDA for $<span data-bind="amtFinal">25</span></small></span></div>
+          <div class="floater f2"><span class="f-fx">₹<span data-bind="amtInrFinal">2,100</span> <i>→</i> $<span data-bind="amtFinal">25</span></span><small>Rupees in, dollars out</small></div>
           <div class="floater f6"><b>$1</b><small>minimum</small></div>
         </div>
         <p class="fine phone-note">Illustrative screen</p>
+      </div>
+      <div class="frac" aria-live="polite">
+        <p class="frac-kicker">$<span data-bind="amtFinal">25</span> buys you</p>
+        <p class="frac-big"><b data-bind="nvdaQty">0.1378</b> <span>of an NVIDIA share</span></p>
+        <div class="frac-tiles" id="frac-tiles" aria-hidden="true"></div>
+        <p class="frac-note">Each square is 1% of one share at $<span data-bind="nvdaPx">181.40</span>.</p>
+        <h3 class="frac-h">The same $<span data-bind="amtFinal">25</span> in other favourites</h3>
+        <ul class="frac-list" id="frac-list"></ul>
+        <p class="fine">Reference prices, for illustration. Try the amounts on the phone.</p>
+      </div>
       </div>
       <div class="product-copy">
         <ul class="features">
