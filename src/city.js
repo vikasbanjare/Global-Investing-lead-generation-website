@@ -4,6 +4,15 @@
 import * as THREE from 'three';
 
 const PAGE_BG = 0xf3f8ff; // brand Cloud White; must match --bg
+
+// Curved horizon (the reference's "earth falling away"): every vertex drops with its distance from the camera's
+// line of sight, sideways and beyond the focus. Done once in the shared projection chunk so all materials,
+// shadows and sprites agree. CURVE_D is roughly the camera-to-focus distance; the label mirrors it in JS.
+const CURVE_K = 0.00016, CURVE_D = 1150;
+THREE.ShaderChunk.project_vertex = THREE.ShaderChunk.project_vertex.replace(
+  'mvPosition = modelViewMatrix * mvPosition;',
+  'mvPosition = modelViewMatrix * mvPosition;\n{ float dz_ = max(0.0, -mvPosition.z - ' + CURVE_D.toFixed(1) + '); mvPosition.y -= (dz_ * dz_ + mvPosition.x * mvPosition.x) * ' + CURVE_K + '; }',
+);
 const ORANGE = 0xff5400;
 const GROUND = 0.6; // land surface height
 
@@ -105,7 +114,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     marker: new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.95, depthWrite: false }),
   };
 
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), mat.water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(3600, 3600, 160, 160), mat.water);
   water.rotation.x = -Math.PI / 2;
   water.receiveShadow = true;
   scene.add(water);
@@ -129,16 +138,33 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   function build(d) {
     const rand = rng(7);
     // ---- Land and parks (flat clay slabs on the water)
+    // Flat ground pieces, tessellated so the curved horizon bends them smoothly (long triangles would sink).
+    const tessellate = (geo, maxEdge) => {
+      const src = geo.toNonIndexed().attributes.position.array, out = [];
+      const split = (a, b, c, depth) => {
+        const d = (p, q) => Math.hypot(p[0] - q[0], p[2] - q[2]);
+        if (depth > 9 || Math.max(d(a, b), d(b, c), d(c, a)) <= maxEdge) { out.push(...a, ...b, ...c); return; }
+        const m = (p, q) => [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2];
+        const ab = m(a, b), bc = m(b, c), ca = m(c, a);
+        split(a, ab, ca, depth + 1); split(ab, b, bc, depth + 1); split(ca, bc, c, depth + 1); split(ab, bc, ca, depth + 1);
+      };
+      for (let i = 0; i < src.length; i += 9) split([src[i], src[i + 1], src[i + 2]], [src[i + 3], src[i + 4], src[i + 5]], [src[i + 6], src[i + 7], src[i + 8]], 0);
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(out, 3));
+      g.computeVertexNormals();
+      return g;
+    };
     const slab = (flat, depth, material, y) => {
       const shape = new THREE.Shape(pairs(flat).map(([x, z]) => new THREE.Vector2(x, -z)));
-      const geo = depth ? new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: 0.5, bevelThickness: 0.25, bevelSegments: 1 }) : new THREE.ShapeGeometry(shape);
+      const geo = new THREE.ShapeGeometry(shape);
       geo.rotateX(-Math.PI / 2);
-      const m = new THREE.Mesh(geo, material);
-      m.position.y = y;
+      const m = new THREE.Mesh(tessellate(geo, 24), material);
+      m.position.y = y + depth;
       m.receiveShadow = true;
       scene.add(m);
     };
-    d.land.forEach((l) => slab(l, GROUND - 0.25, mat.land, 0));
+    const farLand = new THREE.MeshStandardMaterial({ color: 0xc9ced3, roughness: 1 }); // other shores: pale, hazy, secondary
+    d.land.forEach((l, i) => slab(l, GROUND - 0.25, i === 0 ? mat.land : farLand, 0));
     d.parks.forEach((p) => slab(p, 0, mat.park, GROUND + 0.02));
 
     // ---- Buildings: one merged mesh of real footprints, extruded to real heights.
@@ -233,6 +259,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
         if (inMapped || !lands.some((l) => inside(l, x, z))) continue;
         const north = Math.max(0, -(z - mz0)) / 120; // Manhattan rises again towards Midtown
         const onManhattan = inside(lands[0], x, z);
+        if (!onManhattan && (Math.hypot(x, z) < 650 || rand() < 0.45)) continue; // keep the near sides open water and low shore: Manhattan is the subject
         const midtown = onManhattan ? Math.exp(-((x - esb[0]) ** 2 + (z - esb[1]) ** 2) / (2 * 130 ** 2)) : 0;
         const h = 1.6 + rand() * 5 + (onManhattan ? rand() * 9 * Math.min(1, 0.4 + north) : rand() * 4) + midtown * rand() * rand() * 34;
         fill.push({ x: x + (rand() - 0.5) * 4, z: z + (rand() - 0.5) * 4, w: 2.5 + rand() * 5, d: 2.5 + rand() * 5, r: onManhattan ? 0.5 + (rand() - 0.5) * 0.08 : (rand() - 0.5) * 0.3, h: h * (0.5 + rand() * 0.5), delay: 0.8 + Math.hypot(x, z) * 0.004 + rand() * 0.3 });
@@ -244,7 +271,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const CTX = ['#b9a48c', '#a7856c', '#c8b9a3', '#9fa6ad', '#8d9fb2', '#c3ad94', '#a8968a'].map((h) => new THREE.Color(h)); // brownstone, brick, limestone, glass
     const bgC = new THREE.Color(PAGE_BG), tc = new THREE.Color();
     // Atmospheric perspective: context blocks fade toward the page colour with distance, so the real island stays the subject.
-    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.6, 0.05 + Math.hypot(bk.x, bk.z) / 1300))));
+    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.78, 0.2 + Math.hypot(bk.x, bk.z) / 900))));
     scene.add(ctxMesh);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     placeContext = (time) => {
@@ -518,7 +545,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     renderer.render(scene, camera);
 
     if (label && introDone) {
-      v.copy(anchor).project(camera);
+      v.copy(anchor).applyMatrix4(camera.matrixWorldInverse);
+      { const dz = Math.max(0, -v.z - CURVE_D); v.y -= (dz * dz + v.x * v.x) * CURVE_K; }
+      v.applyMatrix4(camera.projectionMatrix);
       label.style.transform = `translate3d(${((v.x + 1) / 2) * size.w}px, ${size.top + ((1 - v.y) / 2) * size.h}px, 0) translate(-50%, calc(-100% - 14px))`;
     }
 
