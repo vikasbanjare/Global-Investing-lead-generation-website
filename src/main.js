@@ -13,7 +13,7 @@ const hero = $('.hero');
 const canvas = $('.hero-canvas');
 const label = $('.ws-label');
 const poster = $('.hero-poster');
-const POSTER_LABEL = { x: 0.521, y: 0.594 }; // from render-poster.mjs: fraction of the 1600×840 poster
+const POSTER_LABEL = { x: 0.522, y: 0.625 }; // from render-poster.mjs: fraction of the 1600×840 poster
 function placePosterLabel() {
   // Mirror object-fit: cover on the poster's real box (CSS owns the band's size, zoom and offset).
   const hb = hero.getBoundingClientRect();
@@ -256,6 +256,8 @@ function paintFrac(v, pop) {
   $('.frac-big span').textContent = q < 1 ? 'of an NVIDIA share' : 'NVIDIA shares';
   const tile = (f, label) => `<figure class="ftile"><span class="fgrid">${Array.from({ length: 100 }, (_, i) => `<i style="--o:${Math.max(0, Math.min(1, f * 100 - i)).toFixed(2)};--d:${i * 6}ms"></i>`).join('')}</span><figcaption>${label}</figcaption></figure>`;
   $('#frac-tiles').innerHTML = Array.from({ length: Math.min(whole, 3) }, () => tile(1, '1 share')).join('') + (part > 0.0005 ? tile(part, part.toFixed(4)) : '');
+  const nTiles = $('#frac-tiles').children.length;
+  $('#frac-tiles').style.setProperty('--cell', `${nTiles <= 1 ? 18 : nTiles === 2 ? 14 : 10}px`); // one share fills the panel; more shares share it
   fracList.querySelectorAll('li').forEach((li, k) => {
     const fq = v / REF_PRICES[FAVS[k][1]];
     li.querySelector('.fl-bar i').style.setProperty('--f', Math.min(1, fq).toFixed(3));
@@ -264,6 +266,17 @@ function paintFrac(v, pop) {
   if (pop && !reducedMotion) { const f1 = $('.f1'); f1.classList.remove('pop'); void f1.offsetWidth; f1.classList.add('pop'); }
 }
 paintFrac(amount);
+// The phone tilts toward the pointer (desktop): a real object in space, not a flat screenshot.
+const buyGrid = $('.buy-grid'), tilt = $('.phone-tilt');
+if (!reducedMotion && matchMedia('(hover: hover)').matches) {
+  buyGrid.addEventListener('pointermove', (e) => {
+    const r = buyGrid.getBoundingClientRect();
+    tilt.style.setProperty('--ry', `${(((e.clientX - r.left) / r.width) - 0.35) * 22}deg`);
+    tilt.style.setProperty('--rx', `${(0.5 - (e.clientY - r.top) / r.height) * 12}deg`);
+    tilt.style.setProperty('--gx', `${100 - ((e.clientX - r.left) / r.width) * 100}%`); // the glare slides opposite the tilt
+  });
+  buyGrid.addEventListener('pointerleave', () => ['--ry', '--rx', '--gx'].forEach((k) => tilt.style.removeProperty(k)));
+}
 
 // ---------- Diagrams (money routes, session timeline, protection layers) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {

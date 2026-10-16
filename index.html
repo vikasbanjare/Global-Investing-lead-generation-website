@@ -144,6 +144,7 @@
       </div>
       <div class="buy-grid">
       <div class="phone-stage">
+        <div class="phone-tilt">
         <div class="phone" role="group" aria-label="Example order screen">
           <div class="phone-screen">
             <div class="phone-island" aria-hidden="true"></div>
@@ -173,6 +174,7 @@
             <a class="btn btn-orange app-buy" href="#lead">Buy NVIDIA</a>
           </div>
         </div>
+        </div>
         <div class="floaters" aria-hidden="true">
           <div class="floater f1"><span class="f-ok">✓</span><span><b>Order placed</b><small><span data-bind="nvdaQty">0.1378</span> NVDA for $<span data-bind="amtFinal">25</span></small></span></div>
           <div class="floater f2"><span class="f-fx">₹<span data-bind="amtInrFinal">2,100</span> <i>→</i> $<span data-bind="amtFinal">25</span></span><small>Rupees in, dollars out</small></div>
@@ -180,7 +182,9 @@
         </div>
         <p class="fine phone-note">Illustrative screen</p>
       </div>
+      <svg class="money-flow" viewBox="0 0 176 96" aria-hidden="true"><path d="M4 18 C 84 18, 92 78, 172 78"/><circle r="4"><animateMotion dur="2.2s" repeatCount="indefinite" path="M4 18 C 84 18, 92 78, 172 78"/></circle></svg>
       <div class="frac" aria-live="polite">
+        <span class="frac-live"><span class="live-dot is-open"></span>Live preview</span>
         <p class="frac-kicker">$<span data-bind="amtFinal">25</span> buys you</p>
         <p class="frac-big"><b data-bind="nvdaQty">0.1378</b> <span>of an NVIDIA share</span></p>
         <div class="frac-tiles" id="frac-tiles" aria-hidden="true"></div>
@@ -238,7 +242,7 @@
         <article class="tile tile-lead">
           <h3>Own the category leaders</h3>
           <p>AI, cloud, semiconductors, healthcare and consumer brands. Many of the companies defining them are listed only in the US.</p>
-          <ul class="tile-marks" aria-label="Examples"><li><span class="logo" data-logo="apple"></span><span class="sr-only">Apple</span></li><li><span class="logo" data-logo="nvidia"></span><span class="sr-only">NVIDIA</span></li><li><span class="logo" data-logo="google"></span><span class="sr-only">Alphabet</span></li><li><span class="logo" data-logo="amazon"></span><span class="sr-only">Amazon</span></li><li><span class="logo" data-logo="tesla"></span><span class="sr-only">Tesla</span></li><li><span class="logo" data-logo="meta"></span><span class="sr-only">Meta</span></li><li><span class="logo" data-logo="netflix"></span><span class="sr-only">Netflix</span></li><li><span class="logo" data-logo="broadcom"></span><span class="sr-only">Broadcom</span></li></ul>
+          <ul class="tile-marks" aria-label="Examples"><li data-sym="AAPL" style="--i:0"><span class="logo" data-logo="apple"></span><span class="sr-only">Apple</span></li><li data-sym="NVDA" style="--i:1"><span class="logo" data-logo="nvidia"></span><span class="sr-only">NVIDIA</span></li><li data-sym="GOOGL" style="--i:2"><span class="logo" data-logo="google"></span><span class="sr-only">Alphabet</span></li><li data-sym="AMZN" style="--i:3"><span class="logo" data-logo="amazon"></span><span class="sr-only">Amazon</span></li><li data-sym="TSLA" style="--i:4"><span class="logo" data-logo="tesla"></span><span class="sr-only">Tesla</span></li><li data-sym="META" style="--i:5"><span class="logo" data-logo="meta"></span><span class="sr-only">Meta</span></li><li data-sym="NFLX" style="--i:6"><span class="logo" data-logo="netflix"></span><span class="sr-only">Netflix</span></li><li data-sym="AVGO" style="--i:7"><span class="logo" data-logo="broadcom"></span><span class="sr-only">Broadcom</span></li></ul>
         </article>
         <div class="tile tile-fig"><span class="stat-num">$1</span><span class="stat-label">Start investing from</span></div>
         <div class="tile tile-fig"><span class="stat-num">5,000+</span><span class="stat-label">US stocks and ETFs</span></div>

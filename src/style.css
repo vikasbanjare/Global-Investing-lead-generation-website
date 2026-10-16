@@ -919,7 +919,8 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .hero-copy .capture-error { margin-top: 8px; }
 .hero-copy .live { margin-top: 22px; }
 .hero-copy > .proof { margin-top: 26px; }
-@media (min-width: 901px) { .hero { min-height: 1040px; } } /* fixed stage, so the city always sits below the copy as in the reference */
+@media (min-width: 901px) { .hero { min-height: 1240px; } } /* 1040 px stage + 200 px more harbour below the island */
+@media (min-width: 901px) { .hero-fade { background: linear-gradient(180deg, var(--bg) 0, var(--bg) 395px, rgba(243, 248, 255, 0.92) 541px, rgba(243, 248, 255, 0) 728px), linear-gradient(0deg, var(--bg) 0, rgba(243, 248, 255, 0) 110px); } } /* px, so the taller stage doesn't push the haze over the city */ /* fixed stage, so the city always sits below the copy as in the reference */
 
 /* iter-112: US-market cue in the hero — real flag colours, kept small; exchanges named. */
 .eyebrow-us { display: inline-flex; align-items: center; gap: 10px; }
@@ -1013,3 +1014,56 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .frac-list li { grid-template-columns: 22px 1fr 60px 72px; gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .fgrid i::after, .fl-bar i { transition: none; } }
+
+/* iter-116: category leaders come alive — an orange wave runs through the logos; hover lights one up with flowing orange. */
+.tile-marks li { position: relative; overflow: hidden; transition: transform 0.35s var(--ease), background-color 0.35s, box-shadow 0.35s; }
+.tile-marks li::before { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255, 138, 76, 0.35) 50%, transparent 70%); translate: -120% 0; transition: translate 0.8s var(--ease); pointer-events: none; }
+.tile-marks li::after { content: attr(data-sym); position: absolute; bottom: 7px; font-size: 10px; font-weight: 800; letter-spacing: 0.1em; color: var(--orange-soft); opacity: 0; translate: 0 6px; transition: opacity 0.3s, translate 0.3s var(--ease); }
+.tile-marks .logo { transition: translate 0.3s var(--ease); animation: leaders-wave 7s ease-in-out infinite; animation-delay: calc(var(--i) * 0.18s + 1s); }
+@keyframes leaders-wave { 0%, 14%, 100% { color: #fff; } 5% { color: var(--orange-soft); } }
+.tile-marks li:hover, .tile-marks li:active { transform: translateY(-4px); background-color: rgba(255, 84, 0, 0.12); box-shadow: inset 0 0 0 1px rgba(255, 138, 76, 0.65), 0 14px 30px -12px rgba(255, 84, 0, 0.65); }
+.tile-marks li:hover::before, .tile-marks li:active::before { translate: 120% 0; }
+.tile-marks li:hover::after, .tile-marks li:active::after { opacity: 1; translate: 0 0; }
+.tile-marks li:hover .logo, .tile-marks li:active .logo { translate: 0 -7px; background: linear-gradient(120deg, #ff5400, #ffb070, #ff8a4c, #ff5400) 0 0 / 300% 100%; animation: leaders-flow 1.4s linear infinite; }
+@keyframes leaders-flow { to { background-position: 300% 0; } }
+@media (prefers-reduced-motion: reduce) { .tile-marks .logo, .tile-marks li:hover .logo { animation: none; } .tile-marks li, .tile-marks li::before { transition: none; } }
+
+/* iter-116: the buy section, premium pass — a phone in space, money flowing into the share. */
+.buy-grid { position: relative; }
+.product .phone-stage { perspective: 1400px; background: radial-gradient(closest-side, rgba(255, 84, 0, 0.14), rgba(255, 84, 0, 0) 70%) center 46% / 560px 560px no-repeat; }
+.product .phone-stage::after { content: ''; position: absolute; left: 50%; bottom: 38px; width: 260px; height: 34px; translate: -50% 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(4, 33, 63, 0.28), rgba(4, 33, 63, 0)); z-index: 0; animation: floor 7s ease-in-out infinite; }
+@keyframes floor { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.86; opacity: 0.7; } }
+.phone-tilt { position: relative; z-index: 2; transform: rotateY(var(--ry, -12deg)) rotateX(var(--rx, 5deg)); transition: transform 0.6s var(--ease); }
+.product .phone { background: linear-gradient(145deg, #1b2b45, #061a36 40%, #02101f); }
+.product .phone::before, .product .phone::after { content: ''; position: absolute; width: 4px; border-radius: 2px; background: #0c1d36; box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.12); }
+.product .phone::before { left: -3px; top: 120px; height: 64px; box-shadow: 0 -86px 0 -0.5px #0c1d36; } /* volume rocker + action button */
+.product .phone::after { right: -3px; top: 150px; height: 96px; } /* side button */
+.product .phone-screen::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0.22) 46%, rgba(255, 255, 255, 0) 54%) var(--gx, 60%) 0 / 220% 100% no-repeat; mix-blend-mode: soft-light; }
+.money-flow { position: absolute; left: calc(50% - 128px); top: 25%; width: 176px; height: 96px; z-index: 4; overflow: visible; pointer-events: none; }
+.money-flow path { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 2 9; animation: flow-dash 1s linear infinite; opacity: 0.8; }
+.money-flow circle { fill: var(--orange); filter: drop-shadow(0 0 6px rgba(255, 84, 0, 0.8)); }
+@keyframes flow-dash { to { stroke-dashoffset: -11; } }
+.frac { position: relative; padding: 34px 34px 28px; box-shadow: var(--card-shadow), 0 40px 80px -40px rgba(255, 84, 0, 0.35); background: linear-gradient(180deg, #fff 0%, #fff 60%, #fffaf6 100%); }
+.frac::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(140deg, rgba(255, 84, 0, 0.45), rgba(7, 45, 94, 0.08) 40%, rgba(7, 45, 94, 0.05)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.frac-live { position: absolute; top: 22px; right: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--tint); font-size: 11px; font-weight: 700; color: var(--navy); }
+.frac-big b { font-size: clamp(44px, 4.6vw, 64px); }
+.fgrid { grid-template-columns: repeat(10, var(--cell, 18px)); gap: 3px; padding: 8px; border-radius: 12px; background: linear-gradient(180deg, #eef3fb, #e5edf8); box-shadow: inset 0 1px 2px rgba(7, 45, 94, 0.08); }
+.frac-tiles { --cell: 18px; align-items: flex-end; }
+.fgrid i { width: var(--cell, 18px); height: var(--cell, 18px); border-radius: calc(var(--cell, 18px) / 5); background: #fff; box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.06); }
+.fgrid i::after { background: linear-gradient(135deg, #ff5400, #ff8a4c); box-shadow: 0 0 8px rgba(255, 84, 0, 0.45); }
+.frac-list { gap: 6px; }
+.frac-list li { padding: 8px 10px; margin: 0 -10px; border-radius: 12px; grid-template-columns: 34px 1fr 90px 80px; transition: background-color 0.25s; }
+.frac-list li:hover { background: var(--tint); }
+.frac-list .logo { width: 34px; height: 34px; border-radius: 50%; background: none; -webkit-mask: none; mask: none; position: relative; }
+.frac-list .logo::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--tint); }
+.frac-list .logo::after { content: ''; position: absolute; inset: 8px; background: var(--navy); -webkit-mask: var(--logo) center / contain no-repeat; mask: var(--logo) center / contain no-repeat; }
+.fl-bar { height: 8px; border-radius: 4px; }
+.fl-bar i { background: linear-gradient(90deg, #ff5400, #ff8a4c); }
+.fl-qty { justify-self: end; padding: 3px 8px; border-radius: 8px; background: #fff4ec; font-size: 13px; }
+@media (max-width: 900px) {
+  .money-flow, .product .phone-stage::after { display: none; }
+  .phone-tilt { transform: none; }
+  .frac-list li { grid-template-columns: 30px 1fr 54px 76px; }
+  .frac-live { position: static; margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .money-flow path, .product .phone-stage::after { animation: none; } .money-flow circle { display: none; } .phone-tilt { transition: none; } }

@@ -198,6 +198,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     // ---- Buildings: one merged mesh of real footprints, extruded to real heights.
     const PAL = d.palette.map((h) => new THREE.Color(h)); // real OSM building:colour / roof:colour (sRGB → linear)
     const pos = [], nor = [], col = [], del = [], gls = [], tops = [];
+    const lpos = [], ldel = []; // edge lines: building corners and roof outlines
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), f = new THREE.Vector3();
     let color, delay, glassy, top;
     const tri = (p0, p1, p2, normal) => {
@@ -252,6 +253,12 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       top = y1;
       color = wallC;
       delay = Math.hypot(cx, cz) * 0.0065 + rand() * 0.25;
+      for (let i = 0; i < pts.length; i++) {
+        const [px, pz] = pts[(i + pts.length - 1) % pts.length], [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length];
+        lpos.push(x0, y1, z0, x1, y1, z1); ldel.push(delay, delay); // roof outline
+        const turn = Math.abs(Math.atan2((x0 - px) * (z1 - z0) - (z0 - pz) * (x1 - x0), (x0 - px) * (x1 - x0) + (z0 - pz) * (z1 - z0)));
+        if (turn > 0.45) { lpos.push(x0, y0, z0, x0, y1, z0); ldel.push(delay, delay); } // a real corner, not a curved facade's facet
+      }
       for (let i = 0; i < pts.length; i++) {
         const [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length];
         n.set(z1 - z0, 0, -(x1 - x0)).normalize();
@@ -334,6 +341,16 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     city.customDepthMaterial = depth;
     city.castShadow = city.receiveShadow = true;
     scene.add(city);
+    // Edges: a fine navy line on every corner and roof edge, so each tower reads as its own crisp volume.
+    facade.polygonOffset = true; facade.polygonOffsetFactor = 1; facade.polygonOffsetUnits = 1;
+    const eGeo = new THREE.BufferGeometry();
+    eGeo.setAttribute('position', new THREE.Float32BufferAttribute(lpos, 3));
+    eGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(ldel, 1));
+    const eMat = new THREE.LineBasicMaterial({ color: 0x0a2442, transparent: true, opacity: 0.55 });
+    eMat.onBeforeCompile = (sh) => patchGrowth(sh, uT);
+    const edges = new THREE.LineSegments(eGeo, eMat);
+    edges.frustumCulled = false;
+    scene.add(edges);
 
     // ---- Context beyond the mapped area (north Manhattan, Brooklyn, Jersey City): low-detail blocks that fade
     // into the haze, so the real Financial District doesn't end in an empty plain. Not real buildings.
@@ -568,8 +585,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // the hero, Midtown and the Empire State in the haze), not a map of rooftops. Real towers hide the NYSE from here
   // (ray-marched), so an orange map pin rises above the skyline at its spot.
   // From over the harbour, south of the tip, looking up the island: the tip centred under the headline, water on both sides.
-  const target = new THREE.Vector3(-5, 20, -50);
-  const rig = { az: 0, pol: 1.05, r: 680 }; // matched to the user's reference layout: tip centred under the copy, water both sides
+  const target = new THREE.Vector3(-5, 46, -64);
+  const rig = { az: 0, pol: 1.22, r: 650 }; // lower, more oblique view (iter-116): towers read by their height, harbour wide below
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
 
@@ -579,10 +596,12 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     size = { w, h, top: canvas.offsetTop };
     zoom = w >= 900 ? 1 : 0.55; // phones/tablets: the city band is small, bring the Financial District closer
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    // Lens shift: city sits right of the copy on desktop, below it on phones.
-    if (w >= 900) camera.setViewOffset(w, h, 0, -h * 0.02, w, h); // centred layout: the city sits in the lower part of the hero, under the copy
-    else camera.setViewOffset(w, h, 0, h * 0.06, w, h);
+    // Desktop: the framing is set for a 1040 px stage; a taller hero extends the view downward (more harbour under the
+    // island) at the same scale, instead of shrinking the city.
+    const H0 = w >= 900 ? Math.min(h, 1040) : h;
+    camera.aspect = w / H0;
+    if (w >= 900) camera.setViewOffset(w, H0, 0, -H0 * 0.02, w, h); // centred layout: the city sits under the copy
+    else camera.setViewOffset(w, h, 0, h * 0.22, w, h); // phones: lift the city so the NYSE label sits mid-band
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(canvas);
