@@ -940,3 +940,16 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 @media (max-width: 560px) { .section-head-row > .tabs { align-self: stretch; justify-content: flex-start; } }
 /* The floating phone holds still while someone is using it. */
 .product .phone:hover, .product .phone:focus-within { animation-play-state: paused; }
+
+/* Hero aligned to the user's reference (measured at 1513×1039): eyebrow y≈100, ~56px headline, 18px lead ~650px wide,
+   580px form, live line and facts beneath; the city fills the lower half. */
+.hero { padding-top: 96px; }
+.hero-copy { gap: 0; }
+.hero-copy .eyebrow { margin-bottom: 22px; font-size: 13px; }
+.hero-copy .h1 { font-size: clamp(38px, 3.7vw, 60px); line-height: 1.04; letter-spacing: -0.03em; }
+.hero-copy .lead { margin-top: 22px; font-size: 18px; line-height: 1.5; max-width: 660px; }
+.hero-copy .capture { margin-top: 26px; max-width: 580px; }
+.hero-copy .capture-error { margin-top: 8px; }
+.hero-copy .live { margin-top: 22px; }
+.hero-copy > .proof { margin-top: 26px; }
+@media (min-width: 901px) { .hero { min-height: 1040px; } } /* fixed stage, so the city always sits below the copy as in the reference */

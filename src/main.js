@@ -13,7 +13,7 @@ const hero = $('.hero');
 const canvas = $('.hero-canvas');
 const label = $('.ws-label');
 const poster = $('.hero-poster');
-const POSTER_LABEL = { x: 0.512, y: 0.458 }; // from render-poster.mjs: fraction of the 1600×840 poster
+const POSTER_LABEL = { x: 0.521, y: 0.594 }; // from render-poster.mjs: fraction of the 1600×840 poster
 function placePosterLabel() {
   // Mirror object-fit: cover on the poster's real box (CSS owns the band's size, zoom and offset).
   const hb = hero.getBoundingClientRect();

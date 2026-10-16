@@ -131,7 +131,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
   };
   const grow = []; // landmark groups scaled on Y during the intro
-  const PIN_Y = 34; // above every tower around the NYSE (tallest neighbour ≈ 23 units)
+  const PIN_Y = 22; // above every tower around the NYSE (tallest neighbour ≈ 23 units)
   let ring, anchor = new THREE.Vector3(0, PIN_Y + 4, 0); // label sits just above the pin
   const keepClearOf = new THREE.Vector3(0, 8, 0); // the NYSE: clouds never cross the camera's view of it
 
@@ -469,8 +469,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // the hero, Midtown and the Empire State in the haze), not a map of rooftops. Real towers hide the NYSE from here
   // (ray-marched), so an orange map pin rises above the skyline at its spot.
   // From over the harbour, south of the tip, looking up the island: the tip centred under the headline, water on both sides.
-  const target = new THREE.Vector3(-5, 0, -60);
-  const rig = { az: 0, pol: 0.95, r: 1150 };
+  const target = new THREE.Vector3(-5, 20, -50);
+  const rig = { az: 0, pol: 1.05, r: 680 }; // matched to the user's reference layout: tip centred under the copy, water both sides
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
 
@@ -482,7 +482,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // Lens shift: city sits right of the copy on desktop, below it on phones.
-    if (w >= 900) camera.setViewOffset(w, h, 0, -h * 0.27, w, h); // centred layout: the city sits in the lower part of the hero, under the copy
+    if (w >= 900) camera.setViewOffset(w, h, 0, -h * 0.02, w, h); // centred layout: the city sits in the lower part of the hero, under the copy
     else camera.setViewOffset(w, h, 0, h * 0.06, w, h);
     camera.updateProjectionMatrix();
   }
