@@ -10,7 +10,7 @@ const root = document.documentElement;
 const motionPaused = () => root.classList.contains('motion-paused');
 const setMotion = (paused) => {
   root.classList.toggle('motion-paused', paused);
-  document.querySelectorAll('.motion-toggle').forEach((b) => { b.setAttribute('aria-pressed', String(paused)); b.querySelector('.mt-label').textContent = paused ? 'Play motion' : 'Pause motion'; });
+  document.querySelectorAll('.motion-toggle').forEach((b) => { b.querySelector('.mt-label').textContent = paused ? 'Play motion' : 'Pause motion'; }); // the label is the state (no aria-pressed: one signal, no contradiction)
   window.dispatchEvent(new Event('motionchange'));
   try { localStorage.setItem('motion-paused', paused ? '1' : '0'); } catch {}
 };
