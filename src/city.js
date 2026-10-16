@@ -481,40 +481,42 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     ring.visible = false;
     scene.add(ring);
 
-    // Brooklyn Bridge along its mapped line: deck, two towers, catenary cables.
+    // Brooklyn Bridge along its mapped line, in its real materials: granite towers with twin Gothic arches (≈84 m),
+    // a dark deck, four main cables in "Brooklyn Bridge Tan" with vertical suspenders and the diagonal stays that make its web.
     if (d.bridge) {
       const [ax, az] = d.bridge.a, [bx, bz] = d.bridge.b;
       const L = Math.hypot(bx - ax, bz - az) + 60; // the mapped deck stops at the data edge; run on into Brooklyn
       const bridge = new THREE.Group();
-      const deck = new THREE.Mesh(new THREE.BoxGeometry(L, 0.5, 2.6).translate(L / 2, 5, 0), mat.clay);
-      bridge.add(deck);
+      const granite = new THREE.MeshStandardMaterial({ color: 0xb8a88d, roughness: 0.9 });
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0x5f5a54, roughness: 0.85 });
+      const tan = new THREE.LineBasicMaterial({ color: 0xc9b48c });
+      const tanFine = new THREE.LineBasicMaterial({ color: 0xc9b48c, transparent: true, opacity: 0.4 });
+      const DECK = 5, TOP = 10.5, W = 1.6; // deck height, tower top, half the cable spread
+      bridge.add(new THREE.Mesh(new THREE.BoxGeometry(L, 0.45, 3.2).translate(L / 2, DECK, 0), deckMat));
       const towers = [L * 0.36, L * 0.86];
+      const box = (w, h, dpt, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(dpt, h, w).translate(x, y + h / 2, z), granite); bridge.add(m); };
       for (const tx of towers) {
-        for (const dz of [-1.2, 1.2]) {
-          const leg = new THREE.Mesh(new THREE.BoxGeometry(1.2, 11, 1.1).translate(0, 5.5, 0), mat.clay);
-          leg.position.set(tx, 0, dz);
-          bridge.add(leg);
-        }
-        for (const y of [8, 10.6]) {
-          const beam = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 3.4), mat.clay);
-          beam.position.set(tx, y, 0);
-          bridge.add(beam);
-        }
+        box(5.2, DECK, 1.9, tx, 0, 0); // pier below the deck
+        for (const [w, z] of [[1.1, -2.05], [1.2, 0], [1.1, 2.05]]) box(w, 3.5, 1.6, tx, DECK, z); // three piers framing two arches
+        box(5.2, TOP - DECK - 3.5, 1.6, tx, DECK + 3.5, 0); // crown over the arches
+        box(5.6, 0.3, 1.9, tx, TOP, 0); // cornice
       }
       bridge.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
-      for (const dz of [-1.2, 1.2]) {
-        const pts = [];
-        const span = (xa, xb, ya, yb, sag) => {
-          for (let i = 0; i <= 24; i++) {
-            const t = i / 24;
-            pts.push(new THREE.Vector3(xa + (xb - xa) * t, ya + (yb - ya) * t - Math.sin(Math.PI * t) * sag, dz));
-          }
-        };
-        span(0, towers[0], 5.3, 11, 1.4);
-        span(towers[0], towers[1], 11, 11, 6.2);
-        span(towers[1], L, 11, 5.3, 1.4);
-        bridge.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat.cable));
+      const cableY = (x) => { // main cable height along the bridge (parabolic sag between towers)
+        const [t0, t1] = towers;
+        const sag = (xa, xb, ya, yb, s, xx) => { const t = (xx - xa) / (xb - xa); return ya + (yb - ya) * t - 4 * s * t * (1 - t); };
+        if (x < t0) return sag(0, t0, DECK + 0.4, TOP, 1.2, x);
+        if (x < t1) return sag(t0, t1, TOP, TOP, 5.4, x);
+        return sag(t1, L, TOP, DECK + 0.4, 1.2, x);
+      };
+      const segs = [], fine = [];
+      for (const dz of [-W, -W * 0.35, W * 0.35, W]) {
+        for (let i = 0; i < 120; i++) { const x0 = (i / 120) * L, x1 = ((i + 1) / 120) * L; segs.push(x0, cableY(x0), dz, x1, cableY(x1), dz); }
+        if (Math.abs(dz) === W) for (let x = 1; x < L; x += 2.4) { const y = cableY(x); if (y > DECK + 0.6) fine.push(x, DECK + 0.2, dz, x, y, dz); } // suspenders
+        if (Math.abs(dz) === W) for (const tx of towers) for (let k = 1; k <= 5; k++) for (const sgn of [-1, 1]) { const x = tx + sgn * k * 3.4; if (x > 0 && x < L) fine.push(tx, TOP - 0.3, dz, x, DECK + 0.2, dz); } // diagonal stays
       }
+      const lines = (arr, m) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3)); bridge.add(new THREE.LineSegments(g, m)); };
+      lines(segs, tan); lines(fine, tanFine);
       bridge.position.set(ax, 0, az);
       bridge.rotation.y = -Math.atan2(bz - az, bx - ax);
       scene.add(bridge);

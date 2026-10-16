@@ -237,34 +237,53 @@ function renderAmount() {
 }
 chips.addEventListener('click', (e) => {
   const b = e.target.closest('button');
-  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); }
+  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); $('#calc-amt').value = String(amount); }
 });
 paintAmount(amount);
 renderAmount();
 
-// ---------- What the amount buys: one NVIDIA share as 100 squares, and the same money across other favourites.
-const qtyText = (q) => (q < 1 ? q.toFixed(4) : `${q.toFixed(2)}`);
-const FAVS = [['Apple', 'AAPL', 'apple'], ['Tesla', 'TSLA', 'tesla'], ['Meta', 'META', 'meta'], ['Netflix', 'NFLX', 'netflix'], ['Coca-Cola', 'KO', 'cocacola']];
-const fracList = $('#frac-list');
-fracList.innerHTML = FAVS.map(([name, sym, logo]) => `<li><span class="logo" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span><span class="fl-name"><b>${name}</b><small>${sym} · $${REF_PRICES[sym].toFixed(2)}</small></span><span class="fl-bar"><i></i></span><b class="fl-qty"></b></li>`).join('');
+// ---------- Fractional calculator: type any amount, pick a company, see the exact fraction (and the phone follows).
+const STOCKS = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq'], ['AAPL', 'Apple', 'apple', 'Nasdaq'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq'], ['META', 'Meta', 'meta', 'Nasdaq'], ['NFLX', 'Netflix', 'netflix', 'Nasdaq'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE']];
+const logoUrl = (logo) => `url(${import.meta.env.BASE_URL}logos/${logo}.svg)`;
+let sel = 'NVDA';
+const qtyText = (q) => (q < 1 ? q.toFixed(4) : q.toFixed(q < 100 ? 3 : 1));
+const ringOffset = (q) => (100 - (q >= 1 && q % 1 < 0.0005 ? 100 : (q % 1) * 100)).toFixed(2); // a whole share closes the ring
+const pick = $('#calc-pick');
+pick.innerHTML = STOCKS.map(([sym, name, logo]) => `<button type="button" role="radio" data-sym="${sym}"><span class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" cx="60" cy="60" r="52" pathLength="100"/></svg><span class="logo" style="--logo: ${logoUrl(logo)}"></span></span><span class="sr-only">${name}, </span><b class="pick-qty"></b> <small>${sym}</small></button>`).join('');
 function paintFrac(v, pop) {
-  const q = v / REF_PRICES.NVDA, whole = Math.floor(q), part = q - whole;
-  bind('nvdaQty', qtyText(q));
-  bind('nvdaPx', REF_PRICES.NVDA.toFixed(2));
-  bind('amtFinal', v);
+  const [sym, name, logo, exch] = STOCKS.find((s) => s[0] === sel);
+  const px = REF_PRICES[sym], q = v / px;
+  bind('qty', qtyText(q));
+  bind('qtyUnit', q < 1 ? 'of a share of' : q < 2 ? 'share of' : 'shares of');
+  bind('wholeNote', q >= 1 ? ` · ${Math.floor(q)} whole + ${(q % 1).toFixed(2)}` : '');
+  bind('sym', sym); bind('stockName', name); bind('exch', exch); bind('px', px.toFixed(2));
+  bind('amtFinal', v.toLocaleString('en-US', { maximumFractionDigits: 2 }));
   bind('amtInrFinal', Math.round(v * FX).toLocaleString('en-IN'));
-  $('.frac-big span').textContent = q < 1 ? 'of an NVIDIA share' : 'NVIDIA shares';
-  const tile = (f, label) => `<figure class="ftile"><span class="fgrid">${Array.from({ length: 100 }, (_, i) => `<i style="--o:${Math.max(0, Math.min(1, f * 100 - i)).toFixed(2)};--d:${i * 6}ms"></i>`).join('')}</span><figcaption>${label}</figcaption></figure>`;
-  $('#frac-tiles').innerHTML = Array.from({ length: Math.min(whole, 3) }, () => tile(1, '1 share')).join('') + (part > 0.0005 ? tile(part, part.toFixed(4)) : '');
-  const nTiles = $('#frac-tiles').children.length;
-  $('#frac-tiles').style.setProperty('--cell', `${nTiles <= 1 ? 18 : nTiles === 2 ? 14 : 10}px`); // one share fills the panel; more shares share it
-  fracList.querySelectorAll('li').forEach((li, k) => {
-    const fq = v / REF_PRICES[FAVS[k][1]];
-    li.querySelector('.fl-bar i').style.setProperty('--f', Math.min(1, fq).toFixed(3));
-    li.querySelector('.fl-qty').textContent = fq < 1 ? `${fq.toFixed(4)} sh` : `${fq.toFixed(2)} sh`;
+  $('#ring-logo').style.setProperty('--logo', logoUrl(logo));
+  $('#app-logo').style.setProperty('--logo', logoUrl(logo));
+  $('#ring-main').style.strokeDashoffset = ringOffset(q);
+  pick.querySelectorAll('button').forEach((b) => {
+    const pq = v / REF_PRICES[b.dataset.sym];
+    b.setAttribute('aria-checked', String(b.dataset.sym === sel));
+    b.querySelector('.ring-fill').style.strokeDashoffset = ringOffset(pq);
+    b.querySelector('.pick-qty').textContent = qtyText(pq);
   });
   if (pop && !reducedMotion) { const f1 = $('.f1'); f1.classList.remove('pop'); void f1.offsetWidth; f1.classList.add('pop'); }
 }
+pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); } });
+// Typed amounts: digits and one decimal point, $1 to $1,000,000 (the order minimum and a sane ceiling).
+const calcIn = $('#calc-amt');
+calcIn.addEventListener('input', () => {
+  const clean = calcIn.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1').replace(/^(\d*\.\d{0,2}).*$/, '$1');
+  if (clean !== calcIn.value) calcIn.value = clean;
+  const v = Math.min(1e6, Number(clean) || 0);
+  const ok = v >= 1;
+  calcIn.closest('.calc').classList.toggle('is-invalid', !ok);
+  $('#calc-hint').lastChild.textContent = ok ? ' · type any amount from $1' : ' · the minimum is $1';
+  if (!ok) return;
+  amount = v; renderAmount(); paintFrac(v);
+});
+calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calcIn.value = String(amount); calcIn.closest('.calc').classList.remove('is-invalid'); $('#calc-hint').lastChild.textContent = ' · type any amount from $1'; } });
 paintFrac(amount);
 // The phone tilts toward the pointer (desktop): a real object in space, not a flat screenshot.
 const buyGrid = $('.buy-grid'), tilt = $('.phone-tilt');
@@ -277,6 +296,13 @@ if (!reducedMotion && matchMedia('(hover: hover)').matches) {
   });
   buyGrid.addEventListener('pointerleave', () => ['--ry', '--rx', '--gx'].forEach((k) => tilt.style.removeProperty(k)));
 }
+
+// ---------- Vault: hovering a layer in the list lights its ring.
+const vault = $('.vault');
+document.querySelectorAll('.vault-list li').forEach((li) => {
+  li.addEventListener('mouseenter', () => { vault.dataset.hl = li.dataset.k; });
+  li.addEventListener('mouseleave', () => { delete vault.dataset.hl; });
+});
 
 // ---------- Diagrams (money routes, session timeline, protection layers) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {

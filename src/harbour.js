@@ -33,64 +33,86 @@ export function createHarbour({ scene, camera, renderer, ll, reducedMotion, curv
     return out.set(EBB_EAST_RIVER.x * er * w + EBB_HUDSON.x * hu * (1 - w), EBB_EAST_RIVER.y * er * w + EBB_HUDSON.y * hu * (1 - w));
   };
 
-  // ---- Vessels on real routes (lat, lon waypoints; terminals at both ends).
+  // ---- Vessels on real water (lat, lon waypoints). One big cruise boat runs left to right through the view, under the
+  // Brooklyn Bridge (loop: it re-enters off-screen); small craft shuttle between terminals elsewhere.
   const P = (lat, lon) => new THREE.Vector2(...ll(lat, lon));
   const fleet = [
-    { name: 'Staten Island Ferry', len: 94, beam: 21, colour: 0xff6a00, vmax: 16, accel: 0.25, yaw: 3,
-      route: [P(40.7008, -74.0131), P(40.6955, -74.0175), P(40.6855, -74.0300), P(40.6720, -74.0470)] },
-    { name: 'NYC Ferry · East River', len: 26, beam: 8, colour: 0xffffff, vmax: 22, accel: 0.45, yaw: 8,
-      route: [P(40.7030, -74.0066), P(40.7046, -73.9990), P(40.7031, -73.9956)] },
-    { name: 'Governors Island ferry', len: 30, beam: 10, colour: 0xffffff, vmax: 9, accel: 0.25, yaw: 6,
+    { name: 'Harbor cruise · East River', len: 85, beam: 16, hull: 0x0d2a4a, decks: 2, funnel: true, vmax: 11, accel: 0.12, yaw: 3, loop: true,
+      route: [P(40.6990, -74.0380), P(40.6995, -74.0250), P(40.6993, -74.0120), P(40.7020, -74.0035), P(40.7055, -73.9975), P(40.7072, -73.9915), P(40.7085, -73.9860)] },
+    { name: 'Water taxi', len: 18, beam: 6, hull: 0xffd400, decks: 1, vmax: 18, accel: 0.5, yaw: 10,
+      route: [P(40.7012, -74.0170), P(40.6990, -74.0080), P(40.6962, -74.0048)] },
+    { name: 'Governors Island ferry', len: 26, beam: 9, hull: 0xffffff, decks: 1, vmax: 9, accel: 0.25, yaw: 6,
       route: [P(40.7003, -74.0122), P(40.6962, -74.0138), P(40.6922, -74.0158)] },
-    { name: 'Harbour tour', len: 40, beam: 10, colour: 0xf4f1ea, vmax: 10, accel: 0.25, yaw: 5,
-      route: [P(40.7120, -74.0205), P(40.7020, -74.0210), P(40.6975, -74.0140), P(40.6990, -74.0040), P(40.7045, -73.9975)] },
-    { name: 'Tug and barge · Hudson', len: 70, beam: 14, colour: 0x8b5a3c, vmax: 6, accel: 0.08, yaw: 2,
-      route: [P(40.7250, -74.0230), P(40.7050, -74.0240), P(40.6880, -74.0290)] },
-    { name: 'Water taxi', len: 18, beam: 6, colour: 0xffd400, vmax: 18, accel: 0.5, yaw: 10,
-      route: [P(40.7012, -74.0170), P(40.6990, -74.0080), P(40.7040, -74.0010)] },
+    { name: 'NYC Ferry · Hudson', len: 26, beam: 8, hull: 0xffffff, decks: 1, vmax: 20, accel: 0.45, yaw: 8,
+      route: [P(40.7145, -74.0195), P(40.7080, -74.0260), P(40.7140, -74.0330)] },
+    { name: 'Tug · Hudson', len: 24, beam: 9, hull: 0x9a2f22, decks: 1, vmax: 8, accel: 0.15, yaw: 4,
+      route: [P(40.7250, -74.0230), P(40.7050, -74.0245), P(40.6900, -74.0300)] },
+    { name: 'Sailboat', len: 12, beam: 4, hull: 0xffffff, decks: 0, mast: true, vmax: 5, accel: 0.1, yaw: 6,
+      route: [P(40.6920, -74.0300), P(40.6990, -74.0265), P(40.7060, -74.0245)] },
   ];
 
-  const hullMat = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55 });
-  const white = hullMat(0xffffff);
+  const mat = (c, r = 0.55) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+  const white = mat(0xf7f7f5), glassBand = mat(0x1d2a3a, 0.3);
   const vessels = fleet.map((f, i) => {
     const L = f.len / UNIT, B = f.beam / UNIT;
     const g = new THREE.Group();
-    const hull = new THREE.Mesh(new THREE.BoxGeometry(L, B * 0.45, B).translate(0, B * 0.25, 0), hullMat(f.colour));
-    const bow = new THREE.Mesh(new THREE.ConeGeometry(B / 2, B * 0.9, 4).rotateZ(-Math.PI / 2).rotateX(Math.PI / 4).translate(L / 2 + B * 0.42, B * 0.25, 0), hullMat(f.colour));
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(L * 0.55, B * 0.4, B * 0.8).translate(-L * 0.08, B * 0.65, 0), white);
-    hull.castShadow = deck.castShadow = true;
-    g.add(hull, bow, deck);
+    const hullMat = mat(f.hull);
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(L, B * 0.42, B).translate(0, B * 0.21, 0), hullMat);
+    const bow = new THREE.Mesh(new THREE.ConeGeometry(B / 2, B * 1.1, 4).rotateZ(-Math.PI / 2).rotateX(Math.PI / 4).scale(1, 0.42 / 0.707, 1).translate(L / 2 + B * 0.5, B * 0.21, 0), hullMat);
+    g.add(hull, bow);
+    for (let k = 0; k < f.decks; k++) { // superstructure decks stepping back, with a dark window band
+      const dl = L * (0.7 - k * 0.18), dy = B * (0.42 + k * 0.32);
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(dl, B * 0.3, B * 0.86).translate(-L * 0.05 - k * L * 0.04, dy + B * 0.15, 0), white));
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(dl * 1.002, B * 0.1, B * 0.865).translate(-L * 0.05 - k * L * 0.04, dy + B * 0.17, 0), glassBand));
+    }
+    if (f.funnel) g.add(new THREE.Mesh(new THREE.CylinderGeometry(B * 0.14, B * 0.16, B * 0.5, 10).translate(-L * 0.2, B * 1.25, 0), mat(0xff5400)));
+    if (f.mast) g.add(new THREE.Mesh(new THREE.ConeGeometry(B * 0.9, L * 0.9, 3).scale(0.08, 1, 1).translate(0, L * 0.45 + B * 0.4, 0), white)); // sail
+    g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     scene.add(g);
     const start = f.route[0], next = f.route[1];
     return {
-      ...f, g, L, vmax: f.vmax * KN, accel: f.accel / UNIT, yawMax: (f.yaw * Math.PI) / 180,
-      pos: start.clone(), psi: Math.atan2(next.y - start.y, next.x - start.x), v: 0,
-      leg: 1, dir: 1, dwell: i * 25, // stagger departures (warm-up spreads them along their routes)
-      emitAcc: 0,
+      ...f, g, L, B, vmax: f.vmax * KN, accel: f.accel / UNIT, yawMax: (f.yaw * Math.PI) / 180,
+      pos: start.clone(), psi: Math.atan2(next.y - start.y, next.x - start.x), v: f.loop ? f.vmax * KN : 0,
+      leg: 1, dir: 1, dwell: f.loop ? 0 : i * 20, emitAcc: 0,
+      trail: [], // stern samples, newest first: { x, z, fx, fz, v, age }
     };
   });
 
-  // ---- Wake particles (one buffer for the fleet).
-  const MAX = 3600;
-  const wake = { n: 0, x: new Float32Array(MAX), z: new Float32Array(MAX), fx: new Float32Array(MAX), fz: new Float32Array(MAX), v: new Float32Array(MAX), age: new Float32Array(MAX), life: new Float32Array(MAX), beam: new Float32Array(MAX) };
-  const POINTS = MAX * 3;
-  const pos = new Float32Array(POINTS * 3), alpha = new Float32Array(POINTS), size = new Float32Array(POINTS);
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
-  geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1).setUsage(THREE.DynamicDrawUsage));
-  geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1).setUsage(THREE.DynamicDrawUsage));
-  const foam = new THREE.Points(geo, new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false,
-    uniforms: { uScale: { value: 1 } },
-    vertexShader: `uniform float uScale; attribute float aAlpha; attribute float aSize; varying float vA;
-      void main() { vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  // ---- Wakes: one soft foam ribbon per vessel. It opens at the Kelvin angle behind the stern; the turbulent centre
+  // fades fast, the two edges (the Kelvin arms) linger; foam is broken up by noise and drifts with the current.
+  const MAXS = 90, SPACING = 0.55;
+  const wakeMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: `attribute float aU; attribute float aT; varying float vU; varying float vT; varying vec2 vP;
+      void main() { vU = aU; vT = aT; vP = position.xz; vec4 mv = modelViewMatrix * vec4(position, 1.0);
         float dz = max(0.0, -mv.z - ${curve.D.toFixed(1)}); mv.y -= (dz * dz + mv.x * mv.x) * ${curve.K};
-        gl_Position = projectionMatrix * mv; gl_PointSize = aSize * uScale / -mv.z; vA = aAlpha; }`,
-    fragmentShader: `varying float vA; void main() { vec2 c = gl_PointCoord - 0.5; float d = dot(c, c);
-        if (d > 0.25) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, vA * (1.0 - d * 4.0)); }`,
-  }));
-  foam.frustumCulled = false;
-  scene.add(foam);
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `varying float vU; varying float vT; varying vec2 vP;
+      float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float n(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+      void main() {
+        float u = abs(vU);
+        float core = (1.0 - smoothstep(0.0, 0.5, u)) * exp(-vT * 5.0) * 0.85;
+        float arm = smoothstep(0.62, 0.9, u) * (1.0 - smoothstep(0.9, 1.0, u)) * 0.6;
+        float foam = (core + arm) * (0.55 + 0.45 * n(vP * 2.3 + vT * 3.0)) * pow(1.0 - vT, 1.6);
+        foam *= smoothstep(0.0, 0.03, vT + 0.01); // soft start at the stern
+        gl_FragColor = vec4(vec3(1.0), foam * 0.9); }`,
+  });
+  for (const s of vessels) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAXS * 2 * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aU', new THREE.BufferAttribute(new Float32Array(MAXS * 2).map((_, k) => (k % 2 ? 1 : -1)), 1));
+    geo.setAttribute('aT', new THREE.BufferAttribute(new Float32Array(MAXS * 2), 1).setUsage(THREE.DynamicDrawUsage));
+    const idx = [];
+    for (let k = 0; k < MAXS - 1; k++) { const a0 = k * 2; idx.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2); }
+    geo.setIndex(idx);
+    s.wake = new THREE.Mesh(geo, wakeMat);
+    s.wake.frustumCulled = false;
+    s.wake.renderOrder = 1;
+    scene.add(s.wake);
+    s.life = 30 + s.L * 2; // big hulls leave longer wakes
+  }
 
   const cur = new THREE.Vector2();
   const nowSec = () => Date.now() / 1000;
@@ -102,10 +124,11 @@ export function createHarbour({ scene, camera, renderer, ll, reducedMotion, curv
     const dist = toT.length();
     const isTerminal = s.leg === 0 || s.leg === s.route.length - 1;
     if (s.dwell > 0) { s.dwell -= dt; s.v = 0; return; }
-    if (dist < (isTerminal ? 1.2 : 6)) {
-      if (isTerminal) { // arrive, dwell, reverse
-        s.dwell = 40 + Math.random() * 30; s.dir = -s.dir; s.leg += s.dir; return;
+    if (dist < (isTerminal && !s.loop ? 1.2 : 6)) {
+      if (s.loop && s.leg === s.route.length - 1) { // through the view and out: re-enter at the start, off-screen
+        s.pos.copy(s.route[0]); s.leg = 1; s.psi = Math.atan2(s.route[1].y - s.route[0].y, s.route[1].x - s.route[0].x); s.trail.length = 0; return;
       }
+      if (isTerminal) { s.dwell = 40 + Math.random() * 30; s.dir = -s.dir; s.leg += s.dir; return; } // arrive, dwell, reverse
       s.leg += s.dir;
       return;
     }
@@ -114,50 +137,41 @@ export function createHarbour({ scene, camera, renderer, ll, reducedMotion, curv
     dPsi = Math.atan2(Math.sin(dPsi), Math.cos(dPsi));
     const yawRate = s.yawMax * Math.min(1, 0.35 + s.v / s.vmax);
     s.psi += THREE.MathUtils.clamp(dPsi, -yawRate * dt, yawRate * dt);
-    // Throttle: brake into terminals (v = sqrt(2 a d)), ease off in sharp turns.
+    // Throttle: brake into terminals (v = sqrt(2 a d)), ease off in sharp turns; loopers keep cruising.
     let remaining = dist;
     for (let k = s.leg; k !== -1 && k !== s.route.length && !(k === 0 || k === s.route.length - 1); k += s.dir) remaining += s.route[k].distanceTo(s.route[k + s.dir]);
-    const vTarget = Math.min(s.vmax * (1 - 0.5 * Math.min(1, Math.abs(dPsi) / 1.2)), Math.sqrt(2 * s.accel * remaining));
+    const vTarget = s.loop ? s.vmax * (1 - 0.35 * Math.min(1, Math.abs(dPsi) / 1.2)) : Math.min(s.vmax * (1 - 0.5 * Math.min(1, Math.abs(dPsi) / 1.2)), Math.sqrt(2 * s.accel * remaining));
     s.v += THREE.MathUtils.clamp(vTarget - s.v, -s.accel * 1.6 * dt, s.accel * dt);
     // Ground velocity = water velocity + current.
     current(s.pos.x, s.pos.y, phase, cur);
     s.pos.x += (Math.cos(s.psi) * s.v + cur.x) * dt;
     s.pos.y += (Math.sin(s.psi) * s.v + cur.y) * dt;
-    // Wake samples, spaced by distance travelled through the water.
+    // Wake samples at the stern, spaced by distance travelled through the water.
     s.emitAcc += s.v * dt;
-    while (s.emitAcc > 0.6 && s.v > 0.05) {
-      s.emitAcc -= 0.6;
-      const i = wake.n < MAX ? wake.n++ : 0; // ponytail: full buffer overwrites the oldest slot (index 0 after compaction)
-      wake.x[i] = s.pos.x - Math.cos(s.psi) * s.L * 0.5; wake.z[i] = s.pos.y - Math.sin(s.psi) * s.L * 0.5;
-      wake.fx[i] = Math.cos(s.psi); wake.fz[i] = Math.sin(s.psi); wake.v[i] = s.v; wake.age[i] = 0;
-      wake.life[i] = 18 + 40 * (s.v / (22 * KN)); wake.beam[i] = s.L * 0.18;
+    while (s.emitAcc > SPACING && s.v > 0.05) {
+      s.emitAcc -= SPACING;
+      s.trail.unshift({ x: s.pos.x - Math.cos(s.psi) * s.L * 0.5, z: s.pos.y - Math.sin(s.psi) * s.L * 0.5, fx: Math.cos(s.psi), fz: Math.sin(s.psi), v: s.v, age: 0 });
+      if (s.trail.length > MAXS) s.trail.length = MAXS;
     }
   }
 
   function stepWake(dt, phase) {
-    let k = 0;
-    for (let i = 0; i < wake.n; i++) {
-      wake.age[i] += dt;
-      if (wake.age[i] > wake.life[i]) continue;
-      if (k !== i) for (const a of ['x', 'z', 'fx', 'fz', 'v', 'age', 'life', 'beam']) wake[a][k] = wake[a][i];
-      current(wake.x[k], wake.z[k], phase, cur);
-      wake.x[k] += cur.x * dt; wake.z[k] += cur.y * dt; // wake water drifts with the tide
-      k++;
+    for (const s of vessels) {
+      const tr = s.trail;
+      for (const p of tr) { p.age += dt; current(p.x, p.z, phase, cur); p.x += cur.x * dt; p.z += cur.y * dt; } // wake water drifts with the tide
+      while (tr.length && tr[tr.length - 1].age > s.life) tr.pop();
+      const pos = s.wake.geometry.attributes.position.array, at = s.wake.geometry.attributes.aT.array;
+      // The ribbon starts at the live stern so it never detaches from the boat.
+      const pts = [{ x: s.pos.x - Math.cos(s.psi) * s.L * 0.5, z: s.pos.y - Math.sin(s.psi) * s.L * 0.5, fx: Math.cos(s.psi), fz: Math.sin(s.psi), v: s.v, age: 0 }, ...tr].slice(0, MAXS);
+      pts.forEach((p, k) => {
+        const half = s.B * 0.55 + p.age * p.v * KELVIN; // Kelvin half-angle opening
+        const nx = -p.fz, nz = p.fx;
+        pos.set([p.x - nx * half, 0.55, p.z - nz * half, p.x + nx * half, 0.55, p.z + nz * half], k * 6);
+        at[k * 2] = at[k * 2 + 1] = Math.min(1, p.age / s.life);
+      });
+      s.wake.geometry.setDrawRange(0, Math.max(0, pts.length - 1) * 6);
+      s.wake.geometry.attributes.position.needsUpdate = s.wake.geometry.attributes.aT.needsUpdate = true;
     }
-    wake.n = k;
-    let p = 0;
-    for (let i = 0; i < wake.n; i++) {
-      const a = wake.age[i], t = a / wake.life[i];
-      const spread = a * wake.v[i] * KELVIN + wake.beam[i]; // Kelvin arms
-      const nx = -wake.fz[i], nz = wake.fx[i];
-      const fade = (1 - t) * (1 - t);
-      for (const [off, al, sz] of [[0, 0.75 * Math.exp(-a / 6), wake.beam[i] * 2 + a * 0.12], [spread, 0.55 * fade, 1.1 + a * 0.05], [-spread, 0.55 * fade, 1.1 + a * 0.05]]) {
-        pos[p * 3] = wake.x[i] + nx * off; pos[p * 3 + 1] = 0.7; pos[p * 3 + 2] = wake.z[i] + nz * off;
-        alpha[p] = al; size[p] = sz; p++;
-      }
-    }
-    geo.setDrawRange(0, p);
-    geo.attributes.position.needsUpdate = geo.attributes.aAlpha.needsUpdate = geo.attributes.aSize.needsUpdate = true;
   }
 
   // ---- Water surface: ripples advected by the same current, so sun glints flow with the tide.
@@ -197,7 +211,6 @@ export function createHarbour({ scene, camera, renderer, ll, reducedMotion, curv
       simClock += dt;
       const phase = tide(nowSec());
       waterU.uTime.value = simClock % 20000; // float32-safe
-      foam.material.uniforms.uScale.value = renderer.domElement.height / (2 * Math.tan((camera.fov * Math.PI) / 360)); // world size → px
       waterU.uEbbER.value.copy(EBB_EAST_RIVER).multiplyScalar(2.5 * KN * phase);
       waterU.uEbbH.value.copy(EBB_HUDSON).multiplyScalar(1.5 * KN * phase);
       for (const s of vessels) {
