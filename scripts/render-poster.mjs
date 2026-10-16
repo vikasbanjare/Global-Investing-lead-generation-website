@@ -26,7 +26,7 @@ const webp = await page.evaluate(async (b64) => {
   const c = document.createElement('canvas');
   c.width = img.naturalWidth; c.height = img.naturalHeight;
   c.getContext('2d').drawImage(img, 0, 0);
-  return c.toDataURL('image/webp', 0.8).split(',')[1];
+  return c.toDataURL('image/webp', 0.6).split(',')[1];
 }, png.toString('base64'));
 writeFileSync('public/city-poster.webp', Buffer.from(webp, 'base64'));
 console.log(`poster ${Math.round(Buffer.from(webp, 'base64').length / 1024)} KB; label at x=${label.x.toFixed(1)}% y=${label.y.toFixed(1)}%`);

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 
 const PAGE_BG = 0xf3f8ff; // brand Cloud White; must match --bg
-const ORANGE = 0xe97e26;
+const ORANGE = 0xff5400;
 const GROUND = 0.6; // land surface height
 
 // Seeded random so the scene is identical on every load.
@@ -64,7 +64,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   renderer.toneMappingExposure = 1.04;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(PAGE_BG, 980, 1750); // starts just past the Financial District: Midtown and the far shores sit in haze
+  scene.fog = new THREE.Fog(PAGE_BG, 820, 1320); // the Financial District stays crisp; uptown and the far shores dissolve into haze
   const camera = new THREE.PerspectiveCamera(22, 1, 1, 3200);
 
   // Morning light: cool sky fill, warm low sun from the east-south-east (the real morning sun over the East River).
@@ -86,7 +86,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     park: new THREE.MeshStandardMaterial({ color: 0xe1e9dd, roughness: 1 }),
     clay: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
     glass: new THREE.MeshStandardMaterial({ color: 0xc9d8ec, roughness: 0.3, metalness: 0.2 }),
-    navy: new THREE.MeshStandardMaterial({ color: 0x1b3c6a, roughness: 0.7 }),
+    navy: new THREE.MeshStandardMaterial({ color: 0x072d5e, roughness: 0.7 }),
     cable: new THREE.LineBasicMaterial({ color: 0x8aa0c0 }),
     marker: new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0.95, depthWrite: false }),
   };
@@ -170,7 +170,10 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
           float fy = fract(vWPos.y / 0.9), fu = fract(u / 0.75);
           float win = step(0.3, fy) * step(fy, 0.78) * step(0.18, fu) * step(fu, 0.82) * step(1.5, vWPos.y);
           float aa = clamp(1.0 - max(fwidth(vWPos.y / 0.9), fwidth(u / 0.75)) * 1.4, 0.0, 1.0);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.7, 0.77, 0.88), win * side * aa * 0.55);`);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.7, 0.77, 0.88), win * side * aa * 0.55);
+          // Grounding: walls darken towards street level (cheap ambient occlusion), so towers sit on the ground.
+          float ao = mix(0.72, 1.0, smoothstep(0.6, 7.0, vWPos.y));
+          diffuseColor.rgb *= mix(1.0, ao, side);`);
     };
     const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
     depth.onBeforeCompile = (sh) => patchGrowth(sh, uT);
@@ -322,9 +325,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     for (let k = 0; k < 7; k++) {
       const x = 34 + r2() * 60, y = 44 + r2() * 40, r = 22 + r2() * 26;
       const grd = g.createRadialGradient(x, y, 0, x, y, r);
-      grd.addColorStop(0, dark ? 'rgba(15,36,71,0.9)' : 'rgba(255,255,255,1)');
-      grd.addColorStop(0.55, dark ? 'rgba(15,36,71,0.5)' : 'rgba(246,249,255,0.85)');
-      grd.addColorStop(1, dark ? 'rgba(15,36,71,0)' : 'rgba(214,224,240,0)');
+      grd.addColorStop(0, dark ? 'rgba(4, 33, 63,0.9)' : 'rgba(255,255,255,1)');
+      grd.addColorStop(0.55, dark ? 'rgba(4, 33, 63,0.5)' : 'rgba(246,249,255,0.85)');
+      grd.addColorStop(1, dark ? 'rgba(4, 33, 63,0)' : 'rgba(214,224,240,0)');
       g.fillStyle = grd; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
     }
     // Seen from above, cloud tops are bright white: no grey underside (that was for the old side-on view).

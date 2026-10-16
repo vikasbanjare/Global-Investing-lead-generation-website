@@ -1,4 +1,4 @@
-# mStock Global Investing — lead-generation landing page (design preview)
+# MAPS World Markets — Global Investing lead-generation landing page (design preview)
 
 A single-page landing site for investing in US stocks and ETFs from India: "Your evening. Wall Street's morning."
 
