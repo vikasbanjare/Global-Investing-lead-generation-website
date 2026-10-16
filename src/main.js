@@ -50,12 +50,13 @@ else window.addEventListener('load', () => whenIdle(startCity), { once: true });
 
 
 // ---------- Ticker: its 16 logos load only as the band nears the viewport (they'd otherwise compete with the hero for bandwidth).
-const ticker = $('.ticker');
-new IntersectionObserver(([e], obs) => {
+// (same for the bento's brand marks)
+const lazyLogos = new IntersectionObserver((entries, obs) => entries.forEach((e) => {
   if (!e.isIntersecting) return;
-  ticker.querySelectorAll('[data-logo]').forEach((el) => el.style.setProperty('--logo', `url(${import.meta.env.BASE_URL}logos/${el.dataset.logo}.svg)`));
-  obs.disconnect();
-}, { rootMargin: '400px 0px' }).observe(ticker);
+  e.target.querySelectorAll('[data-logo]').forEach((el) => el.style.setProperty('--logo', `url(${import.meta.env.BASE_URL}logos/${el.dataset.logo}.svg)`));
+  obs.unobserve(e.target);
+}), { rootMargin: '400px 0px' });
+document.querySelectorAll('.ticker, .tile-marks').forEach((el) => lazyLogos.observe(el));
 
 // ---------- Live clocks
 function tick() {
@@ -208,7 +209,7 @@ const laneObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.lane, .dayline, .layers').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
-const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy > *', '.phone-stage', '.orders > *', '.why-head', '.why-item',
+const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy > *', '.phone-stage', '.orders > *', '.bento > .tile',
   '.eligibility', '.steps > li', '.trust-head', '.tabs', '#rows-panel', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
   '.tax-item', '.faq .split-top > div:first-child', '.faq-item', '.cta-inner > *'].join(', ');
 const revealObserver = new IntersectionObserver((entries) => {

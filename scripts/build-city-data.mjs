@@ -38,6 +38,31 @@ const ring = (geom, tol = 1 / UNIT) => {
 };
 const metres = (v) => { if (v == null) return null; const n = parseFloat(String(v).replace(',', '.')); if (Number.isNaN(n)) return null; return /ft|'/.test(String(v)) ? n * 0.3048 : n; };
 
+// ---- Real colours: OSM building:colour / roof:colour (hex or CSS names), deduplicated into a palette.
+const NAMED = { white: '#f2f0ea', lightgray: '#c9c8c3', lightgrey: '#c9c8c3', gray: '#9a9893', grey: '#9a9893', darkgray: '#6f6e6a', darkgrey: '#6f6e6a', black: '#3a3b3d', brown: '#8a6a52', beige: '#d8ccb0', tan: '#c8ad86', red: '#9b4c3c', silver: '#b8bcc0', blue: '#6f8fb0', green: '#7f9a7a', yellow: '#d9c27c', cream: '#e6dcc4', ivory: '#ece6d6', sandybrown: '#c8a07a', maroon: '#7a3d33', darkred: '#7d3a30', darkslategray: '#3f4a4d', slategray: '#6d7a85' };
+const palette = [];
+const colourIdx = (c) => {
+  if (!c) return null;
+  let hex = String(c).trim().toLowerCase();
+  if (NAMED[hex]) hex = NAMED[hex];
+  if (/^#[0-9a-f]{3}$/.test(hex)) hex = '#' + [...hex.slice(1)].map((x) => x + x).join('');
+  if (!/^#[0-9a-f]{6}$/.test(hex)) return null;
+  let i = palette.indexOf(hex);
+  if (i < 0) { palette.push(hex); i = palette.length - 1; }
+  return i;
+};
+const roofByMaterial = (m) => ({ copper: '#7fae96', glass: '#8fa6bd', metal: '#9ea3a8', roof_tiles: '#8d5b4a', grass: '#8ea677' })[m] || null;
+// Untagged walls: plausible Financial District tones by material, height and age (stable per building id).
+const WALLS = { glass: ['#7f9ab4', '#8ca3b8', '#6f8ba6', '#9bb0c2'], brick: ['#9b6a55', '#a87a62', '#8c5e4b'], stone: ['#cdbfa5', '#d6cab2', '#c4b59a', '#bfb6a6'], concrete: ['#c3c0b8', '#b7b4ac', '#cfccc4'] };
+const defaultWall = (mat, h, year, id) => {
+  const pick = (k) => colourIdx(WALLS[k][id % WALLS[k].length]);
+  if (/glass/.test(mat) || (h >= 150 && (!year || year > 1970))) return pick('glass');
+  if (/brick/.test(mat)) return pick('brick');
+  if (/stone|marble|granite|limestone/.test(mat) || (year && year < 1940)) return pick('stone');
+  if (/concrete|metal/.test(mat)) return pick('concrete');
+  return h > 60 ? pick(id % 3 ? 'concrete' : 'glass') : pick(id % 4 === 0 ? 'brick' : 'stone');
+};
+
 // ---- Buildings: render parts where a building has them, otherwise its outline.
 const isPart = (w) => 'building:part' in w.tags;
 const parts = bld.filter(isPart).map((w) => ({ w, pts: ring(w.geometry) }));
@@ -60,9 +85,12 @@ for (const { w, pts } of [...parts, ...outlines.filter((o) => !hasParts(o))]) {
   if (h - base < 1.5) continue;
   const year = parseInt(w.tags.start_date, 10);
   const mat = `${w.tags['building:material'] || ''} ${w.tags.material || ''}`;
-  const tone = h >= 120 || /glass/.test(mat) ? 1 : (h <= 45 && ((year && year < 1940) || /brick|stone|marble|granite/.test(mat))) ? 2 : 0;
+  const glass = /glass/.test(mat) || (!mat.trim() && h >= 150 && (!year || year > 1970));
+  const tone = glass ? 1 : (h <= 45 && ((year && year < 1940) || /brick|stone|marble|granite/.test(mat))) ? 2 : 0;
+  const wall = colourIdx(w.tags['building:colour'] || w.tags.colour) ?? defaultWall(mat, h, year, w.id);
+  const roof = colourIdx(w.tags['roof:colour']) ?? colourIdx(roofByMaterial(w.tags['roof:material'])) ?? colourIdx('#9c9890');
   const ccw = area(pts) > 0 ? pts : [...pts].reverse();
-  out.push([r1(base / UNIT), r1((h - base) / UNIT), tone, ...ccw.flat().map(r1)]);
+  out.push([r1(base / UNIT), r1((h - base) / UNIT), tone, wall, roof, ...ccw.flat().map(r1)]);
 }
 
 // ---- Land: chain coastline ways, close each landmass with corners outside the view.
@@ -108,7 +136,7 @@ let best = 0, angle = 0;
 for (let i = 0; i < nysePts.length; i++) { const [a, b] = [nysePts[i], nysePts[(i + 1) % nysePts.length]]; const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L > best) { best = L; angle = Math.atan2(b[1] - a[1], b[0] - a[0]); } }
 
 mkdirSync('public/data', { recursive: true });
-const data = { unit: UNIT, origin: [LAT0, LON0], attribution: '© OpenStreetMap contributors (ODbL)', b: out, land: lands, parks, nyse: { at: [0, 0], angle: r1(angle * 100) / 100, size: [r1(best), r1(Math.sqrt(Math.abs(area(nysePts))) )] }, wtc: at('One World Trade Center'), bridge };
+const data = { palette, unit: UNIT, origin: [LAT0, LON0], attribution: '© OpenStreetMap contributors (ODbL)', b: out, land: lands, parks, nyse: { at: [0, 0], angle: r1(angle * 100) / 100, size: [r1(best), r1(Math.sqrt(Math.abs(area(nysePts))) )] }, wtc: at('One World Trade Center'), bridge };
 writeFileSync('public/data/manhattan.json', JSON.stringify(data));
 const tall = out.filter((b) => b[1] * UNIT > 150).length;
 console.log(`buildings ${out.length} (towers >150 m: ${tall}), land ${lands.length}, parks ${parks.length}, ${Math.round(JSON.stringify(data).length / 1024)} KB, wtc ${data.wtc}, bridge ${JSON.stringify(bridge)}, nyse angle ${data.nyse.angle}`);

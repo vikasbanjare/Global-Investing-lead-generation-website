@@ -68,7 +68,21 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   const camera = new THREE.PerspectiveCamera(22, 1, 1, 3200);
 
   // Morning light: cool sky fill, warm low sun from the east-south-east (the real morning sun over the East River).
-  scene.add(new THREE.HemisphereLight(0xf8fbff, 0xdde1e8, 1.1)); // soft fill: shaded faces stay readable, sunlit ones pop
+  scene.add(new THREE.HemisphereLight(0xeaf2ff, 0x9a958c, 0.55)); // sky above, warm ground bounce below
+  // Image-based light from a generated morning sky: glass and water reflect it, shadowed faces pick up its blue.
+  {
+    const pm = new THREE.PMREMGenerator(renderer);
+    const skyScene = new THREE.Scene();
+    const skyGeo = new THREE.SphereGeometry(100, 32, 16);
+    const cols = []; const pp = skyGeo.attributes.position;
+    const zen = new THREE.Color(0x8fb6e3), hor = new THREE.Color(0xf6efe4), gnd = new THREE.Color(0x7d7f80), tmp = new THREE.Color();
+    for (let i = 0; i < pp.count; i++) { const y = pp.getY(i) / 100; tmp.copy(y > 0 ? hor : gnd).lerp(y > 0 ? zen : gnd, Math.pow(Math.abs(y), 0.6)); cols.push(tmp.r, tmp.g, tmp.b); }
+    skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    skyScene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+    scene.environment = pm.fromScene(skyScene, 0.02).texture;
+    scene.environmentIntensity = 0.75;
+    pm.dispose();
+  }
   const sun = new THREE.DirectionalLight(0xffd3a3, 4.2); // stronger key vs fill: towers read as volumes
   sun.position.set(200, 150, 60); // a low east-south-east morning sun: long shadows across the grid from this view
   sun.target.position.set(0, 0, -40);
@@ -81,9 +95,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   const mat = {
     // Unlit, fixed pale blue: lit water turned beige-grey under the warm sun. Haze still blends it into the page.
-    water: new THREE.MeshBasicMaterial({ color: 0xd2e3f5, toneMapped: false }),
-    land: new THREE.MeshStandardMaterial({ color: 0xf3f5f9, roughness: 1 }),
-    park: new THREE.MeshStandardMaterial({ color: 0xe1e9dd, roughness: 1 }),
+    water: new THREE.MeshStandardMaterial({ color: 0x4f7ea8, roughness: 0.22, metalness: 0.1 }), // reflects the sky
+    land: new THREE.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.95 }), // streets and plazas: asphalt and paving
+    park: new THREE.MeshStandardMaterial({ color: 0x7f9a62, roughness: 1 }),
     clay: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
     glass: new THREE.MeshStandardMaterial({ color: 0xc9d8ec, roughness: 0.3, metalness: 0.2 }),
     navy: new THREE.MeshStandardMaterial({ color: 0x072d5e, roughness: 0.7 }),
@@ -119,24 +133,26 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     d.parks.forEach((p) => slab(p, 0, mat.park, GROUND + 0.02));
 
     // ---- Buildings: one merged mesh of real footprints, extruded to real heights.
-    const TONES = [new THREE.Color(0xf4f6fa), new THREE.Color(0xd5e0ef), new THREE.Color(0xf1ebe3)]; // clay, glass, masonry
-    const pos = [], nor = [], col = [], del = [];
+    const PAL = d.palette.map((h) => new THREE.Color(h)); // real OSM building:colour / roof:colour (sRGB → linear)
+    const pos = [], nor = [], col = [], del = [], gls = [];
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), f = new THREE.Vector3();
-    let color, delay;
+    let color, delay, glassy;
     const tri = (p0, p1, p2, normal) => {
       f.subVectors(p1, p0).cross(c.subVectors(p2, p0));
       const [q1, q2] = f.dot(normal) < 0 ? [p2, p1] : [p1, p2]; // wind every face toward its outward normal
-      for (const p of [p0, q1, q2]) { pos.push(p.x, p.y, p.z); nor.push(normal.x, normal.y, normal.z); col.push(color.r, color.g, color.b); del.push(delay); }
+      for (const p of [p0, q1, q2]) { pos.push(p.x, p.y, p.z); nor.push(normal.x, normal.y, normal.z); col.push(color.r, color.g, color.b); del.push(delay); gls.push(glassy); }
     };
     const up = new THREE.Vector3(0, 1, 0);
     for (const row of d.b) {
-      const [base, h, tone] = row;
-      const pts = pairs(row.slice(3));
+      const [base, h, tone, wallI, roofI] = row;
+      const pts = pairs(row.slice(5));
       if (pts.length < 3) continue;
       const y0 = GROUND + base, y1 = y0 + h;
       const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cz = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-      const v = 0.97 + rand() * 0.04;
-      color = TONES[tone].clone().multiplyScalar(v);
+      const v = 0.96 + rand() * 0.06;
+      const wallC = PAL[wallI].clone().multiplyScalar(v), roofC = PAL[roofI].clone().multiplyScalar(v);
+      glassy = tone === 1 ? 1 : 0;
+      color = wallC;
       delay = Math.hypot(cx, cz) * 0.0065 + rand() * 0.25;
       for (let i = 0; i < pts.length; i++) {
         const [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length];
@@ -146,6 +162,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
         a.set(x0, y0, z0); b.set(x1, y0, z1); const t1 = new THREE.Vector3(x1, y1, z1), t0 = new THREE.Vector3(x0, y1, z0);
         tri(a.clone(), b.clone(), t1, nn); tri(a.clone(), t1.clone(), t0, nn);
       }
+      color = roofC; glassy = 0;
       const faces = THREE.ShapeUtils.triangulateShape(pts.map(([x, z]) => new THREE.Vector2(x, z)), []);
       for (const [i, j, k] of faces) tri(new THREE.Vector3(pts[i][0], y1, pts[i][1]), new THREE.Vector3(pts[j][0], y1, pts[j][1]), new THREE.Vector3(pts[k][0], y1, pts[k][1]), up);
     }
@@ -154,26 +171,35 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     geo.setAttribute('aDelay', new THREE.Float32BufferAttribute(del, 1));
+    geo.setAttribute('aGlass', new THREE.Float32BufferAttribute(gls, 1));
 
     // Facades: floor bands and window bays drawn from world position on vertical faces, faded where they'd shimmer.
-    const facade = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, vertexColors: true });
+    const facade = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, vertexColors: true });
     facade.onBeforeCompile = (sh) => {
       patchGrowth(sh, uT);
       sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWN = normalize(mat3(modelMatrix) * objectNormal);');
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nattribute float aGlass;\nvarying float vGlass;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWN = normalize(mat3(modelMatrix) * objectNormal);\nvGlass = aGlass;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nvarying float vGlass;')
         .replace('#include <color_fragment>', `#include <color_fragment>
           float side = 1.0 - step(0.5, abs(vWN.y));
           float u = abs(vWN.x) > 0.5 ? vWPos.z : vWPos.x;
-          float fy = fract(vWPos.y / 0.9), fu = fract(u / 0.75);
-          float win = step(0.3, fy) * step(fy, 0.78) * step(0.18, fu) * step(fu, 0.82) * step(1.5, vWPos.y);
-          float aa = clamp(1.0 - max(fwidth(vWPos.y / 0.9), fwidth(u / 0.75)) * 1.4, 0.0, 1.0);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.7, 0.77, 0.88), win * side * aa * 0.55);
+          float fy = fract(vWPos.y / 0.45), fu = fract(u / 0.42);      // ~3.6 m floors, ~3.4 m bays (8 m per unit)
+          float aa = clamp(1.0 - max(fwidth(vWPos.y / 0.45), fwidth(u / 0.42)) * 1.2, 0.0, 1.0);
+          float above = step(1.2, vWPos.y);
+          // Masonry: punched windows, dark glass with a cool sky tint.
+          float punched = step(0.28, fy) * step(fy, 0.8) * step(0.22, fu) * step(fu, 0.78) * above;
+          vec3 pane = vec3(0.16, 0.2, 0.26);
+          diffuseColor.rgb = mix(diffuseColor.rgb, pane, punched * side * mix(0.32, 0.62, aa) * (1.0 - vGlass));
+          // Glass towers: lighter spandrel bands every floor, thin mullions.
+          float spandrel = step(0.84, fy) * above, mullion = step(0.93, fu);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.35 + 0.04, max(spandrel, mullion * 0.6) * side * vGlass * mix(0.35, 0.8, aa));
           // Grounding: walls darken towards street level (cheap ambient occlusion), so towers sit on the ground.
-          float ao = mix(0.72, 1.0, smoothstep(0.6, 7.0, vWPos.y));
-          diffuseColor.rgb *= mix(1.0, ao, side);`);
+          float ao = mix(0.7, 1.0, smoothstep(0.6, 7.0, vWPos.y));
+          diffuseColor.rgb *= mix(1.0, ao, side);`)
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.14, vGlass * (1.0 - step(0.5, abs(vWN.y))));')
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.55, vGlass * (1.0 - step(0.5, abs(vWN.y))));');
     };
     const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
     depth.onBeforeCompile = (sh) => patchGrowth(sh, uT);
@@ -185,7 +211,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     // ---- Context beyond the mapped area (north Manhattan, Brooklyn, Jersey City): low-detail blocks that fade
     // into the haze, so the real Financial District doesn't end in an empty plain. Not real buildings.
     let mx0 = Infinity, mx1 = -Infinity, mz0 = Infinity, mz1 = -Infinity;
-    for (const row of d.b) for (let i = 3; i < row.length; i += 2) { mx0 = Math.min(mx0, row[i]); mx1 = Math.max(mx1, row[i]); mz0 = Math.min(mz0, row[i + 1]); mz1 = Math.max(mz1, row[i + 1]); }
+    for (const row of d.b) for (let i = 5; i < row.length; i += 2) { mx0 = Math.min(mx0, row[i]); mx1 = Math.max(mx1, row[i]); mz0 = Math.min(mz0, row[i + 1]); mz1 = Math.max(mz1, row[i + 1]); }
     const lands = d.land.map(pairs);
     // Real positions from latitude/longitude, in the same projection as the data.
     const ll = (lat, lon) => [((lon - d.origin[1]) * 111320 * Math.cos((d.origin[0] * Math.PI) / 180)) / d.unit, (-(lat - d.origin[0]) * 110540) / d.unit];
@@ -206,6 +232,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
     const ctxMesh = new THREE.InstancedMesh(boxGeo, mat.clay, fill.length);
     ctxMesh.castShadow = ctxMesh.receiveShadow = true;
+    const CTX = ['#bdb8ae', '#c9c2b3', '#a5735e', '#9a9d9f', '#d2ccbf', '#8ba2b8', '#b49a80'].map((h) => new THREE.Color(h));
+    fill.forEach((_, i) => ctxMesh.setColorAt(i, CTX[(i * 7 + (i >> 3)) % CTX.length]));
     scene.add(ctxMesh);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3();
     placeContext = (time) => {
@@ -243,7 +271,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
     // New York Stock Exchange: block, six columns, pediment, facing Broad Street.
     const nyse = new THREE.Group();
-    nyse.add(new THREE.Mesh(new THREE.BoxGeometry(9, 6.4, 7).translate(0, 3.2, 0), mat.navy));
+    nyse.add(new THREE.Mesh(new THREE.BoxGeometry(9, 6.4, 7).translate(0, 3.2, 0), new THREE.MeshStandardMaterial({ color: 0xe8e2d6, roughness: 0.6 }))); // white marble, as built
     for (let i = 0; i < 6; i++) {
       const colm = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 5, 10).translate(0, 2.5, 0), mat.clay);
       colm.position.set(-3.4 + i * 1.36, 0, 4.1);
