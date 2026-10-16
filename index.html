@@ -44,10 +44,14 @@
     <!-- Phones/tablets only: the poster is above the fold there (eager, high priority); desktop gets a 1px stand-in and never downloads it. -->
     <picture>
       <source media="(max-width: 900px)" srcset="/city-poster.webp" type="image/webp">
-      <img class="hero-poster" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" width="1600" height="840" loading="lazy" decoding="async" aria-hidden="true">
+      <img class="hero-poster" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" width="1600" height="840" fetchpriority="high" decoding="async" aria-hidden="true">
     </picture>
     <div class="hero-fade" aria-hidden="true"></div>
     <p class="map-credit">Buildings © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors</p>
+    <div class="ws-label" aria-hidden="true">
+      <span class="ws-dot"></span>
+      <span class="ws-text"><strong>Wall Street</strong><span class="tz"><span data-bind="nyc">—</span>&nbsp;ET</span></span>
+    </div>
 
 
     <div class="wrap hero-copy">
@@ -80,25 +84,6 @@
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>0.25% flat brokerage</li>
         <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>Fully regulated via IFSCA GIFT City</li>
       </ul>
-    </div>
-    <div class="hero-photo" aria-hidden="false">
-      <picture>
-        <source media="(max-width: 900px)" srcset="/hero-aerial-900.webp" type="image/webp">
-        <img src="/hero-aerial.webp" width="1513" height="480" alt="Aerial view of Lower Manhattan at morning, with the Financial District on the harbour" fetchpriority="high" decoding="async">
-      </picture>
-      <div class="boats" aria-hidden="true">
-        <span class="boat b1" aria-hidden="true"></span>
-        <span class="boat b2" aria-hidden="true"></span>
-        <span class="boat b3" aria-hidden="true"></span>
-        <span class="boat b4" aria-hidden="true"></span>
-        <span class="boat b5" aria-hidden="true"></span>
-        <span class="boat b6" aria-hidden="true"></span>
-      </div>
-      <span class="hero-pin" aria-hidden="true"></span>
-      <div class="ws-label" aria-hidden="true">
-        <span class="ws-dot"></span>
-        <span class="ws-text"><strong>Wall Street</strong><span class="tz"><span data-bind="nyc">—</span>&nbsp;ET</span></span>
-      </div>
     </div>
   </section>
 
@@ -542,7 +527,7 @@
         <nav aria-label="Learn"><h3>Learn</h3><a href="#how">How it works</a><a href="#tax">Tax guide</a><a href="#faq">FAQs</a></nav>
         <nav aria-label="Legal"><h3>Legal</h3><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#disclosures">Disclosures</a><a href="#charges">Schedule of charges</a></nav>
       </div>
-      <p class="footer-fine">IFSCA Broker Dealer Registration No. [REGISTRATION NUMBER] · [REGISTERED OFFICE ADDRESS]. Investments in securities markets are subject to market risks. Read all related documents carefully before investing. Brand names and logos are for identification only and do not imply endorsement. © 2026 Mirae Asset Capital Markets (IFSC) Private Limited.</p>
+      <p class="footer-fine">IFSCA Broker Dealer Registration No. [REGISTRATION NUMBER] · [REGISTERED OFFICE ADDRESS]. Investments in securities markets are subject to market risks. Read all related documents carefully before investing. Brand names and logos are for identification only and do not imply endorsement. Map data © OpenStreetMap contributors, available under the Open Database License. © 2026 Mirae Asset Capital Markets (IFSC) Private Limited.</p>
     </div>
   </footer>
 

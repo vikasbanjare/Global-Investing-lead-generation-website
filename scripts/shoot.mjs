@@ -41,8 +41,8 @@ for (const [w, h] of widths) {
   if (metrics.overflowX > 0) fail(`${w}px: horizontal overflow ${metrics.overflowX}px`);
   if (errors.length) fail(`${w}px: console errors: ${errors.join(' | ')}`);
   if (!metrics.webgl) fail(`${w}px: WebGL hero failed`);
-  if (!(await page.evaluate(() => { const i = document.querySelector('.hero-photo img'); return document.querySelector('.hero').classList.contains('is-photo') && i.complete && i.naturalWidth > 0; }))) fail(`${w}px: hero photo not shown`);
-  if (!(await page.evaluate(() => { const l = document.querySelector('.ws-label'); return l.classList.contains('is-on') && /\d/.test(l.textContent) && l.getBoundingClientRect().width > 40; }))) fail(`${w}px: live Wall Street label not shown`);
+  if (w >= 900 && !(await page.evaluate(() => document.querySelector('.hero').classList.contains('is-live')))) fail(`${w}px: live city did not start`);
+  if (w < 900 && !(await page.evaluate(() => { const i = document.querySelector('.hero-poster'); return i.complete && i.naturalWidth > 0 && getComputedStyle(i).display !== 'none'; }))) fail(`${w}px: poster not shown`);
   await page.close();
 }
 
