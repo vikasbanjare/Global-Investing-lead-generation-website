@@ -64,8 +64,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   renderer.toneMappingExposure = 1.04;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(PAGE_BG, 700, 1180); // the Financial District stays crisp; uptown and the far shores dissolve into haze
-  const camera = new THREE.PerspectiveCamera(22, 1, 1, 3200);
+  scene.fog = new THREE.Fog(PAGE_BG, 1150, 1950); // the Financial District stays crisp; uptown and the far shores dissolve into haze
+  const camera = new THREE.PerspectiveCamera(22, 1, 1, 5000);
 
   // Morning light: cool sky fill, warm low sun from the east-south-east (the real morning sun over the East River).
   scene.add(new THREE.HemisphereLight(0xeaf2ff, 0x9a958c, 0.55)); // sky above, warm ground bounce below
@@ -83,7 +83,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     scene.environmentIntensity = 0.75;
     pm.dispose();
   }
-  const sun = new THREE.DirectionalLight(0xffd3a3, 4.2); // stronger key vs fill: towers read as volumes
+  const sun = new THREE.DirectionalLight(0xffcf96, 4.4); // stronger key vs fill: towers read as volumes
   sun.position.set(200, 150, 60); // a low east-south-east morning sun: long shadows across the grid from this view
   sun.target.position.set(0, 0, -40);
   sun.castShadow = true;
@@ -95,8 +95,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   const mat = {
     // Unlit, fixed pale blue: lit water turned beige-grey under the warm sun. Haze still blends it into the page.
-    water: new THREE.MeshStandardMaterial({ color: 0x4f7ea8, roughness: 0.22, metalness: 0.1 }), // reflects the sky
-    land: new THREE.MeshStandardMaterial({ color: 0xa9a7a2, roughness: 0.95 }), // streets and plazas: asphalt and paving
+    water: new THREE.MeshStandardMaterial({ color: 0x1f5f95, roughness: 0.3, metalness: 0.15 }), // deep harbour blue, reflects the sky
+    land: new THREE.MeshStandardMaterial({ color: 0x9c9a95, roughness: 0.95 }), // streets and plazas: asphalt and paving
     park: new THREE.MeshStandardMaterial({ color: 0x7f9a62, roughness: 1 }),
     clay: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
     glass: new THREE.MeshStandardMaterial({ color: 0xc9d8ec, roughness: 0.3, metalness: 0.2 }),
@@ -112,6 +112,15 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   const uT = { value: 0 };
   let placeContext = () => {};
+  let boats = [];
+  const placeBoats = (dt) => {
+    for (const b of boats) {
+      b.a += b.speed * dt;
+      const x = b.cx + Math.cos(b.a) * b.rad, z = b.cz + Math.sin(b.a) * b.rad * 0.6;
+      b.g.position.set(x, 0, z);
+      b.g.rotation.y = -Math.atan2(Math.cos(b.a) * b.rad * 0.6, -Math.sin(b.a) * b.rad) + Math.PI; // face along the path, wake behind
+    }
+  };
   const grow = []; // landmark groups scaled on Y during the intro
   const PIN_Y = 34; // above every tower around the NYSE (tallest neighbour ≈ 23 units)
   let ring, anchor = new THREE.Vector3(0, PIN_Y + 4, 0); // label sits just above the pin
@@ -219,31 +228,56 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const fill = [];
     for (let x = -330; x <= 440; x += 7) {
       for (let z = -880; z <= 260; z += 7) {
-        if ((Math.round(x / 7) % 4 === 0) || (Math.round(z / 7) % 3 === 0) || rand() < 0.14) continue; // streets, and the odd open lot
+        if (rand() < 0.22) continue; // open lots, so the blocks don't read as a grid
         const inMapped = x > mx0 - 3 && x < mx1 + 3 && z > mz0 - 3 && z < mz1 + 3;
         if (inMapped || !lands.some((l) => inside(l, x, z))) continue;
         const north = Math.max(0, -(z - mz0)) / 120; // Manhattan rises again towards Midtown
         const onManhattan = inside(lands[0], x, z);
         const midtown = onManhattan ? Math.exp(-((x - esb[0]) ** 2 + (z - esb[1]) ** 2) / (2 * 130 ** 2)) : 0;
         const h = 1.6 + rand() * 5 + (onManhattan ? rand() * 9 * Math.min(1, 0.4 + north) : rand() * 4) + midtown * rand() * rand() * 34;
-        fill.push({ x: x + (rand() - 0.5) * 1.8, z: z + (rand() - 0.5) * 1.8, w: 3 + rand() * 3, d: 3 + rand() * 3, h, delay: 0.8 + Math.hypot(x, z) * 0.004 + rand() * 0.3 });
+        fill.push({ x: x + (rand() - 0.5) * 4, z: z + (rand() - 0.5) * 4, w: 2.5 + rand() * 5, d: 2.5 + rand() * 5, r: onManhattan ? 0.5 + (rand() - 0.5) * 0.08 : (rand() - 0.5) * 0.3, h: h * (0.5 + rand() * 0.5), delay: 0.8 + Math.hypot(x, z) * 0.004 + rand() * 0.3 });
       }
     }
     const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
     const ctxMesh = new THREE.InstancedMesh(boxGeo, mat.clay, fill.length);
-    ctxMesh.castShadow = ctxMesh.receiveShadow = true;
-    const CTX = ['#bdb8ae', '#c9c2b3', '#a5735e', '#9a9d9f', '#d2ccbf', '#8ba2b8', '#b49a80'].map((h) => new THREE.Color(h));
-    fill.forEach((_, i) => ctxMesh.setColorAt(i, CTX[(i * 7 + (i >> 3)) % CTX.length]));
+    ctxMesh.castShadow = false; ctxMesh.receiveShadow = true; // no shadow clutter from context blocks
+    const CTX = ['#b9a48c', '#a7856c', '#c8b9a3', '#9fa6ad', '#8d9fb2', '#c3ad94', '#a8968a'].map((h) => new THREE.Color(h)); // brownstone, brick, limestone, glass
+    const bgC = new THREE.Color(PAGE_BG), tc = new THREE.Color();
+    // Atmospheric perspective: context blocks fade toward the page colour with distance, so the real island stays the subject.
+    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.6, 0.05 + Math.hypot(bk.x, bk.z) / 1300))));
     scene.add(ctxMesh);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3();
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     placeContext = (time) => {
       fill.forEach((bk, i) => {
         const e = easeOut(clamp01((time - bk.delay) / 1.3));
-        ctxMesh.setMatrixAt(i, m4.compose(pv.set(bk.x, GROUND, bk.z), q, sv.set(bk.w, Math.max(0.001, bk.h * e), bk.d)));
+        ctxMesh.setMatrixAt(i, m4.compose(pv.set(bk.x, GROUND, bk.z), q.setFromAxisAngle(yAxis, bk.r), sv.set(bk.w, Math.max(0.001, bk.h * e), bk.d)));
       });
       ctxMesh.instanceMatrix.needsUpdate = true;
     };
     placeContext(0);
+
+    // ---- Harbour traffic: ferries and boats with white wakes, circling the tip (decorative, not data).
+    const wakeTex = (() => { const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128; const g = cv.getContext('2d');
+      const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.beginPath(); g.moveTo(13, 0); g.lineTo(19, 0); g.lineTo(32, 128); g.lineTo(0, 128); g.closePath(); g.fill(); return new THREE.CanvasTexture(cv); })();
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+    const wakeMat = new THREE.MeshBasicMaterial({ map: wakeTex, transparent: true, depthWrite: false, opacity: 0.85 });
+    const brand = new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.6 }); // Staten Island Ferry orange
+    boats = [];
+    const brng = rng(21);
+    const lanes = [[0, 150, 95, 0.9], [-70, 110, 45, 1.4], [75, 115, 55, 1.2], [-150, 60, 40, 1.1], [150, 60, 45, 1.0], [110, 190, 70, 0.8], [-110, 190, 60, 0.9]];
+    lanes.forEach(([cx, cz, rad, speed], i) => {
+      const g = new THREE.Group();
+      const big = i === 0;
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(big ? 2.6 : 1.4, big ? 1.6 : 0.8, big ? 9 : 4.2).translate(0, 0.9, 0), big ? brand : hullMat);
+      hull.castShadow = true;
+      const cabin = new THREE.Mesh(new THREE.BoxGeometry(big ? 2 : 1, 0.8, big ? 4.5 : 1.6).translate(0, big ? 2.1 : 1.6, -0.3), hullMat);
+      const wake = new THREE.Mesh(new THREE.PlaneGeometry(big ? 9 : 5, big ? 40 : 22).rotateX(-Math.PI / 2).translate(0, 0.3, big ? 24 : 13), wakeMat);
+      g.add(hull, cabin, wake);
+      scene.add(g);
+      boats.push({ g, cx, cz, rad, speed: speed * 0.035, a: brng() * Math.PI * 2 });
+    });
+    placeBoats(0);
 
     // ---- Landmarks, at their real positions
     // One World Trade Center: tapered square prism on a podium, with spire (417 m roof, 541 m spire).
@@ -407,8 +441,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // Low and wide from the harbour: Lower Manhattan reads as a skyline rising from the water (One World Trade Center
   // the hero, Midtown and the Empire State in the haze), not a map of rooftops. Real towers hide the NYSE from here
   // (ray-marched), so an orange map pin rises above the skyline at its spot.
-  const target = new THREE.Vector3(-10, 26, -30);
-  const rig = { az: 0.2, pol: 1.05, r: 540 }; // close enough that the Financial District fills the right half
+  // From over the harbour, south of the tip, looking up the island: the tip centred under the headline, water on both sides.
+  const target = new THREE.Vector3(-5, 0, -60);
+  const rig = { az: 0, pol: 0.95, r: 1150 };
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
 
@@ -416,11 +451,11 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     size = { w, h, top: canvas.offsetTop };
-    zoom = w >= 900 ? 1 : 0.62; // phones/tablets: the city band is small, bring the Financial District closer
+    zoom = w >= 900 ? 1 : 0.55; // phones/tablets: the city band is small, bring the Financial District closer
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     // Lens shift: city sits right of the copy on desktop, below it on phones.
-    if (w >= 900) camera.setViewOffset(w, h, -w * 0.27, -h * 0.04, w, h);
+    if (w >= 900) camera.setViewOffset(w, h, 0, -h * 0.27, w, h); // centred layout: the city sits in the lower part of the hero, under the copy
     else camera.setViewOffset(w, h, 0, h * 0.06, w, h);
     camera.updateProjectionMatrix();
   }
@@ -465,7 +500,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     const now = clock.getElapsedTime();
-    if (!reducedMotion) placeClouds(Math.min(0.1, now - lastDrift));
+    if (!reducedMotion) { placeClouds(Math.min(0.1, now - lastDrift)); placeBoats(Math.min(0.1, now - lastDrift)); }
     lastDrift = now;
 
     const dx = ptr.x - ptr.sx, dy = ptr.y - ptr.sy, ds = scroll - scrollEased;
@@ -488,7 +523,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     if (growing || settling) wake();
-    else if (!reducedMotion && visible && clouds.length) setTimeout(wake, 33);
+    else if (!reducedMotion && visible && (clouds.length || boats.length)) setTimeout(wake, 33);
   }
 
   new IntersectionObserver(([entry]) => {

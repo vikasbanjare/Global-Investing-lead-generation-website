@@ -13,7 +13,7 @@ const hero = $('.hero');
 const canvas = $('.hero-canvas');
 const label = $('.ws-label');
 const poster = $('.hero-poster');
-const POSTER_LABEL = { x: 0.517, y: 0.484 }; // from render-poster.mjs: fraction of the 1600×840 poster
+const POSTER_LABEL = { x: 0.512, y: 0.458 }; // from render-poster.mjs: fraction of the 1600×840 poster
 function placePosterLabel() {
   // Mirror object-fit: cover on the poster's real box (CSS owns the band's size, zoom and offset).
   const hb = hero.getBoundingClientRect();
@@ -56,7 +56,7 @@ const lazyLogos = new IntersectionObserver((entries, obs) => entries.forEach((e)
   e.target.querySelectorAll('[data-logo]').forEach((el) => el.style.setProperty('--logo', `url(${import.meta.env.BASE_URL}logos/${el.dataset.logo}.svg)`));
   obs.unobserve(e.target);
 }), { rootMargin: '400px 0px' });
-document.querySelectorAll('.ticker, .tile-marks').forEach((el) => lazyLogos.observe(el));
+document.querySelectorAll('.ticker, .tile-marks, .floaters').forEach((el) => lazyLogos.observe(el));
 
 // ---------- Live clocks
 function tick() {
@@ -206,10 +206,10 @@ renderAmount();
 const laneObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); laneObserver.unobserve(e.target); } });
 }, { threshold: 0.35 });
-document.querySelectorAll('.lane, .dayline, .layers').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
+document.querySelectorAll('.lane, .dayline, .layers, .phone-stage').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
-const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy > *', '.phone-stage', '.orders > *', '.bento > .tile',
+const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
   '.eligibility', '.steps > li', '.trust-head', '.tabs', '#rows-panel', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
   '.tax-item', '.faq .split-top > div:first-child', '.faq-item', '.cta-inner > *'].join(', ');
 const revealObserver = new IntersectionObserver((entries) => {

@@ -850,3 +850,91 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .tile-fig .stat-num { font-size: 32px; }
 }
 @media (max-width: 560px) { .bento > .tile-fig:nth-last-child(-n+2) { grid-column: 1 / -1; min-height: 0; } }
+
+/* ================= Centred layout (user direction) ================= */
+/* Hero: big centred statement on top, the aerial city rising below it, full width. */
+.hero { min-height: clamp(860px, 100svh, 1080px); padding: 108px 0 0; }
+.hero-copy { flex: none; justify-content: flex-start; align-items: center; text-align: center; gap: 22px; }
+.hero-copy > *, .hero-copy .lead { max-width: 780px; }
+.hero-copy .h1 { max-width: none; font-size: clamp(46px, 6vw, 92px); line-height: 1.02; letter-spacing: -0.035em; }
+.hero-copy .lead { font-size: clamp(18px, 1.5vw, 21px); }
+.hero-copy .capture { max-width: 580px; }
+.hero-copy .live { justify-content: center; }
+.hero-copy > .proof { justify-content: center; margin-top: 4px; }
+.hero-fade { background: linear-gradient(180deg, var(--bg) 0%, var(--bg) 38%, rgba(243, 248, 255, 0.92) 52%, rgba(243, 248, 255, 0) 70%), linear-gradient(0deg, var(--bg) 0%, rgba(243, 248, 255, 0) 10%); }
+
+/* Section heads centred everywhere; heads that had a side action/tabs stack it underneath. */
+.section-head { margin-inline: auto; text-align: center; align-items: center; max-width: 820px; }
+.section-head .lead { margin-inline: auto; max-width: 680px; }
+.section-head-row { display: flex; flex-direction: column; align-items: center; gap: 22px; max-width: none; }
+.section-head-row > div:first-child { align-items: center; max-width: 820px; }
+.tabs { justify-content: center; }
+/* Trust, pricing, FAQ, CTA: centred stacks. */
+@media (min-width: 901px) {
+  .trust-split { grid-template-columns: minmax(0, 1fr); gap: 48px; }
+  .trust-head { text-align: center; align-items: center; margin-inline: auto; max-width: 760px; }
+  .layers { max-width: 820px; margin-inline: auto; width: 100%; }
+  .pricing-split { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; row-gap: 40px; justify-items: center; }
+  .why-mstock { display: flex; flex-direction: column; align-items: center; grid-row: auto; }
+  .pricing-head { text-align: center; align-items: center; }
+  .pricing .prices { grid-column: auto; grid-row: auto; width: min(100%, 860px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pricing .price:nth-child(n) { border-top: 0; border-left: 1px solid var(--line); }
+  .pricing .price:first-child { border-left: 0; }
+  .pricing-body { align-items: center; }
+  .pricing .benefits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; max-width: 860px; text-align: left; }
+  .pricing-cta { align-self: center; }
+  .faq .split-top { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .faq .split-top > div:first-child { position: static; text-align: center; align-items: center; max-width: 720px; margin-inline: auto; }
+  .faq-list { max-width: 860px; margin-inline: auto; width: 100%; }
+}
+.cta-inner, .cta { text-align: center; }
+.cta .cta-inner { align-items: center; }
+.cta .cta-inner > * { margin-inline: auto; }
+@media (min-width: 901px) { .cta::before { display: none; } }
+.cta-benefits { justify-content: center; }
+
+/* ================= Product: the phone floats, details reveal around it ================= */
+.product-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.product .phone-stage { position: relative; width: 100%; max-width: 1040px; padding: 40px 0 8px; background: radial-gradient(closest-side, rgba(255, 84, 0, 0.1), rgba(255, 84, 0, 0) 70%) center 46% / 640px 640px no-repeat; }
+.product .phone { position: relative; z-index: 2; animation: hover 7s ease-in-out infinite; box-shadow: inset 0 0 0 1.5px #33415c, 0 80px 120px -50px rgba(4, 33, 63, 0.55), 0 30px 60px -30px rgba(4, 33, 63, 0.4); }
+@keyframes hover { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-14px) rotate(0.5deg); } }
+.floaters { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.floater { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgba(255, 255, 255, 0.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--card-shadow), 0 30px 50px -30px rgba(4, 33, 63, 0.35); font-size: 14px; color: var(--ink); white-space: nowrap; }
+.floater > span:not([class]), .floater .f-logos + small { display: flex; flex-direction: column; }
+.floater b { font-weight: 800; color: var(--ink); }
+.floater small { font-size: 12px; color: var(--slate); font-weight: 600; }
+.f-ok { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #1f8a4c; color: #fff; font-weight: 800; }
+.f-fx { font-weight: 800; color: var(--orange-text); font-size: 16px; } .f-fx i { font-style: normal; color: var(--muted); }
+.f2 { flex-direction: column; align-items: flex-start; gap: 2px; }
+.f3, .f6 { flex-direction: column; gap: 0; align-items: flex-start; } .f3 b, .f6 b { font-size: 26px; line-height: 1.1; color: var(--orange-text); }
+.f-logos { display: flex; } .f-logos .logo { width: 30px; height: 30px; padding: 7px; border-radius: 50%; background: var(--navy); color: #fff; margin-left: -6px; box-shadow: 0 0 0 2px #fff; -webkit-mask: none; mask: none; position: relative; }
+.f-logos .logo::after { content: ''; position: absolute; inset: 7px; background: #fff; -webkit-mask: var(--logo) center / contain no-repeat; mask: var(--logo) center / contain no-repeat; }
+.f-logos .logo:first-child { margin-left: 0; }
+/* placement around the phone (desktop) */
+.f1 { left: 4%; top: 18%; } .f2 { left: 9%; top: 47%; } .f3 { left: 15%; top: 73%; }
+.f4 { right: 2%; top: 16%; } .f5 { right: 8%; top: 46%; } .f6 { right: 17%; top: 72%; }
+.floater { animation: drift 6s ease-in-out infinite; }
+.f2, .f5 { animation-delay: -2s; } .f3, .f6 { animation-delay: -4s; }
+@keyframes drift { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+.js .floater { opacity: 0; scale: 0.85; transition: opacity 0.6s var(--ease), scale 0.6s var(--ease); }
+.js .phone-stage.is-in .floater { opacity: 1; scale: 1; }
+.phone-stage.is-in .f1 { transition-delay: 0.2s; } .phone-stage.is-in .f4 { transition-delay: 0.35s; } .phone-stage.is-in .f2 { transition-delay: 0.5s; }
+.phone-stage.is-in .f5 { transition-delay: 0.65s; } .phone-stage.is-in .f3 { transition-delay: 0.8s; } .phone-stage.is-in .f6 { transition-delay: 0.95s; }
+.product .product-copy { width: 100%; }
+.product .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 8px 0 0; }
+.product .features li { flex-direction: column; gap: 10px; padding: 26px; border-radius: 22px; background: #fff; box-shadow: var(--card-shadow); text-align: left; }
+.product .orders { margin-top: 40px; width: 100%; }
+@media (max-width: 1100px) { .f1, .f2, .f3 { left: 0; } .f4, .f5, .f6 { right: 0; } }
+@media (max-width: 900px) {
+  .product .features { grid-template-columns: minmax(0, 1fr); }
+  .product .phone-stage { padding-top: 24px; }
+  .floaters { position: static; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 24px; }
+  .floater { position: static; animation: none; }
+  .f5, .f6 { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .product .phone, .floater { animation: none; } .js .floater { opacity: 1; scale: 1; transition: none; } }
+.section-head-row { width: 100%; }
+.section-head-row > * { max-width: 100%; min-width: 0; }
+@media (max-width: 560px) { .section-head-row > .tabs { align-self: stretch; justify-content: flex-start; } }
+/* The floating phone holds still while someone is using it. */
+.product .phone:hover, .product .phone:focus-within { animation-play-state: paused; }
