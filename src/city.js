@@ -615,6 +615,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   const INTRO = 3.4;
   const v = new THREE.Vector3();
   const wake = () => { if (visible && !raf && built) raf = requestAnimationFrame(frame); };
+  // The page's Pause motion switch (WCAG 2.2.2): boats and clouds hold still; pointer and scroll still move the camera.
+  let paused = document.documentElement.classList.contains('motion-paused');
+  window.addEventListener('motionchange', () => { paused = document.documentElement.classList.contains('motion-paused'); wake(); });
 
   const onPointer = (e) => {
     if (reducedMotion) return;
@@ -647,7 +650,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     const now = clock.getElapsedTime();
-    if (!reducedMotion) { placeClouds(Math.min(0.1, now - lastDrift)); harbour?.step(now - lastDrift); }
+    if (!reducedMotion && !paused) { placeClouds(Math.min(0.1, now - lastDrift)); harbour?.step(now - lastDrift); }
     lastDrift = now;
 
     const dx = ptr.x - ptr.sx, dy = ptr.y - ptr.sy, ds = scroll - scrollEased;
@@ -672,7 +675,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     if (growing || settling) wake();
-    else if (!reducedMotion && visible && (clouds.length || harbour)) setTimeout(wake, 33);
+    else if (!reducedMotion && !paused && visible && (clouds.length || harbour)) setTimeout(wake, 33);
   }
 
   new IntersectionObserver(([entry]) => {

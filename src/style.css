@@ -1120,3 +1120,58 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .proof-cards span { font-size: 13px; font-weight: 600; color: var(--slate); }
 @media (max-width: 560px) { .hero-copy > .proof-cards { gap: 8px; } .proof-cards li { padding: 10px 6px; border-radius: 14px; } .proof-cards b { font-size: 19px; } .proof-cards svg { width: 17px; height: 17px; } .proof-cards span { font-size: 11px; text-align: center; } }
 /* the water meets the page on an eased curve (no visible band) */
+
+/* iter-118: say what happens before the number is given (and get consent); the calculator hands off to the form. */
+.capture-note { margin: 10px auto 0; max-width: 560px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.capture-note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+#lead[hidden] ~ .capture-note, #lead-2[hidden] ~ .capture-note { display: none; } /* gone once the number is sent */
+.cta .capture-note { margin-left: 0; color: var(--on-dark-3); }
+.calc-go { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 4px 0 4px; }
+.calc-cta { padding-inline: 22px; }
+.calc-go-note { font-size: 13px; font-weight: 600; color: var(--slate); }
+.capture.is-primed { box-shadow: 0 0 0 3px rgba(255, 84, 0, 0.35), var(--card-shadow); transition: box-shadow 0.4s; }
+@media (max-width: 560px) { .calc-cta { width: 100%; justify-content: center; } }
+
+/* iter-119: design-review fixes. */
+/* #2 focus stays visible on every navy surface */
+.board :focus-visible, .tile-lead :focus-visible, .dock :focus-visible { outline-color: var(--orange); }
+/* #4 one switch pauses everything; decorative loops also stop on their own after a few cycles */
+.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
+.tile-marks .logo { animation-iteration-count: 3; }
+.floater, .product .phone, .product .phone-stage::after { animation-iteration-count: 4; }
+.f1.pop { animation-iteration-count: 1, 4; }
+.motion-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 0 0 1px var(--line); color: var(--navy); font: 600 13px var(--font); cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.motion-toggle:hover { background: #fff; }
+.mt-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mt-play { display: none; fill: currentColor; stroke: none; }
+.motion-toggle[aria-pressed="true"] .mt-pause { display: none; }
+.motion-toggle[aria-pressed="true"] .mt-play { display: inline; }
+.hero > .motion-toggle { position: absolute; left: 24px; bottom: 16px; z-index: 2; }
+.footer-motion { margin: 0 0 12px; }
+.footer-motion .motion-toggle { background: transparent; padding-left: 0; box-shadow: none; }
+@media (max-width: 900px) { .hero > .motion-toggle { top: 376px; bottom: auto; left: 12px; min-height: 36px; padding: 0 12px; } } /* on the city band, opposite the map credit */
+/* #7 the closing band's consent note sits under its centred form */
+.cta .capture-note { margin-left: auto; margin-right: auto; text-align: center; max-width: 560px; }
+/* #10 touch targets ≥ 44 px (the brief's gate) */
+.chip { height: 44px; }
+.tab { height: 44px; }
+.nav-links a, .nav-login { display: inline-flex; align-items: center; min-height: 44px; }
+.footer nav a { display: flex; align-items: center; min-height: 44px; }
+.footer nav { gap: 0; }
+@media (max-width: 900px) { .board-go { min-width: 44px; min-height: 44px; justify-content: center; } }
+/* #14 reveals capped near the large-duration token */
+.js .session .sess-reveal { transition-duration: 0.9s; }
+.ring-fill { transition-duration: 0.4s; }
+.vring, .vcore { transition-duration: 0.3s, 0.45s, 0.45s; }
+/* #17 ring labels are decorative; the numbered legend carries them on phones */
+@media (max-width: 600px) { .vring i { display: none; } }
+/* #18 the illustrative note reads with the ticker title */
+.ticker-title .ticker-note { font-weight: 600; color: var(--muted); }
+/* #10 follow-up: the last targets under 44 px, enlarged without moving anything visible */
+.btn-sm, .skip, .brand { min-height: 44px; }
+.nav-links a { padding-inline: 10px; margin-inline: -10px; } /* wider hit area, same visual spacing */
+.board-go { min-height: 44px; }
+.app-chips { gap: 5px; }
+.chip { min-width: 44px; }
+@media (max-width: 900px) { .hero > .motion-toggle { min-height: 44px; } }
+.nav-login { padding-inline: 8px; margin-inline: -8px; } /* 42 → 58 px wide hit area */

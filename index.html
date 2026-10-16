@@ -32,7 +32,7 @@
         </nav>
         <div class="nav-cta">
           <a class="nav-login" href="#login">Log in</a>
-          <a class="btn btn-navy btn-sm" href="#lead">Open account</a>
+          <a class="btn btn-orange btn-sm" href="#lead">Start investing</a>
         </div>
     </div>
   </header>
@@ -62,7 +62,7 @@
       <form class="capture" id="lead" novalidate>
         <label class="sr-only" for="mobile">Mobile number</label>
         <span class="capture-cc">+91</span>
-        <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="Your mobile number" aria-describedby="lead-error" required>
+        <input id="mobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="Your mobile number" aria-describedby="lead-error lead-note" required>
         <button class="btn btn-orange" type="submit">Start investing</button>
       </form>
       <p class="capture-error" id="lead-error" role="alert" hidden>Enter a 10-digit mobile number.</p>
@@ -73,6 +73,7 @@
         </div>
         <button class="btn btn-ghost btn-sm" type="button" id="edit-number">Edit number</button>
       </div>
+      <p class="capture-note" id="lead-note">We’ll send your account-opening link to this number. No spam: by continuing you agree to be contacted about your account, as set out in our <a href="#privacy">Privacy&nbsp;Policy</a>.</p>
 
       <p class="live">
         <span class="live-dot" id="mkt-dot"></span>
@@ -85,14 +86,15 @@
         <li><b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.5 5.6v5.6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10V5.6Z"/><path d="m8.6 12.2 2.4 2.4 4.5-4.6"/></svg>IFSCA</b><span>regulated · GIFT City</span></li>
       </ul>
     </div>
+    <button class="motion-toggle" type="button" aria-pressed="false"><svg class="mt-icon" viewBox="0 0 16 16" aria-hidden="true"><path class="mt-pause" d="M5 3.5v9M11 3.5v9"/><path class="mt-play" d="M5 3.5 12.5 8 5 12.5Z"/></svg><span class="mt-label">Pause motion</span></button>
   </section>
 
   <!-- ============ BRANDS + PROOF ============ -->
-  <section class="section brands">
+  <section class="section brands" id="brands">
     <div class="wrap">
     </div>
     <div class="ticker">
-      <div class="ticker-head wrap"><p class="ticker-title" id="ticker-title">Invest in the brands you use every day</p><p class="ticker-note">Illustrative prices, not live quotes</p></div>
+      <div class="ticker-head wrap"><p class="ticker-title" id="ticker-title">Invest in the brands you use every day <span class="ticker-note">· Illustrative prices, not live quotes</span></p></div>
       <div class="ticker-viewport" role="region" aria-labelledby="ticker-title" tabindex="0">
         <div class="ticker-track">
           <ul><li><span class="logo" data-logo="apple"></span><b>Apple</b><span class="ticker-sym">AAPL</span></li><li><span class="logo" data-logo="nvidia"></span><b>NVIDIA</b><span class="ticker-sym">NVDA</span></li><li><span class="logo" data-logo="google"></span><b>Alphabet</b><span class="ticker-sym">GOOGL</span></li><li><span class="logo" data-logo="amazon"></span><b>Amazon</b><span class="ticker-sym">AMZN</span></li><li><span class="logo" data-logo="tesla"></span><b>Tesla</b><span class="ticker-sym">TSLA</span></li><li><span class="logo" data-logo="meta"></span><b>Meta</b><span class="ticker-sym">META</span></li><li><span class="logo" data-logo="netflix"></span><b>Netflix</b><span class="ticker-sym">NFLX</span></li><li><span class="logo logo-wide" data-logo="visa"></span><b>Visa</b><span class="ticker-sym">V</span></li><li><span class="logo" data-logo="broadcom"></span><b>Broadcom</b><span class="ticker-sym">AVGO</span></li><li><span class="logo" data-logo="mastercard"></span><b>Mastercard</b><span class="ticker-sym">MA</span></li><li><span class="logo" data-logo="cocacola"></span><b>Coca-Cola</b><span class="ticker-sym">KO</span></li><li><span class="logo" data-logo="starbucks"></span><b>Starbucks</b><span class="ticker-sym">SBUX</span></li><li><span class="logo" data-logo="mcdonalds"></span><b>McDonald’s</b><span class="ticker-sym">MCD</span></li><li><span class="logo logo-wide" data-logo="goldmansachs"></span><b>Goldman Sachs</b><span class="ticker-sym">GS</span></li><li><span class="logo" data-logo="americanexpress"></span><b>American Express</b><span class="ticker-sym">AXP</span></li><li><span class="logo" data-logo="bankofamerica"></span><b>Bank of America</b><span class="ticker-sym">BAC</span></li></ul>
@@ -113,7 +115,7 @@
       <figure class="session">
         <div class="session-top">
           <p class="session-status"><span class="live-dot" data-market-dot></span><b data-bind="statusShort">—</b></p>
-          <p class="session-idx">S&amp;P&nbsp;500 <span class="tk-ch" id="sess-ch">—</span></p>
+          <p class="session-idx">Sample session <span class="tk-ch" id="sess-ch">—</span></p>
         </div>
         <div class="session-plot">
           <svg class="session-chart" viewBox="0 0 1000 240" preserveAspectRatio="none" aria-hidden="true">
@@ -185,7 +187,7 @@
       <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5400"/><stop offset="1" stop-color="#ff9a5c"/></linearGradient></defs></svg>
       <svg class="money-flow" viewBox="0 0 176 96" aria-hidden="true"><path d="M4 18 C 84 18, 92 78, 172 78"/><circle r="4"><animateMotion dur="2.2s" repeatCount="indefinite" path="M4 18 C 84 18, 92 78, 172 78"/></circle></svg>
       <div class="calc">
-        <div class="calc-top"><p class="calc-kicker">Fractional calculator</p><span class="frac-live"><span class="live-dot is-open"></span>Live preview</span></div>
+        <div class="calc-top"><p class="calc-kicker">Fractional calculator</p><span class="frac-live">Try it</span></div>
         <label class="calc-input" for="calc-amt"><span class="calc-label">If I invest</span><span class="calc-field"><span class="calc-cur">$</span><input id="calc-amt" type="text" inputmode="decimal" autocomplete="off" value="25" aria-describedby="calc-hint" maxlength="9"></span></label>
         <p class="calc-hint" id="calc-hint">≈ ₹<span data-bind="amtInrFinal">2,100</span> · type any amount from $1</p>
         <div class="calc-result" aria-live="polite">
@@ -198,9 +200,13 @@
             <span class="calc-px"><span data-bind="sym">NVDA</span> at $<span data-bind="px">181.40</span> a share<span class="calc-whole" data-bind="wholeNote"></span></span>
           </div>
         </div>
+        <div class="calc-go">
+          <a class="btn btn-orange calc-cta" href="#lead" id="calc-cta"><span>Start with $<span data-bind="amtFinal">25</span> in <span data-bind="stockName">NVIDIA</span></span></a>
+          <span class="calc-go-note">Free account · about 10 minutes</span>
+        </div>
         <p class="calc-pick-label">Same amount, other leaders · tap to switch</p>
         <div class="calc-pick" id="calc-pick" role="radiogroup" aria-label="Choose a company"></div>
-        <p class="fine">Reference prices, for illustration. Live prices in the app.</p>
+        <p class="fine">Reference prices, for illustration; live prices in the app. US stocks carry market and currency risk, and you can get back less than you invest.</p>
       </div>
       </div>
       <div class="product-copy">
@@ -240,7 +246,7 @@
   </section>
 
   <!-- ============ WHY ============ -->
-  <section class="section why">
+  <section class="section why" id="why">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Why invest in the US</p>
@@ -261,7 +267,7 @@
         </article>
         <article class="tile tile-wide tile-warm">
           <span class="tile-fx" aria-hidden="true">₹ <i>→</i> $</span>
-          <div><h3>Hold part of your wealth in dollars</h3><p>Dollar assets cushion rupee depreciation and help with goals priced in dollars, like a child’s education abroad.</p></div>
+          <div><h3>Hold part of your wealth in dollars</h3><p>Dollar assets cushion rupee depreciation and help with goals priced in dollars, like a child’s education abroad. If the rupee strengthens instead, returns in rupees are lower.</p></div>
         </article>
         <div class="tile tile-fig"><span class="stat-num"><span class="nowrap">1–2&nbsp;days</span></span><span class="stat-label">Withdrawals credited to your Indian bank</span></div>
         <div class="tile tile-fig"><span class="stat-num">$250K</span><span class="stat-label">Yearly limit under RBI’s LRS</span></div>
@@ -277,7 +283,7 @@
           <p class="eyebrow">How it works</p>
           <h2 class="h2">Four steps to your first US stock.</h2>
         </div>
-        <a class="btn btn-orange" href="#lead">Open account</a>
+        <a class="btn btn-orange" href="#lead">Start investing</a>
       </div>
       <div class="eligibility" role="group" aria-label="Who can invest">
         <p class="eligibility-title">Who can invest</p>
@@ -327,7 +333,7 @@
   </section>
 
   <!-- ============ TRUST + ORDERS ============ -->
-  <section class="section trust">
+  <section class="section trust" id="trust">
     <div class="wrap">
       <div class="trust-split">
         <div class="section-head trust-head">
@@ -354,7 +360,7 @@
   </section>
 
   <!-- ============ POPULAR ============ -->
-  <section class="section popular">
+  <section class="section popular" id="popular">
     <div class="wrap">
       <div class="section-head section-head-row">
         <div>
@@ -431,7 +437,7 @@
             <li><strong>Transparent pricing, no hidden charges</strong><span>The full schedule is public. Your bank’s remittance charges are its own.</span></li>
             <li><strong>Dedicated support</strong><span>A global-investing desk for onboarding, remittance and tax documents.</span></li>
           </ul>
-          <a class="btn btn-orange pricing-cta" href="#lead">Open account</a>
+          <a class="btn btn-orange pricing-cta" href="#lead">Start investing</a>
           </div>
         </div>
       <div class="prices">
@@ -503,14 +509,14 @@
   </section>
 
   <!-- ============ CTA ============ -->
-  <section class="cta">
+  <section class="cta" id="start">
     <div class="wrap cta-inner">
       <h2 class="h2">Be in the market when the bell rings.</h2>
       <p class="lead">Open your global account tonight. Once you’re verified, start with $1 in any US session.</p>
       <form class="capture cta-capture" id="lead-2" novalidate>
         <label class="sr-only" for="mobile-2">Mobile number</label>
         <span class="capture-cc">+91</span>
-        <input id="mobile-2" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="Your mobile number" aria-describedby="lead-2-error" required>
+        <input id="mobile-2" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="Your mobile number" aria-describedby="lead-2-error lead-2-note" required>
         <button class="btn btn-orange" type="submit">Start investing</button>
       </form>
       <p class="capture-error" id="lead-2-error" role="alert" hidden>Enter a 10-digit mobile number.</p>
@@ -521,6 +527,7 @@
         </div>
         <button class="btn btn-ghost btn-sm" type="button" id="edit-number-2">Edit number</button>
       </div>
+      <p class="capture-note" id="lead-2-note">We’ll send your account-opening link to this number. No spam: by continuing you agree to be contacted about your account, as set out in our <a href="#privacy">Privacy&nbsp;Policy</a>.</p>
       <ul class="cta-benefits"><li>Paperless onboarding</li><li>Fractional investing</li><li>One app for India and US</li><li>Dedicated support</li></ul>
     </div>
   </section>
@@ -539,13 +546,14 @@
         <nav aria-label="Learn"><h3>Learn</h3><a href="#how">How it works</a><a href="#tax">Tax guide</a><a href="#faq">FAQs</a></nav>
         <nav aria-label="Legal"><h3>Legal</h3><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#disclosures">Disclosures</a><a href="#charges">Schedule of charges</a></nav>
       </div>
+      <p class="footer-motion"><button class="motion-toggle" type="button" aria-pressed="false"><svg class="mt-icon" viewBox="0 0 16 16" aria-hidden="true"><path class="mt-pause" d="M5 3.5v9M11 3.5v9"/><path class="mt-play" d="M5 3.5 12.5 8 5 12.5Z"/></svg><span class="mt-label">Pause motion</span></button></p>
       <p class="footer-fine">IFSCA Broker Dealer Registration No. [REGISTRATION NUMBER] · [REGISTERED OFFICE ADDRESS]. Investments in securities markets are subject to market risks. Read all related documents carefully before investing. Brand names and logos are for identification only and do not imply endorsement. Map data © OpenStreetMap contributors, available under the Open Database License. © 2026 Mirae Asset Capital Markets (IFSC) Private Limited.</p>
     </div>
   </footer>
 
   <div class="dock" id="dock" aria-hidden="true">
     <div class="dock-text"><strong>US stocks from $1</strong><span>₹0 account opening</span></div>
-    <a class="btn btn-orange btn-sm" href="#lead" tabindex="-1">Open account</a>
+    <a class="btn btn-orange btn-sm" href="#lead" tabindex="-1">Start investing</a>
   </div>
 
   <script type="module" src="/src/main.js"></script>

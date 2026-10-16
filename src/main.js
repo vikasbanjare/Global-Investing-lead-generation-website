@@ -4,6 +4,20 @@ import { marketStatus, cityTime, usSessionInIST, istClock, formatWait, REF_PRICE
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// ---------- Pause motion (WCAG 2.2.2): one switch stops every loop — CSS animations, the 3D harbour, the ticking prices.
+// Remembered per visitor; reduced-motion visitors start paused.
+const root = document.documentElement;
+const motionPaused = () => root.classList.contains('motion-paused');
+const setMotion = (paused) => {
+  root.classList.toggle('motion-paused', paused);
+  document.querySelectorAll('.motion-toggle').forEach((b) => { b.setAttribute('aria-pressed', String(paused)); b.querySelector('.mt-label').textContent = paused ? 'Play motion' : 'Pause motion'; });
+  window.dispatchEvent(new Event('motionchange'));
+  try { localStorage.setItem('motion-paused', paused ? '1' : '0'); } catch {}
+};
+let savedMotion = null;
+try { savedMotion = localStorage.getItem('motion-paused'); } catch {}
+setMotion(savedMotion === '1');
+document.querySelectorAll('.motion-toggle').forEach((b) => b.addEventListener('click', () => setMotion(!motionPaused())));
 document.documentElement.classList.add('js'); // reveal styles only apply when JS can undo them
 
 // ---------- Hero city
@@ -78,7 +92,7 @@ tickerItems.forEach((it) => paintQuote(it));
 let tickerOn = false;
 new IntersectionObserver(([e]) => { tickerOn = e.isIntersecting; }).observe($('.ticker'));
 setInterval(() => {
-  if (!tickerOn || document.hidden) return;
+  if (!tickerOn || document.hidden || motionPaused()) return;
   for (const sym of Object.keys(quotes).sort(() => Math.random() - 0.5).slice(0, 3)) { // a few trades per beat, like a real tape
     const q = quotes[sym], step = (Math.random() - 0.5) * 0.004;
     q.px *= 1 + step;
@@ -150,6 +164,7 @@ setInterval(tick, 20_000);
 // ---------- Funnel analytics. Events go to window.dataLayer (Google Tag Manager's standard queue), so whichever
 // analytics/A-B tool mStock uses can read them; no third-party script is loaded here. Never includes the number.
 window.dataLayer = window.dataLayer || [];
+const calcContext = {}; // set once the visitor uses the calculator: { calc_amount, calc_sym } ride along with the lead
 const track = (event, props = {}) => window.dataLayer.push({ event, ...props, variant: document.documentElement.dataset.variant || 'default' });
 const seen = new Set();
 const leadViews = new IntersectionObserver((entries) => entries.forEach((e) => {
@@ -165,9 +180,9 @@ function setupCapture(formSel, sentSel, errorSel, editSel) {
     const valid = /^[6-9]\d{9}$/.test(digits);
     error.hidden = valid;
     field.setAttribute('aria-invalid', String(!valid));
-    track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: form.id });
+    track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: form.id, ...calcContext });
     if (!valid) { field.focus(); return; }
-    // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile: digits, source: form.id }) })
+    // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile: digits, source: form.id, ...calcContext }) })
     form.hidden = true;
     sent.hidden = false;
   });
@@ -237,7 +252,7 @@ function renderAmount() {
 }
 chips.addEventListener('click', (e) => {
   const b = e.target.closest('button');
-  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); $('#calc-amt').value = String(amount); }
+  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); $('#calc-amt').value = String(amount); noteCalc('amount_chip'); }
 });
 paintAmount(amount);
 renderAmount();
@@ -270,7 +285,18 @@ function paintFrac(v, pop) {
   });
   if (pop && !reducedMotion) { const f1 = $('.f1'); f1.classList.remove('pop'); void f1.offsetWidth; f1.classList.add('pop'); }
 }
-pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); } });
+pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
+// Calculator events: what people try is a leading signal for who signs up (and which stocks to lead with).
+const noteCalc = (event) => { Object.assign(calcContext, { calc_amount: amount, calc_sym: sel }); track(event, { amount, sym: sel }); };
+let calcTimer = 0;
+// The calculator's answer leads straight to the form: the amount and stock travel with the lead.
+$('#calc-cta').addEventListener('click', (e) => {
+  e.preventDefault();
+  noteCalc('calc_cta_click');
+  const form = $('#lead'), field = $('#mobile');
+  form.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
+  setTimeout(() => { field.focus({ preventScroll: true }); form.classList.add('is-primed'); setTimeout(() => form.classList.remove('is-primed'), 1600); }, reducedMotion ? 0 : 600);
+});
 // Typed amounts: digits and one decimal point, $1 to $1,000,000 (the order minimum and a sane ceiling).
 const calcIn = $('#calc-amt');
 calcIn.addEventListener('input', () => {
@@ -282,6 +308,7 @@ calcIn.addEventListener('input', () => {
   $('#calc-hint').lastChild.textContent = ok ? ' · type any amount from $1' : ' · the minimum is $1';
   if (!ok) return;
   amount = v; renderAmount(); paintFrac(v);
+  clearTimeout(calcTimer); calcTimer = setTimeout(() => noteCalc('calc_input'), 900); // once the visitor stops typing
 });
 calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calcIn.value = String(amount); calcIn.closest('.calc').classList.remove('is-invalid'); $('#calc-hint').lastChild.textContent = ' · type any amount from $1'; } });
 paintFrac(amount);
@@ -408,5 +435,21 @@ faqList.addEventListener('click', (e) => {
   if (!q) return;
   const open = q.getAttribute('aria-expanded') === 'true';
   q.setAttribute('aria-expanded', String(!open));
+  if (!open) track('faq_open', { question: q.textContent.trim().slice(0, 80) });
   document.getElementById(q.getAttribute('aria-controls')).classList.toggle('is-open', !open);
+});
+
+// ---------- Engagement events: which sections are seen, how far people scroll, which buttons lead to the form.
+const sectionSeen = new IntersectionObserver((entries, obs) => entries.forEach((e) => {
+  if (e.isIntersecting) { track('section_view', { section: e.target.id }); obs.unobserve(e.target); }
+}), { threshold: 0.35 });
+document.querySelectorAll('main section[id]').forEach((sec) => sectionSeen.observe(sec));
+const depths = [25, 50, 75, 100];
+window.addEventListener('scroll', () => {
+  const pct = ((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100;
+  while (depths.length && pct >= depths[0] - 0.5) track('scroll_depth', { percent: depths.shift() });
+}, { passive: true });
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href="#lead"], a[href="#lead-2"]');
+  if (a && a.id !== 'calc-cta') track('cta_click', { label: a.textContent.trim().slice(0, 40), from: a.closest('section[id], header, footer')?.id || a.closest('header, footer')?.tagName.toLowerCase() || 'page' });
 });
