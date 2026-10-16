@@ -39,7 +39,12 @@ const startCity = () => {
     .catch(() => hero.classList.add('no-webgl'));
 };
 const whenIdle = (fn) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 1500 }) : setTimeout(fn, 200));
-if (narrow.matches && !forceLive) {
+// The hero is an aerial photograph (public/hero-aerial.webp). The live 3D city is kept for ?3d (and ?live, the poster renderer).
+const use3d = forceLive || new URLSearchParams(location.search).has('3d');
+if (!use3d) {
+  hero.classList.add('is-photo');
+  label.classList.add('is-on');
+} else if (narrow.matches && !forceLive) {
   placePosterLabel();
   window.addEventListener('resize', () => { if (!live) placePosterLabel(); }, { passive: true });
   label.style.transform = 'translate(-50%, calc(-100% - 14px))';
