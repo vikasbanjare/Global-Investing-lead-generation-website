@@ -64,12 +64,12 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   renderer.toneMappingExposure = 1.04;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(PAGE_BG, 820, 1320); // the Financial District stays crisp; uptown and the far shores dissolve into haze
+  scene.fog = new THREE.Fog(PAGE_BG, 700, 1180); // the Financial District stays crisp; uptown and the far shores dissolve into haze
   const camera = new THREE.PerspectiveCamera(22, 1, 1, 3200);
 
   // Morning light: cool sky fill, warm low sun from the east-south-east (the real morning sun over the East River).
-  scene.add(new THREE.HemisphereLight(0xf8fbff, 0xdde1e8, 1.35)); // soft fill: shaded faces stay readable, sunlit ones pop
-  const sun = new THREE.DirectionalLight(0xffd3a3, 3.6);
+  scene.add(new THREE.HemisphereLight(0xf8fbff, 0xdde1e8, 1.1)); // soft fill: shaded faces stay readable, sunlit ones pop
+  const sun = new THREE.DirectionalLight(0xffd3a3, 4.2); // stronger key vs fill: towers read as volumes
   sun.position.set(200, 150, 60); // a low east-south-east morning sun: long shadows across the grid from this view
   sun.target.position.set(0, 0, -40);
   sun.castShadow = true;
@@ -379,8 +379,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // Low and wide from the harbour: Lower Manhattan reads as a skyline rising from the water (One World Trade Center
   // the hero, Midtown and the Empire State in the haze), not a map of rooftops. Real towers hide the NYSE from here
   // (ray-marched), so an orange map pin rises above the skyline at its spot.
-  const target = new THREE.Vector3(-20, 26, -50);
-  const rig = { az: 0.15, pol: 1.12, r: 760 };
+  const target = new THREE.Vector3(-10, 26, -30);
+  const rig = { az: 0.2, pol: 1.05, r: 540 }; // close enough that the Financial District fills the right half
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
 
