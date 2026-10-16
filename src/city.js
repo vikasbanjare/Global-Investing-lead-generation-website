@@ -2,6 +2,7 @@
 // made by scripts/build-city-data.mjs). Clay-model treatment: buildings grow out of the ground on load, the camera
 // follows the pointer and eases back as the page scrolls, clouds drift over. Data © OpenStreetMap contributors (ODbL).
 import * as THREE from 'three';
+import { createHarbour } from './harbour.js';
 
 const PAGE_BG = 0xf3f8ff; // brand Cloud White; must match --bg
 
@@ -63,6 +64,10 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   }
   const hero = canvas.closest('.hero');
   const data = fetch(`${import.meta.env.BASE_URL}data/manhattan.json`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  // Real aerial photography of the harbour (NYS ITS orthoimagery, colour-graded): draped on land and roofs.
+  const treesData = fetch(`${import.meta.env.BASE_URL}data/trees.json`).then((r) => r.json()).catch(() => []);
+  const orthoBox = fetch(`${import.meta.env.BASE_URL}data/ortho.json`).then((r) => r.json()).catch(() => null); // optional: builds without it use plain ground
+  const orthoTex = new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}data/ortho.webp`).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }).catch(() => null);
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setClearColor(0x000000, 0);
@@ -104,7 +109,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   const mat = {
     // Unlit, fixed pale blue: lit water turned beige-grey under the warm sun. Haze still blends it into the page.
-    water: new THREE.MeshStandardMaterial({ color: 0x1f5f95, roughness: 0.3, metalness: 0.15 }), // deep harbour blue, reflects the sky
+    water: new THREE.MeshStandardMaterial({ color: 0x2b5874, roughness: 0.32, metalness: 0.12 }), // New York Harbor: grey-blue, not pool blue // deep harbour blue, reflects the sky
     land: new THREE.MeshStandardMaterial({ color: 0x9c9a95, roughness: 0.95 }), // streets and plazas: asphalt and paving
     park: new THREE.MeshStandardMaterial({ color: 0x7f9a62, roughness: 1 }),
     clay: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
@@ -121,19 +126,34 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   const uT = { value: 0 };
   let placeContext = () => {};
-  let boats = [];
-  const placeBoats = (dt) => {
-    for (const b of boats) {
-      b.a += b.speed * dt;
-      const x = b.cx + Math.cos(b.a) * b.rad, z = b.cz + Math.sin(b.a) * b.rad * 0.6;
-      b.g.position.set(x, 0, z);
-      b.g.rotation.y = -Math.atan2(Math.cos(b.a) * b.rad * 0.6, -Math.sin(b.a) * b.rad) + Math.PI; // face along the path, wake behind
-    }
-  };
+  let harbour = null; // boats, tidal current, wakes and flowing water (src/harbour.js), built with the city
   const grow = []; // landmark groups scaled on Y during the intro
   const PIN_Y = 22; // above every tower around the NYSE (tallest neighbour ≈ 23 units)
   let ring, anchor = new THREE.Vector3(0, PIN_Y + 4, 0); // label sits just above the pin
   const keepClearOf = new THREE.Vector3(0, 8, 0); // the NYSE: clouds never cross the camera's view of it
+
+  // GLSL: world x/z → lon/lat (same local projection as the data) → web-mercator UV in the aerial image.
+  let ob = { west: 0, east: 0, south: 0, north: 0 };
+  const orthoU = { uOrtho: { value: null }, uOB: { value: new THREE.Vector4() }, uOrig: { value: new THREE.Vector4() } };
+  const ORTHO_GLSL = `uniform sampler2D uOrtho; uniform vec4 uOB; uniform vec4 uOrig;
+    vec4 orthoAt(vec3 w) {
+      float lon = uOrig.y + w.x / uOrig.z, lat = uOrig.x - w.z / uOrig.w;
+      float my = log(tan(0.785398 + radians(lat) * 0.5));
+      vec2 uv = vec2((lon - uOB.x) / (uOB.y - uOB.x), (my - uOB.z) / (uOB.w - uOB.z));
+      float inside = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
+      return vec4(texture2D(uOrtho, clamp(uv, 0.0, 1.0)).rgb, inside);
+    }`;
+  // roofsOnly: drape the photo on low roofs only (tall roofs lean in aerial photos, so their pixels are wrong).
+  const patchOrtho = (sh, amount, roofsOnly) => {
+    Object.assign(sh.uniforms, orthoU);
+    if (!sh.vertexShader.includes('varying vec3 vWPos')) {
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;');
+    }
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + ORTHO_GLSL)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        { vec4 o_ = orthoAt(vWPos); float up_ = ${roofsOnly ? 'step(0.5, abs(vWN.y)) * (1.0 - smoothstep(3.0, 5.5, vWPos.y)) * (1.0 - step(vGlass, -0.5))' : '1.0'}; diffuseColor.rgb = mix(diffuseColor.rgb, o_.rgb, o_.a * up_ * ${amount.toFixed(2)}); }`);
+  };
 
   function build(d) {
     const rand = rng(7);
@@ -163,21 +183,63 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       m.receiveShadow = true;
       scene.add(m);
     };
-    const farLand = new THREE.MeshStandardMaterial({ color: 0xc9ced3, roughness: 1 }); // other shores: pale, hazy, secondary
-    d.land.forEach((l, i) => slab(l, GROUND - 0.25, i === 0 ? mat.land : farLand, 0));
-    d.parks.forEach((p) => slab(p, 0, mat.park, GROUND + 0.02));
+    // Ground: the real aerial photo (streets, parks, piers, the shores' real buildings seen from above).
+    const ground = new THREE.MeshStandardMaterial({ color: 0xbdbab3, roughness: 0.95 });
+    ground.onBeforeCompile = (sh) => patchOrtho(sh, 1.0, false);
+    d.land.forEach((l) => slab(l, GROUND - 0.25, ground, 0));
+    // Seawalls: the island's stone edge from the waterline up to the street, instead of a paper-thin cut.
+    { const wall = [], wn = [];
+      for (const l of d.land) { const p = pairs(l); for (let i = 0; i < p.length; i++) { const [x0, z0] = p[i], [x1, z1] = p[(i + 1) % p.length];
+        const nx = z1 - z0, nz = -(x1 - x0), L = Math.hypot(nx, nz) || 1; const y = GROUND - 0.25;
+        wall.push(x0, 0, z0, x1, 0, z1, x1, y, z1, x0, 0, z0, x1, y, z1, x0, y, z0); for (let k = 0; k < 6; k++) wn.push(nx / L, 0, nz / L); } }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(wall, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(wn, 3));
+      scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x9a968c, roughness: 0.95, side: THREE.DoubleSide }))); }
 
     // ---- Buildings: one merged mesh of real footprints, extruded to real heights.
     const PAL = d.palette.map((h) => new THREE.Color(h)); // real OSM building:colour / roof:colour (sRGB → linear)
-    const pos = [], nor = [], col = [], del = [], gls = [];
+    const pos = [], nor = [], col = [], del = [], gls = [], tops = [];
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3(), f = new THREE.Vector3();
-    let color, delay, glassy;
+    let color, delay, glassy, top;
     const tri = (p0, p1, p2, normal) => {
       f.subVectors(p1, p0).cross(c.subVectors(p2, p0));
       const [q1, q2] = f.dot(normal) < 0 ? [p2, p1] : [p1, p2]; // wind every face toward its outward normal
-      for (const p of [p0, q1, q2]) { pos.push(p.x, p.y, p.z); nor.push(normal.x, normal.y, normal.z); col.push(color.r, color.g, color.b); del.push(delay); gls.push(glassy); }
+      for (const p of [p0, q1, q2]) { pos.push(p.x, p.y, p.z); nor.push(normal.x, normal.y, normal.z); col.push(color.r, color.g, color.b); del.push(delay); gls.push(glassy); tops.push(top); }
     };
     const up = new THREE.Vector3(0, 1, 0);
+    // Rooftop kit, merged into the city mesh so it grows with its building. glassy = -1 marks plain surfaces (no windows).
+    const V = (x, y, z) => new THREE.Vector3(x, y, z);
+    const quad = (p0, p1, p2, p3, nrm) => { tri(p0, p1, p2, nrm); tri(p0, p2, p3, nrm); };
+    const box = (x, z, w, d2, yb, ht, rot = 0) => {
+      const cs = Math.cos(rot), sn = Math.sin(rot);
+      const P = (u, v, y) => V(x + u * cs - v * sn, y, z + u * sn + v * cs);
+      const c4 = [[-w / 2, -d2 / 2], [w / 2, -d2 / 2], [w / 2, d2 / 2], [-w / 2, d2 / 2]];
+      for (let i = 0; i < 4; i++) {
+        const [u0, v0] = c4[i], [u1, v1] = c4[(i + 1) % 4];
+        const ex = P(u1, v1, 0).sub(P(u0, v0, 0)), nrm = V(ex.z, 0, -ex.x).normalize();
+        const mid = P((u0 + u1) / 2, (v0 + v1) / 2, 0);
+        if (nrm.x * (mid.x - x) + nrm.z * (mid.z - z) < 0) nrm.negate(); // face outward
+        quad(P(u0, v0, yb), P(u1, v1, yb), P(u1, v1, yb + ht), P(u0, v0, yb + ht), nrm);
+      }
+      quad(P(-w / 2, -d2 / 2, yb + ht), P(w / 2, -d2 / 2, yb + ht), P(w / 2, d2 / 2, yb + ht), P(-w / 2, d2 / 2, yb + ht), up);
+    };
+    const WOOD = new THREE.Color('#8a6a50'), WOOD_TOP = new THREE.Color('#5b4a3e'), STEEL = new THREE.Color('#4a4f57'), HVAC = new THREE.Color('#d9dcdf');
+    // NYC wooden water tank on steel legs (≈4 m across, 5 m tall, conical cap).
+    const waterTower = (x, z, yb) => {
+      const r = 0.6, legH = 0.45, tankH = 0.75, N = 10; // ≈5 m across, 6 m tall
+      color = STEEL; for (const [u, v] of [[-0.3, -0.3], [0.3, -0.3], [0.3, 0.3], [-0.3, 0.3]]) box(x + u, z + v, 0.07, 0.07, yb, legH);
+      color = WOOD;
+      for (let i = 0; i < N; i++) {
+        const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2, am = (a0 + a1) / 2;
+        const nrm = V(Math.cos(am), 0, Math.sin(am));
+        quad(V(x + r * Math.cos(a0), yb + legH, z + r * Math.sin(a0)), V(x + r * Math.cos(a1), yb + legH, z + r * Math.sin(a1)), V(x + r * Math.cos(a1), yb + legH + tankH, z + r * Math.sin(a1)), V(x + r * Math.cos(a0), yb + legH + tankH, z + r * Math.sin(a0)), nrm);
+      }
+      color = WOOD_TOP;
+      const apex = V(x, yb + legH + tankH + 0.32, z);
+      for (let i = 0; i < N; i++) {
+        const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2, am = (a0 + a1) / 2;
+        tri(V(x + r * 1.06 * Math.cos(a0), yb + legH + tankH, z + r * 1.06 * Math.sin(a0)), V(x + r * 1.06 * Math.cos(a1), yb + legH + tankH, z + r * 1.06 * Math.sin(a1)), apex.clone(), V(Math.cos(am) * 0.7, 0.7, Math.sin(am) * 0.7).normalize());
+      }
+    };
     for (const row of d.b) {
       const [base, h, tone, wallI, roofI] = row;
       const pts = pairs(row.slice(5));
@@ -187,6 +249,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       const v = 0.96 + rand() * 0.06;
       const wallC = PAL[wallI].clone().multiplyScalar(v), roofC = PAL[roofI].clone().multiplyScalar(v);
       glassy = tone === 1 ? 1 : 0;
+      top = y1;
       color = wallC;
       delay = Math.hypot(cx, cz) * 0.0065 + rand() * 0.25;
       for (let i = 0; i < pts.length; i++) {
@@ -200,6 +263,23 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       color = roofC; glassy = 0;
       const faces = THREE.ShapeUtils.triangulateShape(pts.map(([x, z]) => new THREE.Vector2(x, z)), []);
       for (const [i, j, k] of faces) tri(new THREE.Vector3(pts[i][0], y1, pts[i][1]), new THREE.Vector3(pts[j][0], y1, pts[j][1]), new THREE.Vector3(pts[k][0], y1, pts[k][1]), up);
+      // Rooftop clutter where it fits inside the footprint: stair/elevator bulkhead, water tanks on masonry, plant on towers.
+      const area = Math.abs(faces.reduce((s, [i, j, k]) => s + ((pts[j][0] - pts[i][0]) * (pts[k][1] - pts[i][1]) - (pts[k][0] - pts[i][0]) * (pts[j][1] - pts[i][1])) / 2, 0));
+      const fits = (x, z, r) => [[r, r], [-r, r], [r, -r], [-r, -r]].every(([u, v]) => inside(pts, x + u, z + v));
+      const edge = Math.atan2(pts[1][1] - pts[0][1], pts[1][0] - pts[0][0]);
+      if (h > 2 && area > 6) {
+        glassy = -1; top = y1 + 3;
+        const ext = Math.sqrt(area), bx = cx + (rand() - 0.5) * ext * 0.3, bz = cz + (rand() - 0.5) * ext * 0.3, bw = THREE.MathUtils.clamp(ext * 0.3, 0.6, 3.2);
+        if (rand() < 0.8 && fits(bx, bz, bw * 0.6)) { color = roofC.clone().lerp(wallC, 0.5).multiplyScalar(0.92); box(bx, bz, bw, bw * (0.6 + rand() * 0.5), y1, 0.35 + rand() * 0.45, edge); }
+        if (tone !== 1 && h < 24 && rand() < 0.55) {
+          const tx = cx + (rand() - 0.5) * ext * 0.5, tz = cz + (rand() - 0.5) * ext * 0.5;
+          if (fits(tx, tz, 0.7)) waterTower(tx, tz, y1);
+        }
+        if (tone === 1 || h > 24) for (let k = 0; k < 3; k++) {
+          const ux = cx + (rand() - 0.5) * ext * 0.55, uz = cz + (rand() - 0.5) * ext * 0.55;
+          if (fits(ux, uz, 0.5)) { color = HVAC; box(ux, uz, 0.5 + rand() * 0.5, 0.4 + rand() * 0.4, y1, 0.22 + rand() * 0.15, edge); }
+        }
+      }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -207,34 +287,46 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     geo.setAttribute('aDelay', new THREE.Float32BufferAttribute(del, 1));
     geo.setAttribute('aGlass', new THREE.Float32BufferAttribute(gls, 1));
+    geo.setAttribute('aTop', new THREE.Float32BufferAttribute(tops, 1));
 
     // Facades: floor bands and window bays drawn from world position on vertical faces, faded where they'd shimmer.
     const facade = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0, vertexColors: true });
     facade.onBeforeCompile = (sh) => {
       patchGrowth(sh, uT);
       sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nattribute float aGlass;\nvarying float vGlass;')
-        .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWN = normalize(mat3(modelMatrix) * objectNormal);\nvGlass = aGlass;');
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nattribute float aGlass;\nvarying float vGlass;\nattribute float aTop;\nvarying float vTop;\nvarying float vY0;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWN = normalize(mat3(modelMatrix) * objectNormal);\nvGlass = aGlass;\nvTop = aTop - position.y;\nvY0 = position.y;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nvarying float vGlass;')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;\nvarying float vGlass;\nvarying float vTop;\nvarying float vY0;')
         .replace('#include <color_fragment>', `#include <color_fragment>
           float side = 1.0 - step(0.5, abs(vWN.y));
+          float glz = max(vGlass, 0.0), plain = step(vGlass, -0.5), mas = (1.0 - glz) * (1.0 - plain);
           float u = abs(vWN.x) > 0.5 ? vWPos.z : vWPos.x;
-          float fy = fract(vWPos.y / 0.45), fu = fract(u / 0.42);      // ~3.6 m floors, ~3.4 m bays (8 m per unit)
-          float aa = clamp(1.0 - max(fwidth(vWPos.y / 0.45), fwidth(u / 0.42)) * 1.2, 0.0, 1.0);
-          float above = step(1.2, vWPos.y);
+          float fy = fract(vY0 / 0.45), fu = fract(u / 0.42);      // ~3.6 m floors, ~3.4 m bays (8 m per unit)
+          float aa = clamp(1.0 - max(fwidth(vY0 / 0.45), fwidth(u / 0.42)) * 1.2, 0.0, 1.0);
+          float hAbove = vY0 - ${GROUND.toFixed(2)};
+          float above = step(0.6, hAbove) * step(0.34, vTop);
           // Masonry: punched windows, dark glass with a cool sky tint.
           float punched = step(0.28, fy) * step(fy, 0.8) * step(0.22, fu) * step(fu, 0.78) * above;
           vec3 pane = vec3(0.16, 0.2, 0.26);
-          diffuseColor.rgb = mix(diffuseColor.rgb, pane, punched * side * mix(0.32, 0.62, aa) * (1.0 - vGlass));
-          // Glass towers: lighter spandrel bands every floor, thin mullions.
+          diffuseColor.rgb = mix(diffuseColor.rgb, pane, punched * side * mix(0.32, 0.62, aa) * mas);
+          // Glass towers: sky reflected more strongly up the shaft, lighter spandrel bands every floor, thin mullions.
+          float frac = hAbove / max(hAbove + vTop, 1.0);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.6, 0.7, 0.82), glz * side * (0.05 + 0.17 * smoothstep(0.1, 1.0, frac)));
           float spandrel = step(0.84, fy) * above, mullion = step(0.93, fu);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.35 + 0.04, max(spandrel, mullion * 0.6) * side * vGlass * mix(0.35, 0.8, aa));
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.35 + 0.04, max(spandrel, mullion * 0.6) * side * glz * mix(0.35, 0.8, aa));
+          // Cornice: a lit stone band at the parapet with its shadow line under it (masonry only).
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.2 + 0.03, step(vTop, 0.22) * side * mas);
+          diffuseColor.rgb *= 1.0 - 0.38 * step(0.22, vTop) * step(vTop, 0.32) * side * mas;
+          // Storefronts: a dark glazed base with mullions along the street.
+          float shop = step(0.06, hAbove) * step(hAbove, 0.5) * side * (1.0 - plain);
+          diffuseColor.rgb = mix(diffuseColor.rgb, mix(vec3(0.1, 0.12, 0.15), vec3(0.75, 0.72, 0.66), step(0.9, fract(u / 0.7))), shop * 0.85);
           // Grounding: walls darken towards street level (cheap ambient occlusion), so towers sit on the ground.
           float ao = mix(0.7, 1.0, smoothstep(0.6, 7.0, vWPos.y));
           diffuseColor.rgb *= mix(1.0, ao, side);`)
-        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.14, vGlass * (1.0 - step(0.5, abs(vWN.y))));')
-        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.55, vGlass * (1.0 - step(0.5, abs(vWN.y))));');
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.14, max(vGlass, 0.0) * (1.0 - step(0.5, abs(vWN.y))));')
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.45, max(vGlass, 0.0) * (1.0 - step(0.5, abs(vWN.y))));');
+      patchOrtho(sh, 0.85, true); // real rooftops from the aerial photo
     };
     const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
     depth.onBeforeCompile = (sh) => patchGrowth(sh, uT);
@@ -257,6 +349,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
         if (rand() < 0.22) continue; // open lots, so the blocks don't read as a grid
         const inMapped = x > mx0 - 3 && x < mx1 + 3 && z > mz0 - 3 && z < mz1 + 3;
         if (inMapped || !lands.some((l) => inside(l, x, z))) continue;
+        { const lon = d.origin[1] + x * d.unit / (111320 * Math.cos((d.origin[0] * Math.PI) / 180)), lat = d.origin[0] - z * d.unit / 110540;
+          if (lon > ob.west && lon < ob.east && lat > ob.south && lat < ob.north) continue; } // the photo shows the real city here
         const north = Math.max(0, -(z - mz0)) / 120; // Manhattan rises again towards Midtown
         const onManhattan = inside(lands[0], x, z);
         if (!onManhattan && (Math.hypot(x, z) < 650 || rand() < 0.45)) continue; // keep the near sides open water and low shore: Manhattan is the subject
@@ -283,28 +377,33 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     };
     placeContext(0);
 
-    // ---- Harbour traffic: ferries and boats with white wakes, circling the tip (decorative, not data).
-    const wakeTex = (() => { const cv = document.createElement('canvas'); cv.width = 32; cv.height = 128; const g = cv.getContext('2d');
-      const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = gr; g.beginPath(); g.moveTo(13, 0); g.lineTo(19, 0); g.lineTo(32, 128); g.lineTo(0, 128); g.closePath(); g.fill(); return new THREE.CanvasTexture(cv); })();
-    const hullMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
-    const wakeMat = new THREE.MeshBasicMaterial({ map: wakeTex, transparent: true, depthWrite: false, opacity: 0.85 });
-    const brand = new THREE.MeshStandardMaterial({ color: ORANGE, roughness: 0.6 }); // Staten Island Ferry orange
-    boats = [];
-    const brng = rng(21);
-    const lanes = [[0, 150, 95, 0.9], [-70, 110, 45, 1.4], [75, 115, 55, 1.2], [-150, 60, 40, 1.1], [150, 60, 45, 1.0], [110, 190, 70, 0.8], [-110, 190, 60, 0.9]];
-    lanes.forEach(([cx, cz, rad, speed], i) => {
-      const g = new THREE.Group();
-      const big = i === 0;
-      const hull = new THREE.Mesh(new THREE.BoxGeometry(big ? 2.6 : 1.4, big ? 1.6 : 0.8, big ? 9 : 4.2).translate(0, 0.9, 0), big ? brand : hullMat);
-      hull.castShadow = true;
-      const cabin = new THREE.Mesh(new THREE.BoxGeometry(big ? 2 : 1, 0.8, big ? 4.5 : 1.6).translate(0, big ? 2.1 : 1.6, -0.3), hullMat);
-      const wake = new THREE.Mesh(new THREE.PlaneGeometry(big ? 9 : 5, big ? 40 : 22).rotateX(-Math.PI / 2).translate(0, 0.3, big ? 24 : 13), wakeMat);
-      g.add(hull, cabin, wake);
-      scene.add(g);
-      boats.push({ g, cx, cz, rad, speed: speed * 0.035, a: brng() * Math.PI * 2 });
+    // ---- Street and park trees at their real positions (NYC Parks Forestry Tree Points), crown size from trunk diameter.
+    treesData.then((t) => {
+      const n = t.length / 3;
+      if (!n) return;
+      const crown = new THREE.IcosahedronGeometry(1, 0).scale(1, 0.85, 1);
+      const trees = new THREE.InstancedMesh(crown, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), n);
+      // Mid-October in New York: mostly green, some crowns already turning.
+      const LEAF = ['#506a3f', '#5a7546', '#47603d', '#66784a', '#8a8548', '#9a7442', '#8a5c3a'].map((h) => new THREE.Color(h));
+      const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), tr = rng(11);
+      for (let i = 0; i < n; i++) {
+        const r = Math.max(0.25, t[i * 3 + 2]);
+        q4.setFromAxisAngle(up, tr() * Math.PI);
+        m4.compose(new THREE.Vector3(t[i * 3], GROUND - 0.25 + 0.35 + r * 0.85, t[i * 3 + 1]), q4, new THREE.Vector3(r, r * (0.9 + tr() * 0.3), r));
+        trees.setMatrixAt(i, m4);
+        const k = tr();
+        trees.setColorAt(i, LEAF[k < 0.84 ? Math.floor(tr() * 4) : 4 + Math.floor(tr() * 3)]);
+      }
+      trees.castShadow = true; trees.receiveShadow = true;
+      scene.add(trees);
+      renderer.shadowMap.needsUpdate = true;
     });
-    placeBoats(0);
+
+    // ---- Harbour: ferries on their real routes, moved by simple ship kinematics and the tide (src/harbour.js).
+    harbour = createHarbour({ scene, camera, renderer, ll, reducedMotion, curve: { K: CURVE_K, D: CURVE_D } });
+    mat.water.onBeforeCompile = harbour.patchWater;
+    mat.water.needsUpdate = true;
+    harbour.step(0);
 
     // ---- Landmarks, at their real positions
     // One World Trade Center: tapered square prism on a podium, with spire (417 m roof, 541 m spire).
@@ -527,7 +626,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     const now = clock.getElapsedTime();
-    if (!reducedMotion) { placeClouds(Math.min(0.1, now - lastDrift)); placeBoats(Math.min(0.1, now - lastDrift)); }
+    if (!reducedMotion) { placeClouds(Math.min(0.1, now - lastDrift)); harbour?.step(now - lastDrift); }
     lastDrift = now;
 
     const dx = ptr.x - ptr.sx, dy = ptr.y - ptr.sy, ds = scroll - scrollEased;
@@ -552,7 +651,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     if (growing || settling) wake();
-    else if (!reducedMotion && visible && (clouds.length || boats.length)) setTimeout(wake, 33);
+    else if (!reducedMotion && visible && (clouds.length || harbour)) setTimeout(wake, 33);
   }
 
   new IntersectionObserver(([entry]) => {
@@ -563,6 +662,16 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   // Load the city, compile shaders off the main thread where supported, then start the intro.
   data
+    .then((d) => Promise.all([orthoBox, orthoTex]).then(([box, tex]) => {
+      const mY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+      if (box && tex) {
+        ob = box;
+        orthoU.uOrtho.value = tex;
+        orthoU.uOB.value.set(box.west, box.east, mY(box.south), mY(box.north));
+      } else orthoU.uOB.value.set(1, 2, 1, 2); // no photo: every point falls outside it
+      orthoU.uOrig.value.set(d.origin[0], d.origin[1], (111320 * Math.cos((d.origin[0] * Math.PI) / 180)) / d.unit, 110540 / d.unit);
+      return d;
+    }))
     .then((d) => { build(d); return renderer.compileAsync ? renderer.compileAsync(scene, camera).catch(() => {}) : null; })
     .then(() => { built = true; clock.start(); wake(); })
     .catch(() => hero?.classList.add('no-webgl')); // no data: the poster stands in

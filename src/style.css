@@ -135,9 +135,7 @@ main > section { scroll-margin-top: 72px; } /* anchor jumps clear the docked hea
 /* Paired times (the page's core idea, set as type): India time leads, New York time follows in muted tabular figures. */
 .tz, .tz-et { font-variant-numeric: tabular-nums; }
 .tz-et { color: var(--muted); font-weight: 600; white-space: nowrap; }
-.now-label .tz-et { color: var(--on-dark-3); }
 @media (max-width: 560px) {
-  .now-label .now-word { display: none; } /* phones: the pill carries both times instead of the word */
   .when .lead .tz-et { display: block; } /* New York time on its own line, no leading separator */
   .when .lead .tz-sep { display: none; }
 }
@@ -173,30 +171,8 @@ main > section { scroll-margin-top: 72px; } /* anchor jumps clear the docked hea
 /* ---------- Your day, their session (live timeline) ---------- */
 .when { background: var(--surface); padding-top: 72px; }
 .when [data-bind="sessionText"] { white-space: nowrap; }
-.dayline { margin: 0; padding-top: 34px; }
-.dayline-track { position: relative; height: 76px; border-radius: 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
-.band { position: absolute; top: 12px; bottom: 12px; left: calc(var(--from) * 1%); width: calc((var(--to) - var(--from)) * 1%); border-radius: 10px; display: flex; align-items: center; padding: 0 14px; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; }
-.band-work { background: #dbe5f4; color: var(--navy); }
-.band-us { background: var(--orange); color: var(--ink); box-shadow: 0 8px 20px -10px rgba(255, 84, 0, 0.8); }
-.band-short { display: none; }
-/* Midnight: a dashed hairline through the track (the session crosses it); bands sit above it. */
-.midnight { position: absolute; z-index: 0; top: 0; bottom: 0; left: calc(var(--at) * 1%); border-left: 1px dashed rgb(75 97 137 / 0.4); }
-.dayline .band { z-index: 1; }
-.tick.is-covered { visibility: hidden; } /* a label the Now marker would sit on */
-.now { position: absolute; top: -8px; bottom: -8px; left: calc(var(--at) * 1%); width: 2px; margin-left: -1px; background: var(--navy); }
-.now::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--navy); box-shadow: 0 0 0 3px var(--surface); }
-.now-label { position: absolute; top: -32px; left: 0; transform: translateX(-50%); white-space: nowrap; padding: 5px 10px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 12px; font-weight: 600; }
-.now-label b { font-weight: 800; }
-.dayline-ticks { position: relative; height: 22px; margin-top: 14px; }
-.tick { position: absolute; left: calc(var(--at) * 1%); transform: translateX(-50%); font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
-.tick:first-child { transform: none; }
-.tick:last-child { transform: translateX(-100%); }
 @media (max-width: 560px) {
   .when { padding-top: 56px; }
-  .band { padding: 0 8px; font-size: 12px; }
-  .band-long { display: none; }
-  .band-short { display: inline; }
-  .tick-minor { display: none; } /* phones: even 6 h labels (9 am · 3 pm · 9 pm · 3 am · 9 am) */
 
 }
 
@@ -343,10 +319,6 @@ main > section { scroll-margin-top: 72px; } /* anchor jumps clear the docked hea
 .stock-list li:nth-child(4) { animation-delay: 0.12s; }
 .stock-list li:nth-child(5) { animation-delay: 0.16s; }
 /* Timeline: your day draws, then the US session, then "now" drops in. */
-.js .dayline .band { transform: scaleX(0); transform-origin: left center; transition: transform 0.8s var(--ease); }
-.js .dayline .band-us { transition-delay: 0.35s; }
-.js .dayline .now { opacity: 0; transform: translateY(-8px); transition: opacity 0.5s var(--ease) 0.9s, transform 0.5s var(--ease) 0.9s; }
-.js .dayline.is-in .band, .js .dayline.is-in .now { transform: none; opacity: 1; }
 /* Protection layers close in from the outside to the core. */
 .js .layers .layer { opacity: 0; transform: scale(0.97); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
 .js .layers.is-in .layer { opacity: 1; transform: none; }
@@ -610,7 +582,6 @@ html:not(.js) .tabs { display: none; } /* without JS the tabs can't switch, so s
   .pulse { display: none; }
   .ws-dot { animation: none; }
   .js .lane .rail, .js .lane .node { transform: none; opacity: 1; transition: none; }
-  .js .dayline .band, .js .dayline .now, .js .layers .layer { transform: none; opacity: 1; transition: none; }
   .stock-list li { animation: none; }
   .js .faq-panel, .js .faq-panel > .faq-a { transition: none; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
@@ -731,8 +702,6 @@ html:not(.js) .tabs { display: none; } /* without JS the tabs can't switch, so s
 .features .feature-mark { color: var(--orange-text); }
 .stock-go { stroke: var(--orange-text); }
 .faq-q::after { color: var(--orange-text); font-weight: 600; }
-.ticker-track .logo { color: var(--navy); }
-.ticker-sym { color: var(--orange-text); }
 
 /* ---------- Premium canvas: one calm Cloud White surface; the navy moments float as rounded panels ---------- */
 main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer { background: transparent; }
@@ -750,7 +719,6 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 
 /* One card style on the canvas: white, a hairline ring and a soft long shadow. */
 :root { --card-shadow: 0 0 0 1px rgba(4, 33, 63, 0.07), 0 1px 2px rgba(4, 33, 63, 0.05), 0 22px 44px -28px rgba(4, 33, 63, 0.3); }
-.dayline-track { background: #fff; box-shadow: var(--card-shadow); }
 .layers > .layer { background: #fff; box-shadow: var(--card-shadow); }
 .stock { box-shadow: var(--card-shadow); }
 .prices { box-shadow: var(--card-shadow); }
@@ -953,3 +921,62 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .hero-copy .live { margin-top: 22px; }
 .hero-copy > .proof { margin-top: 26px; }
 @media (min-width: 901px) { .hero { min-height: 1040px; } } /* fixed stage, so the city always sits below the copy as in the reference */
+
+/* iter-112: US-market cue in the hero — real flag colours, kept small; exchanges named. */
+.eyebrow-us { display: inline-flex; align-items: center; gap: 10px; }
+.us-flag { flex: none; border-radius: 2px; box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.12); }
+.eyebrow-us { flex-wrap: wrap; justify-content: center; gap: 4px 10px; }
+.eyebrow-us i { font-style: normal; letter-spacing: 0; }
+.eyebrow-us .ex { color: var(--navy); }
+.ws-text .us-flag { display: inline-block; margin-right: 6px; vertical-align: -0.5px; }
+@media (max-width: 600px) { .eyebrow-us i:first-of-type { display: none; } } /* wraps as: flag US stocks and ETFs / NYSE & Nasdaq · from India */
+
+/* iter-113: the ticker trades — illustrative prices that tick up and down (no live feed connected yet). */
+:root { --up: #177a42; --down: #c0262d; } /* 5.2:1 and 5.6:1 on white / Cloud White */
+.ticker-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ticker-head .ticker-title { margin-bottom: 18px; }
+.ticker-note { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tk-px { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; padding: 2px 6px; margin: 0 -6px; border-radius: 6px; transition: background-color 0.9s; }
+.tk-ch { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tk-ch.up { color: var(--up); }
+.tk-ch.down { color: var(--down); }
+.tk-px.flash-up { background: rgba(23, 122, 66, 0.14); transition: none; }
+.tk-px.flash-down { background: rgba(192, 38, 45, 0.12); transition: none; }
+
+/* iter-113: "Your day, their session" as a trading-day chart on an India-time axis. */
+.session { margin: 40px auto 0; max-width: 940px; padding: 22px 28px 20px; background: #fff; border-radius: 24px; box-shadow: var(--card-shadow); color: var(--up); }
+.session.is-down { color: var(--down); }
+.session-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.session-top p { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); }
+.session-status b { font-weight: 700; }
+.session-idx { font-weight: 700; }
+.session-plot { position: relative; height: 240px; margin-top: 36px; border-inline: 1.5px dashed var(--line-strong); }
+.session-chart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.session-line { fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linejoin: round; }
+.session-base { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.bell { position: absolute; top: -34px; font-size: 13px; color: var(--slate); white-space: nowrap; }
+.bell b { color: var(--ink); }
+.bell span { color: var(--orange-text); font-weight: 700; }
+.bell-open { left: 0; }
+.bell-close { right: 0; }
+.session-now { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px #fff, 0 0 0 9px color-mix(in srgb, currentColor 25%, transparent); }
+.session-now-tag { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 2px 8px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700; }
+.session-axis { position: relative; height: 44px; margin-top: 10px; }
+.session-axis span { position: absolute; top: 0; transform: translateX(-50%); display: grid; text-align: center; white-space: nowrap; }
+.session-axis span:first-child { transform: none; text-align: left; }
+.session-axis span:last-child { transform: translateX(-100%); text-align: right; }
+.session-axis b { font-size: 13px; font-weight: 700; color: var(--ink); }
+.session-axis small { font-size: 11px; font-weight: 600; color: var(--muted); }
+.session figcaption { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; color: var(--slate); }
+.session-fine { font-size: 12px; color: var(--muted); }
+.js .session .sess-reveal { clip-path: inset(0 100% 0 0); transition: clip-path 1.8s var(--ease) 0.2s; }
+.js .session.is-in .sess-reveal { clip-path: inset(0 0 0 0); }
+@media (max-width: 640px) {
+  .session { padding: 18px 16px 16px; border-radius: 18px; }
+  .session-plot { height: 170px; }
+  .bell { font-size: 11px; }
+  .bell b { display: block; }
+  .bell { top: -40px; }
+  .session-plot { margin-top: 48px; }
+  .session-axis .minor { display: none; }
+}

@@ -11,7 +11,8 @@ const browser = await chromium.launch({ channel: 'chrome', args: ['--use-angle=s
 // 800px wide is inside the ≤900px layout, so the poster uses the exact phone framing (band 420px tall).
 const page = await browser.newPage({ viewport: { width: 800, height: 1200 }, deviceScaleFactor: 2 });
 await page.goto('http://localhost:4180/?live', { waitUntil: 'networkidle' });
-await page.waitForTimeout(7000);
+await page.waitForFunction(() => /translate3d/.test(document.querySelector(".ws-label").style.transform), null, { timeout: 60000 });
+await page.waitForTimeout(4500); // intro finished, clouds settled
 const label = await page.evaluate(() => {
   const canvas = document.querySelector('.hero-canvas');
   const m = /translate3d\(([\d.]+)px, ([\d.]+)px/.exec(document.querySelector('.ws-label').style.transform);

@@ -1,5 +1,5 @@
 import './style.css';
-import { marketStatus, cityTime, usSessionInIST, istClock } from './market.js';
+import { marketStatus, cityTime, usSessionInIST, istClock, formatWait } from './market.js';
 
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
@@ -58,6 +58,35 @@ const lazyLogos = new IntersectionObserver((entries, obs) => entries.forEach((e)
 }), { rootMargin: '400px 0px' });
 document.querySelectorAll('.ticker, .tile-marks, .floaters').forEach((el) => lazyLogos.observe(el));
 
+// ---------- Ticker prices: an illustrative trading tape (no market-data feed is connected; the note on the page says so).
+// ponytail: random walk from fixed reference prices; swap PX for a quotes API (needs a data-provider key) before launch.
+const PX = { AAPL: 232.1, NVDA: 181.4, GOOGL: 196.2, AMZN: 224.6, TSLA: 318.9, META: 702.3, NFLX: 1185, V: 342.5, AVGO: 298.7, MA: 571.2, KO: 69.8, SBUX: 92.4, MCD: 301.6, GS: 712.8, AXP: 305.1, BAC: 47.9 };
+const quotes = Object.fromEntries(Object.entries(PX).map(([s, p]) => [s, { ref: p, px: p * (1 + (Math.random() - 0.45) * 0.03) }]));
+const tickerItems = [...document.querySelectorAll('.ticker-track li')].map((li) => {
+  const sym = li.querySelector('.ticker-sym').textContent;
+  li.insertAdjacentHTML('beforeend', '<span class="tk-px"></span><span class="tk-ch"></span>');
+  return { sym, px: li.querySelector('.tk-px'), ch: li.querySelector('.tk-ch') };
+});
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+function paintQuote(it, dir) {
+  const q = quotes[it.sym], pct = (q.px / q.ref - 1) * 100;
+  it.px.textContent = usd.format(q.px);
+  it.ch.textContent = `${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%`;
+  it.ch.className = `tk-ch ${pct >= 0 ? 'up' : 'down'}`;
+  if (dir && !reducedMotion) { it.px.classList.remove('flash-up', 'flash-down'); void it.px.offsetWidth; it.px.classList.add(`flash-${dir}`); setTimeout(() => it.px.classList.remove(`flash-${dir}`), 120); }
+}
+tickerItems.forEach((it) => paintQuote(it));
+let tickerOn = false;
+new IntersectionObserver(([e]) => { tickerOn = e.isIntersecting; }).observe($('.ticker'));
+setInterval(() => {
+  if (!tickerOn || document.hidden) return;
+  for (const sym of Object.keys(quotes).sort(() => Math.random() - 0.5).slice(0, 3)) { // a few trades per beat, like a real tape
+    const q = quotes[sym], step = (Math.random() - 0.5) * 0.004;
+    q.px *= 1 + step;
+    tickerItems.filter((it) => it.sym === sym).forEach((it) => paintQuote(it, step >= 0 ? 'up' : 'down'));
+  }
+}, 1200);
+
 // ---------- Live clocks
 function tick() {
   const now = new Date();
@@ -67,43 +96,55 @@ function tick() {
   bind('nyc', cityTime(now, 'America/New_York'));
   bind('status', status.text);
   document.querySelectorAll('#mkt-dot, [data-market-dot]').forEach((d) => d.classList.toggle('is-open', status.open));
-  // Timeline: a 9 am-to-9 am day in IST (so the 9–6 workday is whole); positions are percentages of 1440 minutes from 9:00 am.
+  // Session chart: one US trading day drawn on an India-time axis (opening bell at the left edge, closing bell at the right).
   const session = usSessionInIST(now);
-  const pos = (min) => ((((min - 540) % 1440) + 1440) % 1440) / 14.4;
-  const band = $('#band-us');
-  band.style.setProperty('--from', pos(session.open).toFixed(2));
-  band.style.setProperty('--to', (pos(session.open) + (session.close - session.open) / 14.4).toFixed(2));
-  const [h, m] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number);
-  const at = pos(h * 60 + m);
-  const mark = $('#now-mark');
-  mark.style.setProperty('--at', at.toFixed(2));
-  coverTicks();
-  placeNowLabel();
+  bind('openIST', istClock(session.open));
+  bind('closeIST', istClock(session.close));
+  bind('statusShort', status.open ? `US market open · closes in ${formatWait(status.minutesLeft)}` : `US market opens in ${formatWait(status.minutesLeft)}`);
   bind('sessionText', `${istClock(session.open)} – ${istClock(session.close)}`);
+  drawSession(session, status);
 }
-// Centre the Now pill on the marker, clamped so it never passes the track's edges (the page gutters).
-function placeNowLabel() {
-  const mark = $('#now-mark');
-  const pill = mark.querySelector('.now-label');
-  const track = mark.parentElement.getBoundingClientRect();
-  const x = mark.getBoundingClientRect().left + 1 - track.left; // marker centre within the track
-  const w = pill.offsetWidth;
-  const left = Math.min(Math.max(x - w / 2, 0), track.width - w);
-  pill.style.transform = `translateX(${Math.round(left - x)}px)`;
-}
-// Hide any axis label the Now marker's dot would sit on (it sits in the label row).
-function coverTicks() {
-  const x = $('#now-mark').getBoundingClientRect().left;
-  document.querySelectorAll('.dayline-ticks .tick').forEach((t) => {
-    t.classList.remove('is-covered');
-    const r = t.getBoundingClientRect();
-    if (r.width && x > r.left - 8 && x < r.right + 8) t.classList.add('is-covered');
-  });
+// Illustrative intraday path: a seeded random walk (same shape all day), busier at the open and close like real sessions.
+const SESSION_MIN = 390;
+const sessPath = (() => {
+  let seed = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()).replaceAll('-', ''));
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const pts = [0];
+  for (let i = 1; i <= 78; i++) { const u = i / 78, vol = 0.6 + 1.6 * (Math.exp(-u * 8) + Math.exp(-(1 - u) * 10)); pts.push(pts[i - 1] + (rnd() - 0.47) * vol); }
+  return pts;
+})();
+const hourLabel = (min) => { const m = ((min % 1440) + 1440) % 1440, h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''}\u00a0${h < 12 ? 'am' : 'pm'}`; };
+function drawSession(session, status) {
+  const lo = Math.min(...sessPath), hi = Math.max(...sessPath);
+  const y = (v) => 210 - ((v - lo) / (hi - lo || 1)) * 180;
+  const x = (i) => (i / (sessPath.length - 1)) * 1000;
+  const line = sessPath.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  $('#sess-line').setAttribute('d', line);
+  $('#sess-area').setAttribute('d', `${line} L1000 240 L0 240 Z`);
+  $('.session-base').setAttribute('y1', y(sessPath[0]).toFixed(1));
+  $('.session-base').setAttribute('y2', y(sessPath[0]).toFixed(1));
+  // Live: draw up to now. Closed: the whole day, as a typical session.
+  const elapsed = status.open ? SESSION_MIN - status.minutesLeft : SESSION_MIN;
+  const k = Math.min(sessPath.length - 1, Math.round((elapsed / SESSION_MIN) * (sessPath.length - 1)));
+  $('#sess-clip-r').setAttribute('width', x(k).toFixed(1));
+  const pct = (sessPath[k] - sessPath[0]) * 0.18; // ponytail: walk units → % move, tuned to read like a normal day (±1–2%)
+  const up = pct >= 0;
+  $('.session').classList.toggle('is-down', !up);
+  const ch = $('#sess-ch');
+  ch.textContent = `${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%`;
+  ch.className = `tk-ch ${up ? 'up' : 'down'}`;
+  const nowEl = $('#sess-now');
+  nowEl.hidden = !status.open;
+  nowEl.style.left = `${(x(k) / 10).toFixed(2)}%`;
+  nowEl.style.top = `${((y(sessPath[k]) / 240) * 100).toFixed(2)}%`;
+  // Axis: India time in bold on every full hour, New York time beneath.
+  const ticks = [session.open];
+  for (let t = Math.ceil((session.open + 1) / 60) * 60; t <= session.close - 45; t += 60) ticks.push(t); // no hour label crowding the close
+  ticks.push(session.close);
+  $('#sess-axis').innerHTML = ticks.map((t, i) => `<span class="${i % 2 && i !== ticks.length - 1 ? 'minor' : ''}" style="left:${(((t - session.open) / SESSION_MIN) * 100).toFixed(2)}%"><b>${hourLabel(t)}${i ? '' : ' IST'}</b><small>${hourLabel(570 + t - session.open)}${i ? '' : ' ET'}</small></span>`).join('');
 }
 tick();
 setInterval(tick, 20_000);
-window.addEventListener('resize', () => { coverTicks(); placeNowLabel(); }, { passive: true });
-document.fonts?.ready.then(() => { coverTicks(); placeNowLabel(); }); // widths change once Open Sans loads
 
 // ---------- Lead capture (hero + closing band share the same behaviour)
 // ponytail: front-end only. POST { mobile } to the lead endpoint (CRM) where marked.
@@ -206,7 +247,7 @@ renderAmount();
 const laneObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); laneObserver.unobserve(e.target); } });
 }, { threshold: 0.35 });
-document.querySelectorAll('.lane, .dayline, .layers, .phone-stage').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
+document.querySelectorAll('.lane, .session, .layers, .phone-stage').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
 const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
