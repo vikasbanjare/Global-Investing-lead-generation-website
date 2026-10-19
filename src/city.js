@@ -591,18 +591,24 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   const rig = { az: 0, pol: 1.22, r: 650 }; // lower, more oblique view (iter-116): towers read by their height, harbour wide below
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
+  // Hero layout (the page's A/B toggle): 'centred' puts the city under the copy; 'split' moves it right and closer.
+  // view = the visitor's map controls: zoom factor and tilt (radians), eased toward their targets in the loop.
+  let layout = document.documentElement.dataset.hero === 'split' ? 'split' : 'centred';
+  const view = { z: 1, t: 0, ez: 1, et: 0 };
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     size = { w, h, top: canvas.offsetTop };
-    zoom = w >= 900 ? 1 : 0.55; // phones/tablets: the city band is small, bring the Financial District closer
+    const split = w >= 900 && layout === 'split';
+    zoom = w >= 900 ? (split ? 0.72 : 1) : 0.55; // phones/tablets: the city band is small, bring the Financial District closer
     renderer.setSize(w, h, false);
     // Desktop: the framing is set for a 1040 px stage; a taller hero extends the view downward (more harbour under the
     // island) at the same scale, instead of shrinking the city.
     const H0 = w >= 900 ? Math.min(h, 1040) : h;
     camera.aspect = w / H0;
-    if (w >= 900) camera.setViewOffset(w, H0, 0, -H0 * 0.02, w, h); // centred layout: the city sits under the copy
+    if (split) camera.setViewOffset(w, H0, -w * 0.22, H0 * 0.1, w, h); // split layout: the city fills the right of the hero
+    else if (w >= 900) camera.setViewOffset(w, H0, 0, -H0 * 0.02, w, h); // centred layout: the city sits under the copy
     else camera.setViewOffset(w, h, 0, h * 0.22, w, h); // phones: lift the city so the NYSE label sits mid-band
     camera.updateProjectionMatrix();
   }
@@ -615,9 +621,6 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   const INTRO = 2.1; // was 3.4 s: the city reads as finished sooner
   const v = new THREE.Vector3();
   const wake = () => { if (visible && !raf && built) raf = requestAnimationFrame(frame); };
-  // The page's Pause motion switch (WCAG 2.2.2): boats and clouds hold still; pointer and scroll still move the camera.
-  let paused = document.documentElement.classList.contains('motion-paused');
-  window.addEventListener('motionchange', () => { paused = document.documentElement.classList.contains('motion-paused'); wake(); });
 
   const onPointer = (e) => {
     if (reducedMotion) return;
@@ -651,18 +654,21 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     const now = clock.getElapsedTime();
-    if (!reducedMotion && !paused) { placeClouds(Math.min(0.1, now - lastDrift)); harbour?.step(now - lastDrift); }
+    if (!reducedMotion) { placeClouds(Math.min(0.1, now - lastDrift)); harbour?.step(now - lastDrift); }
     lastDrift = now;
 
     const dx = ptr.x - ptr.sx, dy = ptr.y - ptr.sy, ds = scroll - scrollEased;
     ptr.sx += dx * 0.08;
     ptr.sy += dy * 0.08;
     scrollEased += ds * 0.15;
-    const settling = Math.abs(dx) > 0.002 || Math.abs(dy) > 0.002 || Math.abs(ds) > 0.001;
+    view.ez += (view.z - view.ez) * 0.12;
+    view.et += (view.t - view.et) * 0.12;
+    const settling = Math.abs(dx) > 0.002 || Math.abs(dy) > 0.002 || Math.abs(ds) > 0.001 || Math.abs(view.z - view.ez) > 0.002 || Math.abs(view.t - view.et) > 0.001;
 
     const az = rig.az + ptr.sx * 0.08;
-    const pol = rig.pol - ptr.sy * 0.035 - scrollEased * 0.16;
-    const r = rig.r * zoom + scrollEased * 90;
+    const splitTilt = layout === 'split' && size.w >= 900 ? -0.2 : 0; // split looks more from above, so the city fills its half
+    const pol = THREE.MathUtils.clamp(rig.pol + splitTilt + view.et - ptr.sy * 0.035 - scrollEased * 0.16, 0.6, 1.42);
+    const r = rig.r * zoom * view.ez + scrollEased * 90;
     camera.position.set(target.x + r * Math.sin(pol) * Math.sin(az), target.y + r * Math.cos(pol), target.z + r * Math.sin(pol) * Math.cos(az));
     camera.lookAt(target);
 
@@ -676,7 +682,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }
 
     if (growing || settling) wake();
-    else if (!reducedMotion && !paused && visible && (clouds.length || harbour)) setTimeout(wake, 33);
+    else if (!reducedMotion && visible && (clouds.length || harbour)) setTimeout(wake, 33);
   }
 
   new IntersectionObserver(([entry]) => {
@@ -702,5 +708,11 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     .catch(() => hero?.classList.add('no-webgl')); // no data: the poster stands in
 
   if (new URLSearchParams(location.search).has('debug')) window.__city = { scene, renderer, camera, rig, target, wake: () => { introDone && wake(); } }; // dev inspection only
-  return { renderer, scene, camera };
+  return {
+    renderer, scene, camera,
+    setLayout(mode) { layout = mode === 'split' ? 'split' : 'centred'; resize(); wake(); },
+    zoomBy(f) { view.z = THREE.MathUtils.clamp(view.z * f, 0.55, 1.6); wake(); }, // < 1 moves the camera in
+    tiltBy(d) { view.t = THREE.MathUtils.clamp(view.t + d, -0.45, 0.2); wake(); }, // + looks more from the side
+    resetView() { view.z = 1; view.t = 0; wake(); },
+  };
 }

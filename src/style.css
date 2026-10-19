@@ -1140,20 +1140,9 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 /* #2 focus stays visible on every navy surface */
 .board :focus-visible, .tile-lead :focus-visible, .dock :focus-visible { outline-color: var(--orange); }
 /* #4 one switch pauses everything; decorative loops also stop on their own after a few cycles */
-.motion-paused *, .motion-paused *::before, .motion-paused *::after { animation-play-state: paused !important; }
 .tile-marks .logo { animation-iteration-count: 3; }
 .floater, .product .phone, .product .phone-stage::after { animation-iteration-count: 4; }
 .f1.pop { animation-iteration-count: 1, 4; }
-.motion-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 0 0 1px var(--line); color: var(--navy); font: 600 13px var(--font); cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
-.motion-toggle:hover { background: #fff; }
-.mt-icon { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.mt-play { display: none; fill: currentColor; stroke: none; }
-.motion-paused .motion-toggle .mt-pause { display: none; }
-.motion-paused .motion-toggle .mt-play { display: inline; }
-.hero > .motion-toggle { position: absolute; left: 24px; bottom: 16px; z-index: 2; }
-.footer-motion { margin: 0 0 12px; }
-.footer-motion .motion-toggle { background: transparent; padding-left: 0; box-shadow: none; }
-@media (max-width: 900px) { .hero > .motion-toggle { top: 200px; bottom: auto; left: 12px; padding: 0 12px; } } /* inside the city band (ends ≈268 px), left of the map credit, clear of the headline */
 /* #7 the closing band's consent note sits under its centred form */
 .cta .capture-note { margin-left: auto; margin-right: auto; text-align: center; max-width: 560px; }
 /* #10 touch targets ≥ 44 px (the brief's gate) */
@@ -1393,4 +1382,48 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 }
 @media (max-width: 900px) { .bento > .tile-fig { grid-column: span 1; } } /* phones: the two figures sit side by side */
 @media (min-width: 901px) { .bento > .tile-fig { align-items: center; padding-top: 28px; } } /* figure and label centred in the row */
-@media (max-width: 900px) { .hero > .motion-toggle { width: 44px; padding: 0; justify-content: center; } .hero > .motion-toggle .mt-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } } /* phones: icon-only over the city, still named */
+
+/* ===== iter-125: Hero B · Split (desktop) — copy left, the city on the right with map controls, one proof strip ===== */
+.lead b { color: var(--ink); font-weight: 700; }
+.map-ctrl { display: none; }
+
+@media (min-width: 901px) {
+  [data-hero="split"] .hero { min-height: clamp(760px, 100svh, 960px); padding: 96px 0 40px; }
+  [data-hero="split"] .hero-fade { background: linear-gradient(90deg, var(--bg) 0%, var(--bg) 30%, rgba(243, 248, 255, 0.85) 42%, rgba(243, 248, 255, 0) 58%), linear-gradient(0deg, var(--bg) 0, rgba(243, 248, 255, 0) 90px); }
+  [data-hero="split"] .hero-copy { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: 1fr repeat(7, auto) minmax(40px, 1fr) auto; align-items: start; justify-items: start; text-align: left; gap: 0; }
+  [data-hero="split"] .hero-copy > * { grid-column: 1 / span 2; max-width: 640px; animation: none; }
+  [data-hero="split"] .hero-copy > .eyebrow { grid-row: 2; margin: 0 0 18px; }
+  [data-hero="split"] .hero-copy > .h1 { grid-row: 3; font-size: clamp(40px, 3.9vw, 64px); line-height: 1.04; max-width: none; white-space: nowrap; }
+  [data-hero="split"] .hero-copy > .lead { grid-row: 4; margin: 22px 0 0; max-width: 640px; }
+  [data-hero="split"] .hero-copy > .capture { grid-row: 5; margin-top: 28px; width: 100%; max-width: 620px; }
+  [data-hero="split"] .hero-copy > .capture-error { grid-row: 6; }
+  [data-hero="split"] .hero-copy > .capture-note { grid-row: 7; margin: 12px 0 0; max-width: 620px; text-align: left; }
+  /* the proof strip: IFSCA | 0.25% | ₹0 | live time, one joined white bar across the copy and the city */
+  [data-hero="split"] .hero-copy > .proof-cards { grid-row: 10; grid-column: 1 / span 3; max-width: none; width: 100%; margin: 0; display: flex; flex-direction: row-reverse; gap: 0; background: #fff; border-radius: 20px 0 0 20px; box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.08), 0 20px 40px -24px rgba(4, 33, 63, 0.35); }
+  [data-hero="split"] .proof-cards li { flex: 1; justify-items: start; padding: 22px 26px; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; text-align: left; }
+  [data-hero="split"] .proof-cards li + li { border-right: 1px solid var(--line); }
+  [data-hero="split"] .proof-cards li:last-child { position: relative; }
+  [data-hero="split"] .proof-cards li:last-child::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--orange); border-radius: 0 0 0 20px; }
+  [data-hero="split"] .proof-cards b { font-size: 36px; }
+  [data-hero="split"] .hero-copy > .live { grid-row: 10; grid-column: 4; align-self: stretch; max-width: none; width: 100%; margin: 0; padding: 22px 26px; justify-content: flex-start; align-items: center; background: #fff; border-radius: 0 20px 20px 0; box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.08), 0 20px 40px -24px rgba(4, 33, 63, 0.35); border-left: 1px solid var(--line); font-size: 14px; color: var(--slate); text-align: left; }
+  [data-hero="split"] .hero-copy > .live b { color: var(--ink); }
+  [data-hero="split"] .live .live-dot { background: var(--orange); }
+  /* map controls down the right edge; the Pause switch joins them as an icon */
+  [data-hero="split"] .hero.is-live .map-ctrl { position: absolute; z-index: 3; right: 24px; top: 50%; translate: 0 -50%; display: grid; gap: 12px; }
+  .map-ctrl button { width: 44px; height: 44px; border: 0; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--ink); cursor: pointer; box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.08), 0 8px 20px -10px rgba(4, 33, 63, 0.45); transition: background-color 0.15s, transform 0.15s; }
+  .map-ctrl button:hover { background: var(--tint); }
+  .map-ctrl button:active { transform: scale(0.94); }
+  .map-ctrl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  [data-hero="split"] .map-credit { bottom: 8px; }
+}
+@media (min-width: 901px) {
+  [data-hero="split"] .site-header:not(.is-docked) { background: var(--bg); box-shadow: 0 1px 0 var(--line); }
+  [data-hero="split"] .hero-canvas { top: 84px; height: calc(100% - 84px); } /* the city starts under the header bar */
+}
+
+/* iter-126: the hero A/B switch is a tiny, faded icon in the bottom-right corner (a design-review tool, not for visitors) */
+.hero-switch { position: fixed; right: 10px; bottom: 34px; z-index: 61; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, 0.75); box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.1); color: var(--muted); opacity: 0.55; cursor: pointer; transition: opacity 0.2s, background-color 0.2s; }
+.hero-switch:hover, .hero-switch:focus-visible { opacity: 1; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.hero-switch svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hero-switch:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+@media (max-width: 900px) { .hero-switch { display: none; } } /* both heroes share the phone layout */

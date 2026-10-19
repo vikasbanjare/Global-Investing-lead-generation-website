@@ -4,20 +4,7 @@ import { marketStatus, cityTime, usSessionInIST, istClock, formatWait, REF_PRICE
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// ---------- Pause motion (WCAG 2.2.2): one switch stops every loop — CSS animations, the 3D harbour, the ticking prices.
-// Remembered per visitor; reduced-motion visitors start paused.
 const root = document.documentElement;
-const motionPaused = () => root.classList.contains('motion-paused');
-const setMotion = (paused) => {
-  root.classList.toggle('motion-paused', paused);
-  document.querySelectorAll('.motion-toggle').forEach((b) => { b.querySelector('.mt-label').textContent = paused ? 'Play motion' : 'Pause motion'; }); // the label is the state (no aria-pressed: one signal, no contradiction)
-  window.dispatchEvent(new Event('motionchange'));
-  try { localStorage.setItem('motion-paused', paused ? '1' : '0'); } catch {}
-};
-let savedMotion = null;
-try { savedMotion = localStorage.getItem('motion-paused'); } catch {}
-setMotion(savedMotion === '1');
-document.querySelectorAll('.motion-toggle').forEach((b) => b.addEventListener('click', () => setMotion(!motionPaused())));
 document.documentElement.classList.add('js'); // reveal styles only apply when JS can undo them
 
 // ---------- Hero city
@@ -43,6 +30,7 @@ let live = false;
 // Start downloading the 3D code as soon as the page parses (desktop only); it is only run after load, when idle.
 // The city's data is preloaded from index.html, so code and data arrive in parallel instead of one after the other.
 const cityModule = narrow.matches && !forceLive ? null : import('./city.js');
+let city = null; // the live scene's controls (layout, zoom, tilt), once it has started
 const startCity = () => {
   if (live) return;
   live = true;
@@ -51,7 +39,8 @@ const startCity = () => {
   label.classList.remove('is-on');
   (cityModule || import('./city.js'))
     .then(({ createCity }) => {
-      if (!createCity({ canvas, label, reducedMotion, withClouds: !forceLive })) hero.classList.add('no-webgl');
+      city = createCity({ canvas, label, reducedMotion, withClouds: !forceLive });
+      if (!city) hero.classList.add('no-webgl');
     })
     .catch(() => hero.classList.add('no-webgl'));
 };
@@ -95,7 +84,7 @@ tickerItems.forEach((it) => paintQuote(it));
 let tickerOn = false;
 new IntersectionObserver(([e]) => { tickerOn = e.isIntersecting; }).observe($('.ticker'));
 setInterval(() => {
-  if (!tickerOn || document.hidden || motionPaused()) return;
+  if (!tickerOn || document.hidden || reducedMotion) return;
   for (const sym of Object.keys(quotes).sort(() => Math.random() - 0.5).slice(0, 3)) { // a few trades per beat, like a real tape
     const q = quotes[sym], step = (Math.random() - 0.5) * 0.004;
     q.px *= 1 + step;
@@ -400,7 +389,7 @@ document.fonts?.ready.then(onRingResize);
 buildRing();
 rot = rotTarget = RING.findIndex((s) => s[0] === sel) * STEP;
 onRingResize();
-if (reducedMotion || document.documentElement.classList.contains('motion-paused')) showRingStill();
+if (reducedMotion) showRingStill();
 else {
   spread = 0; ringStage.style.setProperty('--rise', '1'); layoutRing();
   new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); ringIntro(); } }, { threshold: 0.25 }).observe(ringStage);
@@ -410,9 +399,9 @@ else {
 
 paintFrac(amount);
 // ---------- Four layers: the first time the route is seen, a dot runs from your rupees to the US market and each
-// checkpoint lights as it passes. Without JS, or with reduced motion / Pause motion, every checkpoint is simply lit.
+// checkpoint lights as it passes. Without JS, or with reduced motion, every checkpoint is simply lit.
 const gates = $('.gates');
-if (gates && !reducedMotion && !root.classList.contains('motion-paused')) {
+if (gates && !reducedMotion) {
   gates.classList.add('is-run');
   const rail = gates.querySelector('.gate-rail'), checks = [...gates.querySelectorAll('.gate')];
   new IntersectionObserver(([e], obs) => {
@@ -564,3 +553,21 @@ if (import.meta.env.PROD) {
     if (mine && latest && latest !== mine && !sessionStorage.getItem('reloaded-for')) { sessionStorage.setItem('reloaded-for', latest); location.reload(); }
   }).catch(() => {}), 1500);
 }
+
+// ---------- Hero A/B (design preview): one button flips between A · Centred and B · Split. Remembered; ?hero= overrides.
+// The inline script in index.html applies it before first paint; here the button label and the 3D camera follow.
+const heroBtn = document.querySelector('.hero-switch');
+const setHero = (mode, save) => {
+  const split = mode === 'split';
+  if (split) root.dataset.hero = 'split'; else delete root.dataset.hero;
+  heroBtn.setAttribute('aria-label', `Hero layout: ${split ? 'B, split' : 'A, centred'}. Switch to ${split ? 'A, centred' : 'B, split'}`);
+  city?.setLayout?.(mode);
+  if (save) { try { localStorage.setItem('hero-layout', mode); } catch {} track('hero_layout', { layout: mode }); }
+};
+setHero(root.dataset.hero === 'split' ? 'split' : 'centred');
+heroBtn.addEventListener('click', () => setHero(root.dataset.hero === 'split' ? 'centred' : 'split', true));
+document.querySelector('.map-ctrl')?.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-map]');
+  if (!b || !city) return;
+  ({ in: () => city.zoomBy(0.85), out: () => city.zoomBy(1 / 0.85), up: () => city.tiltBy(-0.08), down: () => city.tiltBy(0.08), reset: () => city.resetView() })[b.dataset.map]();
+});
