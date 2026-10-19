@@ -40,13 +40,16 @@ function placePosterLabel() {
 const narrow = matchMedia('(max-width: 900px)');
 const forceLive = new URLSearchParams(location.search).has('live');
 let live = false;
+// Start downloading the 3D code as soon as the page parses (desktop only); it is only run after load, when idle.
+// The city's data is preloaded from index.html, so code and data arrive in parallel instead of one after the other.
+const cityModule = narrow.matches && !forceLive ? null : import('./city.js');
 const startCity = () => {
   if (live) return;
   live = true;
   hero.classList.add('is-live');
   label.removeAttribute('style');
   label.classList.remove('is-on');
-  import('./city.js')
+  (cityModule || import('./city.js'))
     .then(({ createCity }) => {
       if (!createCity({ canvas, label, reducedMotion, withClouds: !forceLive })) hero.classList.add('no-webgl');
     })
@@ -315,7 +318,7 @@ calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calc
 // turned a little further, so the cards curve with the ring (the reference builds its cards the same way).
 // The intro spins the ring once when it comes into view (the pill names each sector); after that, picking a company in
 // the calculator turns the ring to it.
-const ringEl = $('#ring'), ringStage = $('#ring-stage'), ringTrack = $('#ring-track'), ringPill = $('#ring-pill');
+const ringEl = $('#ring'), ringStage = $('#ring-stage'), ringPill = $('#ring-pill');
 const RING = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq', 'AI chips'], ['AAPL', 'Apple', 'apple', 'Nasdaq', 'Consumer tech'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq', 'EVs'], ['META', 'Meta', 'meta', 'Nasdaq', 'Social'],
   ['NFLX', 'Netflix', 'netflix', 'Nasdaq', 'Streaming'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE', 'Beverages'], ['GOOGL', 'Alphabet', 'google', 'Nasdaq', 'Search and cloud'], ['AMZN', 'Amazon', 'amazon', 'Nasdaq', 'E-commerce']];
 const STEP = (2 * Math.PI) / RING.length;
@@ -551,3 +554,13 @@ document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href="#lead"], a[href="#lead-2"]');
   if (a && a.id !== 'calc-cta') track('cta_click', { label: a.textContent.trim().slice(0, 40), from: a.closest('section[id], header, footer')?.id || a.closest('header, footer')?.tagName.toLowerCase() || 'page' });
 });
+
+// ---------- Stale-page check (production). GitHub Pages lets browsers reuse the page for 10 minutes; after a deploy
+// that can show an old version. Ask once, bypassing the cache, and reload if the page has been rebuilt since.
+if (import.meta.env.PROD) {
+  const mine = document.querySelector('script[type="module"][src*="/assets/index-"]')?.getAttribute('src');
+  setTimeout(() => fetch(location.pathname, { cache: 'no-store' }).then((r) => r.text()).then((html) => {
+    const latest = /<script[^>]+type="module"[^>]+src="([^"]*\/assets\/index-[^"]+)"/.exec(html)?.[1];
+    if (mine && latest && latest !== mine && !sessionStorage.getItem('reloaded-for')) { sessionStorage.setItem('reloaded-for', latest); location.reload(); }
+  }).catch(() => {}), 1500);
+}

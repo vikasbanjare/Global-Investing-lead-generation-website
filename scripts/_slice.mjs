@@ -1,0 +1,12 @@
+import { chromium } from 'playwright-core';
+import fs from 'node:fs';
+const [src, out, n, width] = process.argv.slice(2);
+const b = await chromium.launch({ channel: 'chrome' });
+const p = await b.newPage({ viewport: { width: +width, height: 800 } });
+const data = `data:image/png;base64,${fs.readFileSync(src).toString('base64')}`;
+await p.setContent(`<body style="margin:0"><img id=i src="${data}" style="display:block;width:${width}px"></body>`);
+await p.waitForTimeout(300);
+const h = await p.evaluate(() => document.getElementById('i').getBoundingClientRect().height);
+const step = Math.ceil(h / +n);
+for (let k = 0; k < +n; k++) await p.screenshot({ path: `${out}-${k}.png`, clip: { x: 0, y: k * step, width: +width, height: Math.min(step, h - k * step) }, fullPage: true });
+await b.close();

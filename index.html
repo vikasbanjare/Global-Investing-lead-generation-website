@@ -16,6 +16,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="/fonts/open-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/data/manhattan.json" as="fetch" crossorigin media="(min-width: 901px)"> <!-- the city data downloads alongside the 3D code -->
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -145,7 +146,7 @@
           <p class="lead">Expensive shares are no longer all-or-nothing. Pick an amount and own the exact fraction it buys.</p>
       </div>
       <div class="buy-grid">
-      <div class="ring-track" id="ring-track">
+      <div id="ring-track">
       <div class="ring-stage" id="ring-stage">
         <div class="phone ring-phone" role="img" aria-label="Illustrative app screen: your US portfolio with fractional shares">
           <div class="phone-screen ring-screen">
@@ -198,10 +199,6 @@
       <div class="product-copy">
         <ul class="features">
           <li>
-            <span class="feature-mark" aria-hidden="true">$1</span>
-            <div><strong>Invest in top US stocks</strong><span>Search and screen 5,000+ stocks and ETFs by sector, size and theme.</span></div>
-          </li>
-          <li>
             <span class="feature-mark" aria-hidden="true">₹&thinsp;$</span>
             <div><strong>Track in INR and USD</strong><span>Holdings, cash balance and returns, in both currencies, in one place.</span></div>
           </li>
@@ -245,8 +242,6 @@
           <p>AI, cloud, semiconductors, healthcare and consumer brands. Many of the companies defining them are listed only in the US.</p>
           <ul class="tile-marks" aria-label="Examples"><li data-sym="AAPL" style="--i:0"><span class="logo" data-logo="apple"></span><span class="sr-only">Apple</span></li><li data-sym="NVDA" style="--i:1"><span class="logo" data-logo="nvidia"></span><span class="sr-only">NVIDIA</span></li><li data-sym="GOOGL" style="--i:2"><span class="logo" data-logo="google"></span><span class="sr-only">Alphabet</span></li><li data-sym="AMZN" style="--i:3"><span class="logo" data-logo="amazon"></span><span class="sr-only">Amazon</span></li><li data-sym="TSLA" style="--i:4"><span class="logo" data-logo="tesla"></span><span class="sr-only">Tesla</span></li><li data-sym="META" style="--i:5"><span class="logo" data-logo="meta"></span><span class="sr-only">Meta</span></li><li data-sym="NFLX" style="--i:6"><span class="logo" data-logo="netflix"></span><span class="sr-only">Netflix</span></li><li data-sym="AVGO" style="--i:7"><span class="logo" data-logo="broadcom"></span><span class="sr-only">Broadcom</span></li></ul>
         </article>
-        <div class="tile tile-fig"><span class="stat-num">$1</span><span class="stat-label">Start investing from</span></div>
-        <div class="tile tile-fig"><span class="stat-num">5,000+</span><span class="stat-label">US stocks and ETFs</span></div>
         <article class="tile tile-wide">
           <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9M12 3C9.4 5.6 8.1 8.6 8.1 12s1.3 6.4 3.9 9"/></svg></span>
           <div><h3>Diversify beyond one economy</h3><p>India is a small share of global market value. Owning US companies means one country’s cycle no longer decides all of your returns.</p></div>

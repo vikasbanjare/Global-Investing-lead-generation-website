@@ -766,7 +766,11 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 /* Hosted design preview only (vite.config.js adds the element when PREVIEW=1). */
 .preview-banner { position: fixed; left: 12px; bottom: 12px; z-index: 60; max-width: calc(100vw - 24px); margin: 0; padding: 8px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(4, 33, 63, 0.92); box-shadow: 0 8px 24px -10px rgba(4, 33, 63, 0.6); }
 .preview-banner b { color: var(--orange-soft); }
-@media (max-width: 900px) { .preview-banner { bottom: 88px; } } /* above the phone dock */
+/* phones: the preview note sits in the page flow at the very top (it covered content above the dock) */
+@media (max-width: 900px) {
+  .preview-banner { position: relative; left: auto; bottom: auto; display: flex; align-items: center; height: 44px; max-width: none; padding: 0 12px; border-radius: 0; font-size: 11px; line-height: 1.35; box-shadow: none; }
+  body:has(.preview-banner) .site-header { top: 44px; }
+}
 
 /* MAPS World Markets logo (inline SVG, brand colours from the supplied asset). */
 .brand { display: inline-flex; align-items: center; }
@@ -819,7 +823,7 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .tile-fig::before { top: 22px; left: 22px; }
   .tile-fig .stat-num { font-size: 32px; }
 }
-@media (max-width: 560px) { .bento > .tile-fig:nth-last-child(-n+2) { grid-column: 1 / -1; min-height: 0; } }
+
 
 /* ================= Centred layout (user direction) ================= */
 /* Hero: big centred statement on top, the aerial city rising below it, full width. */
@@ -1238,8 +1242,6 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 @media (max-width: 900px) { .ring-phone .phone-island { width: 84px; margin-left: -42px; } .ring-phone .phone-status { left: 22px; right: 18px; font-size: 12px; } } /* narrower phone: clock and icons clear of the island */
 /* iter-121b: bent cards on a real 3D ring + the pinned scroll. The ring sits at the phone's card slot; each card is
    14 slices (12 on phones) on a cylinder, so it curves; back-facing slices drop out on their own. */
-.js .ring-track { height: calc(660px + 3 * 300px); }
-.js .ring-track .ring-stage { position: sticky; top: 64px; }
 .ring-stage { perspective: 1200px; perspective-origin: 50% var(--ring-y); }
 .card-ring { position: absolute; inset: auto; left: 50%; top: calc(var(--ring-y) + var(--rise) * 110px); width: 0; height: 0; z-index: 3; transform-style: preserve-3d; pointer-events: none; }
 .rgroup { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
@@ -1248,16 +1250,9 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .rslice .rcard.is-front { box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.09); }
 .ring-pill > span { transition: opacity 0.2s; }
 @media (max-width: 900px) {
-  .js .ring-track { height: calc(560px + 3 * 260px); }
-  .js .ring-track .ring-stage { top: 12px; }
   .ring-stage { perspective: 900px; }
 }
-@media (prefers-reduced-motion: reduce) { .js .ring-track { height: auto; } .js .ring-track .ring-stage { position: relative; top: 0; } }
 
-/* iter-122: no pin. The ring plays a quick intro when it comes into view (main.js), so the section is its natural height. */
-.js .ring-track { height: auto; }
-.js .ring-track .ring-stage { position: relative; top: 0; }
-@media (max-width: 900px) { .js .ring-track { height: auto; } }
 
 /* iter-122: four steps as a staircase. Each card stands on a riser that grows by one step; a flag tops the last. */
 .stairs { list-style: none; margin: 0 0 8px; padding: 56px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
@@ -1383,3 +1378,19 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .gates.is-run .gate-rail i { left: 50%; top: calc(var(--run, 0) * 100%); }
 }
 @media (max-width: 900px) { .gate-where { justify-self: start; } } /* country pills hug their text in the stacked layout */
+
+/* iter-124 audit fixes */
+/* the calculator (and the phone stage) use the full content width, like every other section */
+.buy-grid { max-width: none; }
+@media (min-width: 901px) { .buy-grid .calc { max-width: none; } }
+/* two product features after removing the one that repeated the hero ($1, 5,000+) */
+.product .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 900px) { .product .features { grid-template-columns: minmax(0, 1fr); } }
+/* bento without the repeated $1 / 5,000+ tiles: lead tile left; the two wide tiles stacked right; the two figures share the last row */
+@media (min-width: 901px) {
+  .bento > .tile-wide { grid-column: 3 / span 2; }
+  .bento > .tile-fig { grid-column: span 2; flex-direction: row; align-items: baseline; justify-content: flex-start; gap: 16px; min-height: 0; padding-top: 44px; }
+}
+@media (max-width: 900px) { .bento > .tile-fig { grid-column: span 1; } } /* phones: the two figures sit side by side */
+@media (min-width: 901px) { .bento > .tile-fig { align-items: center; padding-top: 28px; } } /* figure and label centred in the row */
+@media (max-width: 900px) { .hero > .motion-toggle { width: 44px; padding: 0; justify-content: center; } .hero > .motion-toggle .mt-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } } /* phones: icon-only over the city, still named */

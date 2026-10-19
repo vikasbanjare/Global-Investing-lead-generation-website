@@ -47,7 +47,7 @@ const pairs = (flat) => { // [x0, z0, x1, z1, ...] -> [[x, z], ...] without repe
 };
 
 // GPU growth: every vertex rises with its building's delay (one draw call, no per-frame CPU work).
-const GROW_VERT = 'float e_ = 1.0 - pow(1.0 - clamp((uT - aDelay) / 1.3, 0.0, 1.0), 3.0);\ntransformed.y = ' + GROUND.toFixed(1) + ' + (transformed.y - ' + GROUND.toFixed(1) + ') * max(e_, 0.001);';
+const GROW_VERT = 'float e_ = 1.0 - pow(1.0 - clamp((uT - aDelay) / 0.9, 0.0, 1.0), 3.0);\ntransformed.y = ' + GROUND.toFixed(1) + ' + (transformed.y - ' + GROUND.toFixed(1) + ') * max(e_, 0.001);';
 function patchGrowth(shader, uT) {
   shader.uniforms.uT = uT;
   shader.vertexShader = shader.vertexShader
@@ -66,8 +66,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   const data = fetch(`${import.meta.env.BASE_URL}data/manhattan.json`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
   // Real aerial photography of the harbour (NYS ITS orthoimagery, colour-graded): draped on land and roofs.
   const treesData = fetch(`${import.meta.env.BASE_URL}data/trees.json`).then((r) => r.json()).catch(() => []);
-  const orthoBox = fetch(`${import.meta.env.BASE_URL}data/ortho.json`).then((r) => r.json()).catch(() => null); // optional: builds without it use plain ground
-  const orthoTex = new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}data/ortho.webp`).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }).catch(() => null);
+  const orthoBox = __HAS_ORTHO__ ? fetch(`${import.meta.env.BASE_URL}data/ortho.json`).then((r) => r.json()).catch(() => null) : Promise.resolve(null); // optional: builds without it use plain ground
+  const orthoTex = !__HAS_ORTHO__ ? Promise.resolve(null) : new THREE.TextureLoader().loadAsync(`${import.meta.env.BASE_URL}data/ortho.webp`).then((t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; }).catch(() => null);
 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setClearColor(0x000000, 0);
@@ -252,7 +252,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       glassy = tone === 1 ? 1 : 0;
       top = y1;
       color = wallC;
-      delay = Math.hypot(cx, cz) * 0.0065 + rand() * 0.25;
+      delay = Math.hypot(cx, cz) * 0.0042 + rand() * 0.15; // centre first, outwards; whole city up by ~1.9 s
       for (let i = 0; i < pts.length; i++) {
         const [px, pz] = pts[(i + pts.length - 1) % pts.length], [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length];
         lpos.push(x0, y1, z0, x1, y1, z1); ldel.push(delay, delay); // roof outline
@@ -373,7 +373,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
         if (!onManhattan && (Math.hypot(x, z) < 650 || rand() < 0.45)) continue; // keep the near sides open water and low shore: Manhattan is the subject
         const midtown = onManhattan ? Math.exp(-((x - esb[0]) ** 2 + (z - esb[1]) ** 2) / (2 * 130 ** 2)) : 0;
         const h = 1.6 + rand() * 5 + (onManhattan ? rand() * 9 * Math.min(1, 0.4 + north) : rand() * 4) + midtown * rand() * rand() * 34;
-        fill.push({ x: x + (rand() - 0.5) * 4, z: z + (rand() - 0.5) * 4, w: 2.5 + rand() * 5, d: 2.5 + rand() * 5, r: onManhattan ? 0.5 + (rand() - 0.5) * 0.08 : (rand() - 0.5) * 0.3, h: h * (0.5 + rand() * 0.5), delay: 0.8 + Math.hypot(x, z) * 0.004 + rand() * 0.3 });
+        fill.push({ x: x + (rand() - 0.5) * 4, z: z + (rand() - 0.5) * 4, w: 2.5 + rand() * 5, d: 2.5 + rand() * 5, r: onManhattan ? 0.5 + (rand() - 0.5) * 0.08 : (rand() - 0.5) * 0.3, h: h * (0.5 + rand() * 0.5), delay: 0.4 + Math.hypot(x, z) * 0.0012 + rand() * 0.2 });
       }
     }
     const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
@@ -387,7 +387,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     placeContext = (time) => {
       fill.forEach((bk, i) => {
-        const e = easeOut(clamp01((time - bk.delay) / 1.3));
+        const e = easeOut(clamp01((time - bk.delay) / 0.9));
         ctxMesh.setMatrixAt(i, m4.compose(pv.set(bk.x, GROUND, bk.z), q.setFromAxisAngle(yAxis, bk.r), sv.set(bk.w, Math.max(0.001, bk.h * e), bk.d)));
       });
       ctxMesh.instanceMatrix.needsUpdate = true;
@@ -432,7 +432,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     for (const o of [podium, shaft, spire]) { o.castShadow = o.receiveShadow = true; wtc.add(o); }
     wtc.position.set(d.wtc[0], GROUND, d.wtc[1]);
     scene.add(wtc);
-    grow.push({ obj: wtc, delay: 0.5 });
+    grow.push({ obj: wtc, delay: 0.3 });
 
     // Empire State Building, at its real position and height (381 m roof, 443 m tip): setbacks, crown, mast.
     const esbG = new THREE.Group();
@@ -444,7 +444,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     esbG.position.set(esb[0], GROUND, esb[1]);
     esbG.rotation.y = 0.5; // the Midtown grid runs 29° off true north
     scene.add(esbG);
-    grow.push({ obj: esbG, delay: 1.1 });
+    grow.push({ obj: esbG, delay: 0.7 });
 
     // New York Stock Exchange: block, six columns, pediment, facing Broad Street.
     const nyse = new THREE.Group();
@@ -463,7 +463,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     nyse.rotation.y = -d.nyse.angle; // long side follows Broad Street; the portico faces the camera side
     nyse.scale.set(0.62, 0.78, 0.8); // the real footprint is about 42 m × 52 m
     scene.add(nyse);
-    grow.push({ obj: nyse, delay: 0.25, sy: 0.78 });
+    grow.push({ obj: nyse, delay: 0.15, sy: 0.78 });
 
     // Marker on the NYSE roof: the page's one orange moment in the scene (its pulse lives in CSS on the label).
     ring = new THREE.Group(); // roof ring + a thin leader up to the label, like a map callout
@@ -520,7 +520,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       bridge.position.set(ax, 0, az);
       bridge.rotation.y = -Math.atan2(bz - az, bx - ax);
       scene.add(bridge);
-      grow.push({ obj: bridge, delay: 1.0 });
+      grow.push({ obj: bridge, delay: 0.6 });
     }
   }
 
@@ -612,7 +612,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // ---- Loop: runs during the intro and while the camera eases; then only for the cloud drift (~30 fps) while on screen.
   const clock = new THREE.Clock(false);
   let visible = true, raf = 0, built = false, introDone = false, frameNo = 0, scrollEased = 0, lastDrift = 0;
-  const INTRO = 3.4;
+  const INTRO = 2.1; // was 3.4 s: the city reads as finished sooner
   const v = new THREE.Vector3();
   const wake = () => { if (visible && !raf && built) raf = requestAnimationFrame(frame); };
   // The page's Pause motion switch (WCAG 2.2.2): boats and clouds hold still; pointer and scroll still move the camera.
@@ -636,10 +636,11 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     if (growing) {
       uT.value = t;
       placeContext(t);
-      for (const g of grow) g.obj.scale.y = Math.max(0.001, easeOut(clamp01((t - g.delay) / 1.4))) * (g.sy || 1);
+      for (const g of grow) g.obj.scale.y = Math.max(0.001, easeOut(clamp01((t - g.delay) / 0.9))) * (g.sy || 1);
       if (frameNo++ % 6 === 0) renderer.shadowMap.needsUpdate = true; // shadows lag growth by a few frames: invisible, cheap
       if (t > INTRO) {
         introDone = true;
+        performance.mark('city:intro-done');
         uT.value = 99;
         placeContext(99);
         renderer.shadowMap.needsUpdate = true;
@@ -697,7 +698,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       return d;
     }))
     .then((d) => { build(d); return renderer.compileAsync ? renderer.compileAsync(scene, camera).catch(() => {}) : null; })
-    .then(() => { built = true; clock.start(); wake(); })
+    .then(() => { built = true; performance.mark('city:built'); clock.start(); wake(); })
     .catch(() => hero?.classList.add('no-webgl')); // no data: the poster stands in
 
   if (new URLSearchParams(location.search).has('debug')) window.__city = { scene, renderer, camera, rig, target, wake: () => { introDone && wake(); } }; // dev inspection only
