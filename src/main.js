@@ -275,7 +275,6 @@ function paintFrac(v, pop) {
   bind('amtFinal', v.toLocaleString('en-US', { maximumFractionDigits: 2 }));
   bind('amtInrFinal', Math.round(v * FX).toLocaleString('en-IN'));
   $('#ring-logo').style.setProperty('--logo', logoUrl(logo));
-  $('#app-logo').style.setProperty('--logo', logoUrl(logo));
   $('#ring-main').style.strokeDashoffset = ringOffset(q);
   pick.querySelectorAll('button').forEach((b) => {
     const pq = v / REF_PRICES[b.dataset.sym];
@@ -283,9 +282,9 @@ function paintFrac(v, pop) {
     b.querySelector('.ring-fill').style.strokeDashoffset = ringOffset(pq);
     b.querySelector('.pick-qty').textContent = qtyText(pq);
   });
-  if (pop && !reducedMotion) { const f1 = $('.f1'); f1.classList.remove('pop'); void f1.offsetWidth; f1.classList.add('pop'); }
+  ringTo(sel, pop);
 }
-pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
+pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { pickedAt = scrollY; sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
 // Calculator events: what people try is a leading signal for who signs up (and which stocks to lead with).
 const noteCalc = (event) => { Object.assign(calcContext, { calc_amount: amount, calc_sym: sel }); track(event, { amount, sym: sel }); };
 let calcTimer = 0;
@@ -311,19 +310,100 @@ calcIn.addEventListener('input', () => {
   clearTimeout(calcTimer); calcTimer = setTimeout(() => noteCalc('calc_input'), 900); // once the visitor stops typing
 });
 calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calcIn.value = String(amount); calcIn.closest('.calc').classList.remove('is-invalid'); $('#calc-hint').lastChild.textContent = ' · type any amount from $1'; } });
-paintFrac(amount);
-// The phone tilts toward the pointer (desktop): a real object in space, not a flat screenshot.
-const buyGrid = $('.buy-grid'), tilt = $('.phone-tilt');
-if (!reducedMotion && matchMedia('(hover: hover)').matches) {
-  buyGrid.addEventListener('pointermove', (e) => {
-    const r = buyGrid.getBoundingClientRect();
-    tilt.style.setProperty('--ry', `${(((e.clientX - r.left) / r.width) - 0.35) * 22}deg`);
-    tilt.style.setProperty('--rx', `${(0.5 - (e.clientY - r.top) / r.height) * 12}deg`);
-    tilt.style.setProperty('--gx', `${100 - ((e.clientX - r.left) / r.width) * 100}%`); // the glare slides opposite the tilt
-  });
-  buyGrid.addEventListener('pointerleave', () => ['--ry', '--rx', '--gx'].forEach((k) => tilt.style.removeProperty(k)));
+// ---------- Card ring (after gettakecontrol.app's hero). The selected stock's card sits on the phone, wider than its
+// screen; the other leaders bend away around a tilted 3D cylinder. Each card is cut into thin vertical slices, each
+// turned a little further, so the cards curve with the ring (the reference builds its cards the same way).
+// Scroll: the phone rises and the ring opens; then the stage pins while scrolling turns the ring through four leaders
+// (the pill names each one's sector). After the pin, picking a company in the calculator turns the ring.
+const ringEl = $('#ring'), ringStage = $('#ring-stage'), ringTrack = $('#ring-track'), ringPill = $('#ring-pill');
+const RING = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq', 'AI chips'], ['AAPL', 'Apple', 'apple', 'Nasdaq', 'Consumer tech'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq', 'EVs'], ['META', 'Meta', 'meta', 'Nasdaq', 'Social'],
+  ['NFLX', 'Netflix', 'netflix', 'Nasdaq', 'Streaming'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE', 'Beverages'], ['GOOGL', 'Alphabet', 'google', 'Nasdaq', 'Search and cloud'], ['AMZN', 'Amazon', 'amazon', 'Nasdaq', 'E-commerce']];
+const STEP = (2 * Math.PI) / RING.length, PIN_CARDS = 4; // the pin turns through NVDA → AAPL → TSLA → META
+const geo = () => (innerWidth < 900 ? { r: 360, w: 272, h: 142, n: 12 } : { r: 480, w: 360, h: 160, n: 14 }); // card arc (w / r) stays under the 45° step, or neighbours overlap
+let ringGeo = null, rot = 0, rotTarget = 0, spread = 1, ringRaf = 0, scrollTurning = false, lastPinP = -1;
+let pickedAt = -1e9; // a company picked in the calculator wins until the visitor scrolls on (200 px)
+const cardHTML = ([sym, name, logo, exch]) => `<div class="rcard"><span class="rc-logo"><span class="logo" style="--logo: ${logoUrl(logo)}"></span></span><div class="rc-body"><b class="rc-name">${name}</b><span class="rc-sym">${sym} · ${exch}</span></div><p class="rc-own">You’d own <b class="rc-qty"></b> for <b class="rc-amt"></b>.</p><div class="rc-chips"><span>Price $${REF_PRICES[sym].toFixed(2)}</span><span>From $1</span></div></div>`;
+function buildRing() {
+  ringGeo = geo();
+  const { r, w, h, n } = ringGeo, arc = w / r, d = arc / n, sw = 2 * r * Math.tan(d / 2) + 0.6; // +0.6 px: no hairline seams
+  ringEl.innerHTML = RING.map((c, i) => `<div class="rgroup" data-sym="${c[0]}" style="transform: rotateY(${((i * STEP * 180) / Math.PI).toFixed(3)}deg)">${Array.from({ length: n }, (_, j) => `<div class="rslice" style="width:${sw.toFixed(2)}px;height:${h}px;margin:${-h / 2}px 0 0 ${(-sw / 2).toFixed(2)}px;transform: rotateY(${(((j - (n - 1) / 2) * d * 180) / Math.PI).toFixed(3)}deg) translateZ(${r}px)"><div style="position:absolute;top:0;left:${(-j * (w / n)).toFixed(2)}px;width:${w}px;height:${h}px">${cardHTML(c)}</div></div>`).join('')}</div>`).join('');
+  ringStage.style.setProperty('--ring-r', `${r}px`);
+  fillRing();
 }
+function fillRing() {
+  ringEl.querySelectorAll('.rgroup').forEach((g) => {
+    const q = amount / REF_PRICES[g.dataset.sym];
+    g.querySelectorAll('.rc-qty').forEach((e) => { e.textContent = `${qtyText(q)} sh`; });
+    g.querySelectorAll('.rc-amt').forEach((e) => { e.textContent = usd.format(amount).replace('.00', ''); });
+  });
+}
+function layoutRing() {
+  ringEl.style.transform = `translateZ(${-ringGeo.r}px) rotateX(-4deg) rotateY(${((-rot * 180) / Math.PI).toFixed(3)}deg)`;
+  ringEl.querySelectorAll('.rgroup').forEach((g, i) => {
+    let th = i * STEP - rot; th = Math.atan2(Math.sin(th), Math.cos(th));
+    g.style.transform = `rotateY(${(((rot + th * spread) * 180) / Math.PI).toFixed(3)}deg)`; // spread < 1: cards gather behind the front one
+    g.classList.toggle('is-front', Math.cos(th) > 0.97);
+  });
+}
+function turnRing() {
+  ringRaf = 0;
+  const d = rotTarget - rot;
+  rot = Math.abs(d) < 0.002 || reducedMotion ? rotTarget : rot + d * 0.14;
+  layoutRing();
+  if (rot !== rotTarget) ringRaf = requestAnimationFrame(turnRing);
+}
+function ringTo(sym, pop) {
+  fillRing();
+  const [, , , , sector] = RING.find((s) => s[0] === sym) || RING[0];
+  bind('sector', sector);
+  if (pop && !reducedMotion) { ringPill.classList.remove('is-pop'); void ringPill.offsetWidth; ringPill.classList.add('is-pop'); }
+  if (scrollTurning) return; // the scroll owns the rotation while the stage is pinned
+  const target = RING.findIndex((s) => s[0] === sym) * STEP;
+  rotTarget += Math.atan2(Math.sin(target - rotTarget), Math.cos(target - rotTarget)); // the short way round
+  if (!ringRaf) ringRaf = requestAnimationFrame(turnRing);
+}
+const ease = (t) => 1 - Math.pow(1 - t, 3);
+let ringTicking = false;
+const onRingScroll = () => {
+  if (ringTicking || reducedMotion) return;
+  ringTicking = true;
+  requestAnimationFrame(() => {
+    ringTicking = false;
+    const sr = ringStage.getBoundingClientRect(), tr = ringTrack.getBoundingClientRect();
+    spread = ease(Math.min(1, Math.max(0, (innerHeight - sr.top) / (innerHeight * 0.8))));
+    ringStage.style.setProperty('--rise', (1 - spread).toFixed(3));
+    const pinTop = parseFloat(getComputedStyle(ringStage).top) || 0, span = tr.height - sr.height;
+    const p = span > 0 ? (pinTop - tr.top) / span : -1;
+    const ownPick = Math.abs(scrollY - pickedAt) < 200;
+    scrollTurning = p > 0 && p < 1 && !ownPick;
+    if (!ownPick && p >= 0 && (p <= 1 || lastPinP < 1)) { // pinned (or just leaving it): scroll turns the ring through the first leaders
+      rot = rotTarget = Math.min(1, p) * (PIN_CARDS - 1) * STEP;
+      const k = Math.round(rot / STEP) % RING.length;
+      if (RING[k][0] !== sel) { sel = RING[k][0]; paintFrac(amount, true); }
+    }
+    lastPinP = p;
+    layoutRing();
+  });
+};
+const onRingResize = () => {
+  const g = geo();
+  if (!ringGeo || g.r !== ringGeo.r) buildRing();
+  const slot = ringStage.querySelector('.rs-slot'), rise = getComputedStyle(ringStage).getPropertyValue('--rise');
+  ringStage.style.setProperty('--rise', '0');
+  ringStage.style.setProperty('--ring-y', `${Math.round(slot.getBoundingClientRect().top + slot.offsetHeight / 2 - ringStage.getBoundingClientRect().top)}px`);
+  ringStage.style.setProperty('--rise', rise);
+  layoutRing();
+};
+window.addEventListener('scroll', onRingScroll, { passive: true });
+window.addEventListener('resize', onRingResize, { passive: true });
+document.fonts?.ready.then(onRingResize);
+buildRing();
+rot = rotTarget = RING.findIndex((s) => s[0] === sel) * STEP;
+onRingResize(); onRingScroll();
+{ const hr = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+  bind('greeting', hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'); }
 
+paintFrac(amount);
 // ---------- Vault: hovering a layer in the list lights its ring.
 const vault = $('.vault');
 document.querySelectorAll('.vault-list li').forEach((li) => {

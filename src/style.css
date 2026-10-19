@@ -1178,3 +1178,78 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 /* R4: one orange focal point per view. The header CTA is outlined while the hero form is on screen, orange once docked. */
 .site-header:not(.is-docked) .nav-cta .btn-orange { background: transparent; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--navy); }
 .site-header:not(.is-docked) .nav-cta .btn-orange:hover { background: var(--tint); color: var(--navy); }
+
+/* iter-121: the card ring (after gettakecontrol.app's hero). One centred phone; the selected stock's card sits on its
+   screen, wider than it; the other leaders curve away on a 3D ring (projected in main.js). Calculator below. */
+.buy-grid { grid-template-columns: minmax(0, 1fr); gap: 0; max-width: 1200px; }
+.buy-grid .calc { width: 100%; max-width: 760px; margin: 0 auto; }
+.ring-stage { position: relative; height: 660px; overflow: hidden; display: grid; justify-items: center; align-content: start; --ring-y: 420px; --rise: 0;
+  background: radial-gradient(48% 34% at 50% var(--ring-y), rgba(255, 84, 0, 0.12), rgba(255, 84, 0, 0) 70%); }
+.product .ring-phone { position: relative; z-index: 2; width: 340px; margin-top: 8px; animation: none; transform: translateY(calc(var(--rise) * 110px)) scale(calc(1 - var(--rise) * 0.06));
+  -webkit-mask-image: linear-gradient(#000 74%, transparent 97%); mask-image: linear-gradient(#000 74%, transparent 97%); }
+.ring-screen { height: 700px; padding: 54px 18px 18px; gap: 14px; color: var(--ink); }
+.rs-hello { margin: 4px 0 0; display: grid; gap: 2px; }
+.rs-hello span { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+.rs-hello small { font-size: 12px; color: var(--slate); }
+.rs-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rs-tiles div { display: grid; gap: 2px; padding: 12px; border-radius: 16px; background: var(--bg); }
+.rs-tiles div > span { font-size: 12px; font-weight: 600; color: var(--slate); } /* the label only, not the bound numbers */
+.rs-tiles b, .rs-tiles .app-big { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); font-variant-numeric: tabular-nums; }
+.rs-tiles small { font-size: 11px; color: var(--muted); }
+.rs-sub { margin: 2px 0 0; font-size: 15px; font-weight: 800; }
+.rs-seg { display: flex; padding: 4px; border-radius: 999px; background: var(--bg); }
+.rs-seg span { flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px; padding: 8px; border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--slate); }
+.rs-seg .on { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(4, 33, 63, 0.12); }
+.rs-seg i { font-style: normal; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; font-size: 11px; background: var(--orange); color: var(--ink); }
+.rs-seg span:not(.on) i { background: var(--tint); color: var(--muted); }
+.rs-slot { height: 150px; flex: none; }
+.card-ring { position: absolute; inset: 0; pointer-events: none; } /* not .ring: that class rotates the calculator's SVG rings */
+.rcard { position: absolute; left: 50%; top: calc(var(--ring-y) + var(--rise) * 110px); width: 360px; padding: 16px 18px; border-radius: 22px; background: #fff;
+  box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.06), 0 26px 50px -26px rgba(4, 33, 63, 0.4); display: grid; grid-template-columns: 64px 1fr; gap: 6px 14px; align-items: center;
+  will-change: transform, opacity; backface-visibility: hidden; text-align: left; }
+.rcard.is-front { box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.06), 0 30px 60px -24px rgba(4, 33, 63, 0.5); }
+.rc-logo { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--tint); box-shadow: 0 8px 18px -8px rgba(4, 33, 63, 0.35); }
+.rc-logo .logo { width: 30px; height: 30px; color: var(--navy); }
+.rc-body { display: grid; gap: 2px; }
+.rc-name { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.rc-sym { font-size: 12px; font-weight: 600; color: var(--muted); }
+.rc-own { grid-column: 1 / -1; margin: 6px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; color: var(--slate); }
+.rc-own b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.rc-chips { grid-column: 1 / -1; display: flex; gap: 6px; }
+.rc-chips span { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--slate); box-shadow: inset 0 0 0 1px var(--line); font-variant-numeric: tabular-nums; }
+.ring-pill { position: absolute; z-index: 5; left: 50%; top: calc(var(--ring-y) + 118px + var(--rise) * 110px); translate: -50% 0; display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px;
+  border-radius: 999px; background: var(--orange); color: var(--ink); font-size: 17px; font-weight: 800; box-shadow: 0 16px 34px -12px rgba(255, 84, 0, 0.75); opacity: calc(1 - var(--rise) * 1.6); }
+.ring-pill svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.ring-pill.is-pop { animation: ring-pop 0.5s var(--ease); }
+@keyframes ring-pop { 40% { scale: 1.1; } }
+.ring-stage .phone-note { position: absolute; bottom: 6px; left: 0; right: 0; margin: 0; text-align: center; }
+.calc-chips { margin-top: 10px; }
+@media (max-width: 900px) {
+  .ring-stage { height: 560px; margin-inline: calc(var(--gutter) * -1); }
+  .product .ring-phone { width: 286px; }
+  .ring-screen { height: 600px; padding: 50px 14px 14px; gap: 12px; }
+  .rs-hello span { font-size: 21px; } .rs-tiles b, .rs-tiles .app-big { font-size: 20px; }
+  .rs-slot { height: 132px; }
+  .rcard { width: 300px; padding: 12px 14px; grid-template-columns: 52px 1fr; border-radius: 18px; }
+  .rc-logo { width: 52px; height: 52px; border-radius: 14px; } .rc-name { font-size: 18px; } .rc-own { font-size: 13px; }
+  .ring-pill { font-size: 15px; padding: 9px 16px; top: calc(var(--ring-y) + 104px + var(--rise) * 110px); }
+}
+@media (prefers-reduced-motion: reduce) { .product .ring-phone { transform: none; } .ring-pill.is-pop { animation: none; } }
+@media (max-width: 900px) { .ring-phone .phone-island { width: 84px; margin-left: -42px; } .ring-phone .phone-status { left: 22px; right: 18px; font-size: 12px; } } /* narrower phone: clock and icons clear of the island */
+/* iter-121b: bent cards on a real 3D ring + the pinned scroll. The ring sits at the phone's card slot; each card is
+   14 slices (12 on phones) on a cylinder, so it curves; back-facing slices drop out on their own. */
+.js .ring-track { height: calc(660px + 3 * 300px); }
+.js .ring-track .ring-stage { position: sticky; top: 64px; }
+.ring-stage { perspective: 1200px; perspective-origin: 50% var(--ring-y); }
+.card-ring { position: absolute; inset: auto; left: 50%; top: calc(var(--ring-y) + var(--rise) * 110px); width: 0; height: 0; z-index: 3; transform-style: preserve-3d; pointer-events: none; }
+.rgroup { position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+.rslice { position: absolute; left: 0; top: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.rslice .rcard { position: relative; left: auto; top: auto; width: 100%; height: 100%; transform: none; will-change: auto; box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.09); }
+.rslice .rcard.is-front { box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.09); }
+.ring-pill > span { transition: opacity 0.2s; }
+@media (max-width: 900px) {
+  .js .ring-track { height: calc(560px + 3 * 260px); }
+  .js .ring-track .ring-stage { top: 12px; }
+  .ring-stage { perspective: 900px; }
+}
+@media (prefers-reduced-motion: reduce) { .js .ring-track { height: auto; } .js .ring-track .ring-stage { position: relative; top: 0; } }

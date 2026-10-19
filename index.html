@@ -145,51 +145,37 @@
           <p class="lead">Expensive shares are no longer all-or-nothing. Pick an amount and own the exact fraction it buys.</p>
       </div>
       <div class="buy-grid">
-      <div class="phone-stage">
-        <div class="phone-tilt">
-        <div class="phone" role="group" aria-label="Example order screen">
-          <div class="phone-screen">
+      <div class="ring-track" id="ring-track">
+      <div class="ring-stage" id="ring-stage">
+        <div class="phone ring-phone" role="img" aria-label="Illustrative app screen: your US portfolio with fractional shares">
+          <div class="phone-screen ring-screen">
             <div class="phone-island" aria-hidden="true"></div>
             <div class="phone-status" aria-hidden="true"><span data-bind="istShort">9:41</span><span class="phone-status-icons">
               <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
               <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 2.2c2.1 0 4 .8 5.5 2.1l1.2-1.3A9.6 9.6 0 0 0 7.5.4 9.6 9.6 0 0 0 .8 3l1.2 1.3a8 8 0 0 1 5.5-2.1Zm0 3.4c1.2 0 2.3.4 3.1 1.2l1.2-1.3a6.3 6.3 0 0 0-8.6 0l1.2 1.3c.8-.8 1.9-1.2 3.1-1.2Zm0 3.3c.4 0 .8.2 1.1.4L7.5 10.7 6.4 9.3c.3-.2.7-.4 1.1-.4Z"/></svg>
               <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3.2" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="15" height="8" rx="2"/><path d="M23 4v4c.8-.3 1.3-1.1 1.3-2S23.8 4.3 23 4Z" opacity="0.45"/></svg>
             </span></div>
-            <div class="app-head">
-              <span class="logo logo-lg" id="app-logo" style="--logo: url(/logos/nvidia.svg)"></span>
-              <div><strong data-bind="stockName">NVIDIA</strong><span><span data-bind="sym">NVDA</span> · <span data-bind="exch">Nasdaq</span></span></div>
-              <span class="app-pill">Fractional</span>
+            <p class="rs-hello" aria-hidden="true"><span data-bind="greeting">Good evening</span><small data-bind="status"></small></p>
+            <div class="rs-tiles" aria-hidden="true">
+              <div><span>Investing</span><b class="app-big">$<span data-bind="amt">25</span></b><small>≈ ₹<span data-bind="amtInr">2,100</span></small></div>
+              <div><span>You’d own</span><b><span data-bind="qty">0.1378</span></b><small><span data-bind="sym">NVDA</span> shares</small></div>
             </div>
-            <div class="app-amount">
-              <span class="app-label">Amount</span>
-              <span class="app-big">$<span data-bind="amt">25</span></span>
-              <span class="app-sub">≈ ₹<span data-bind="amtInr">2,100</span> at ₹<span data-bind="fx">84</span> per dollar</span>
-            </div>
-            <div class="app-chips" id="amounts" role="group" aria-label="Choose an amount"></div>
-            <dl class="app-rows">
-              <div><dt>Order type</dt><dd>Market</dd></div>
-              <div><dt>Brokerage (0.25%)</dt><dd>$<span data-bind="fee">0.06</span></dd></div>
-              <div><dt>Executes</dt><dd>US market hours</dd></div>
-              <div class="app-total"><dt>You pay</dt><dd>$<span data-bind="total">25.06</span></dd></div>
-            </dl>
-            <p class="app-market"><span class="live-dot" data-market-dot></span><span data-bind="status"></span></p>
-            <a class="btn btn-orange app-buy" href="#lead">Buy <span data-bind="stockName">NVIDIA</span></a>
+            <p class="rs-sub" aria-hidden="true">Your picks</p>
+            <div class="rs-seg" aria-hidden="true"><span class="on">Fractional <i>6</i></span><span>Whole <i>0</i></span></div>
+            <div class="rs-slot" aria-hidden="true"></div>
           </div>
         </div>
-        </div>
-        <div class="floaters" aria-hidden="true">
-          <div class="floater f1"><span class="f-ok">✓</span><span><b>Order placed</b><small><span data-bind="qty">0.1378</span> <span data-bind="sym">NVDA</span> for $<span data-bind="amtFinal">25</span></small></span></div>
-          <div class="floater f2"><span class="f-fx">₹<span data-bind="amtInrFinal">2,100</span> <i>→</i> $<span data-bind="amtFinal">25</span></span><small>Rupees in, dollars out</small></div>
-          <div class="floater f6"><b>$1</b><small>minimum</small></div>
-        </div>
+        <div class="card-ring" id="ring" aria-hidden="true"></div>
+        <span class="ring-pill" id="ring-pill" aria-hidden="true"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M8 2v6h6"/></svg><span data-bind="sector">AI chips</span></span>
         <p class="fine phone-note">Illustrative screen</p>
       </div>
+      </div>
       <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5400"/><stop offset="1" stop-color="#ff9a5c"/></linearGradient></defs></svg>
-      <svg class="money-flow" viewBox="0 0 176 96" aria-hidden="true"><path d="M4 18 C 84 18, 92 78, 172 78"/><circle r="4"><animateMotion dur="2.2s" repeatCount="indefinite" path="M4 18 C 84 18, 92 78, 172 78"/></circle></svg>
       <div class="calc">
         <div class="calc-top"><p class="calc-kicker">Fractional calculator</p><span class="frac-live">Try it</span></div>
         <label class="calc-input" for="calc-amt"><span class="calc-label">If I invest</span><span class="calc-field"><span class="calc-cur">$</span><input id="calc-amt" type="text" inputmode="decimal" autocomplete="off" value="25" aria-describedby="calc-hint" maxlength="9"></span></label>
         <p class="calc-hint" id="calc-hint">≈ ₹<span data-bind="amtInrFinal">2,100</span> · type any amount from $1</p>
+        <div class="app-chips calc-chips" id="amounts" role="group" aria-label="Quick amounts"></div>
         <div class="calc-result" aria-live="polite">
           <svg class="ring ring-lg" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" id="ring-main" cx="60" cy="60" r="52" pathLength="100"/></svg>
           <span class="ring-logo logo" id="ring-logo" style="--logo: url(/logos/nvidia.svg)"></span>
