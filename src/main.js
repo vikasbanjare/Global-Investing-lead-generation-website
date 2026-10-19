@@ -284,7 +284,7 @@ function paintFrac(v, pop) {
   });
   ringTo(sel, pop);
 }
-pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { pickedAt = scrollY; sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
+pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
 // Calculator events: what people try is a leading signal for who signs up (and which stocks to lead with).
 const noteCalc = (event) => { Object.assign(calcContext, { calc_amount: amount, calc_sym: sel }); track(event, { amount, sym: sel }); };
 let calcTimer = 0;
@@ -313,15 +313,14 @@ calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calc
 // ---------- Card ring (after gettakecontrol.app's hero). The selected stock's card sits on the phone, wider than its
 // screen; the other leaders bend away around a tilted 3D cylinder. Each card is cut into thin vertical slices, each
 // turned a little further, so the cards curve with the ring (the reference builds its cards the same way).
-// Scroll: the phone rises and the ring opens; then the stage pins while scrolling turns the ring through four leaders
-// (the pill names each one's sector). After the pin, picking a company in the calculator turns the ring.
+// The intro spins the ring once when it comes into view (the pill names each sector); after that, picking a company in
+// the calculator turns the ring to it.
 const ringEl = $('#ring'), ringStage = $('#ring-stage'), ringTrack = $('#ring-track'), ringPill = $('#ring-pill');
 const RING = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq', 'AI chips'], ['AAPL', 'Apple', 'apple', 'Nasdaq', 'Consumer tech'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq', 'EVs'], ['META', 'Meta', 'meta', 'Nasdaq', 'Social'],
   ['NFLX', 'Netflix', 'netflix', 'Nasdaq', 'Streaming'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE', 'Beverages'], ['GOOGL', 'Alphabet', 'google', 'Nasdaq', 'Search and cloud'], ['AMZN', 'Amazon', 'amazon', 'Nasdaq', 'E-commerce']];
-const STEP = (2 * Math.PI) / RING.length, PIN_CARDS = 4; // the pin turns through NVDA → AAPL → TSLA → META
+const STEP = (2 * Math.PI) / RING.length;
 const geo = () => (innerWidth < 900 ? { r: 360, w: 272, h: 142, n: 12 } : { r: 480, w: 360, h: 160, n: 14 }); // card arc (w / r) stays under the 45° step, or neighbours overlap
-let ringGeo = null, rot = 0, rotTarget = 0, spread = 1, ringRaf = 0, scrollTurning = false, lastPinP = -1;
-let pickedAt = -1e9; // a company picked in the calculator wins until the visitor scrolls on (200 px)
+let ringGeo = null, rot = 0, rotTarget = 0, spread = 1, ringRaf = 0, scrollTurning = false;
 const cardHTML = ([sym, name, logo, exch]) => `<div class="rcard"><span class="rc-logo"><span class="logo" style="--logo: ${logoUrl(logo)}"></span></span><div class="rc-body"><b class="rc-name">${name}</b><span class="rc-sym">${sym} · ${exch}</span></div><p class="rc-own">You’d own <b class="rc-qty"></b> for <b class="rc-amt"></b>.</p><div class="rc-chips"><span>Price $${REF_PRICES[sym].toFixed(2)}</span><span>From $1</span></div></div>`;
 function buildRing() {
   ringGeo = geo();
@@ -357,34 +356,33 @@ function ringTo(sym, pop) {
   const [, , , , sector] = RING.find((s) => s[0] === sym) || RING[0];
   bind('sector', sector);
   if (pop && !reducedMotion) { ringPill.classList.remove('is-pop'); void ringPill.offsetWidth; ringPill.classList.add('is-pop'); }
-  if (scrollTurning) return; // the scroll owns the rotation while the stage is pinned
+  if (scrollTurning) return; // the intro owns the rotation while it plays
   const target = RING.findIndex((s) => s[0] === sym) * STEP;
   rotTarget += Math.atan2(Math.sin(target - rotTarget), Math.cos(target - rotTarget)); // the short way round
   if (!ringRaf) ringRaf = requestAnimationFrame(turnRing);
 }
-const ease = (t) => 1 - Math.pow(1 - t, 3);
-let ringTicking = false;
-const onRingScroll = () => {
-  if (ringTicking || reducedMotion) return;
-  ringTicking = true;
-  requestAnimationFrame(() => {
-    ringTicking = false;
-    const sr = ringStage.getBoundingClientRect(), tr = ringTrack.getBoundingClientRect();
-    spread = ease(Math.min(1, Math.max(0, (innerHeight - sr.top) / (innerHeight * 0.8))));
+const ease = (t) => 1 - Math.pow(1 - t, 3), easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+// Intro, once per visit: as soon as the phone is a quarter on screen it rises, the cards fan out of the front card and
+// the ring makes one quick full turn (the pill flicks through the sectors), then settles on the selection.
+const ringIntro = () => {
+  const t0 = performance.now(), D = 2400, start = rot;
+  let lastK = -1;
+  scrollTurning = true; // calculator picks wait for the turn to finish
+  const frame = (now) => {
+    const t = Math.min(1, (now - t0) / D);
+    spread = ease(Math.min(1, t / 0.3));
     ringStage.style.setProperty('--rise', (1 - spread).toFixed(3));
-    const pinTop = parseFloat(getComputedStyle(ringStage).top) || 0, span = tr.height - sr.height;
-    const p = span > 0 ? (pinTop - tr.top) / span : -1;
-    const ownPick = Math.abs(scrollY - pickedAt) < 200;
-    scrollTurning = p > 0 && p < 1 && !ownPick;
-    if (!ownPick && p >= 0 && (p <= 1 || lastPinP < 1)) { // pinned (or just leaving it): scroll turns the ring through the first leaders
-      rot = rotTarget = Math.min(1, p) * (PIN_CARDS - 1) * STEP;
-      const k = Math.round(rot / STEP) % RING.length;
-      if (RING[k][0] !== sel) { sel = RING[k][0]; paintFrac(amount, true); }
-    }
-    lastPinP = p;
+    rot = start + easeInOut(Math.max(0, (t - 0.12) / 0.88)) * 2 * Math.PI;
+    const k = ((Math.round(rot / STEP) % RING.length) + RING.length) % RING.length;
+    if (k !== lastK) { lastK = k; bind('sector', RING[k][4]); }
     layoutRing();
-  });
+    if (t < 1) { requestAnimationFrame(frame); return; }
+    rot = rotTarget = start; scrollTurning = false; layoutRing(); ringTo(sel, true);
+    ringStage.dataset.intro = 'done';
+  };
+  requestAnimationFrame(frame);
 };
+const showRingStill = () => { spread = 1; ringStage.style.setProperty('--rise', '0'); layoutRing(); ringStage.dataset.intro = 'done'; };
 const onRingResize = () => {
   const g = geo();
   if (!ringGeo || g.r !== ringGeo.r) buildRing();
@@ -394,32 +392,52 @@ const onRingResize = () => {
   ringStage.style.setProperty('--rise', rise);
   layoutRing();
 };
-window.addEventListener('scroll', onRingScroll, { passive: true });
 window.addEventListener('resize', onRingResize, { passive: true });
 document.fonts?.ready.then(onRingResize);
 buildRing();
 rot = rotTarget = RING.findIndex((s) => s[0] === sel) * STEP;
-onRingResize(); onRingScroll();
+onRingResize();
+if (reducedMotion || document.documentElement.classList.contains('motion-paused')) showRingStill();
+else {
+  spread = 0; ringStage.style.setProperty('--rise', '1'); layoutRing();
+  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); ringIntro(); } }, { threshold: 0.25 }).observe(ringStage);
+}
 { const hr = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
   bind('greeting', hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'); }
 
 paintFrac(amount);
-// ---------- Vault: hovering a layer in the list lights its ring.
-const vault = $('.vault');
-document.querySelectorAll('.vault-list li').forEach((li) => {
-  li.addEventListener('mouseenter', () => { vault.dataset.hl = li.dataset.k; });
-  li.addEventListener('mouseleave', () => { delete vault.dataset.hl; });
-});
+// ---------- Four layers: the first time the route is seen, a dot runs from your rupees to the US market and each
+// checkpoint lights as it passes. Without JS, or with reduced motion / Pause motion, every checkpoint is simply lit.
+const gates = $('.gates');
+if (gates && !reducedMotion && !root.classList.contains('motion-paused')) {
+  gates.classList.add('is-run');
+  const rail = gates.querySelector('.gate-rail'), checks = [...gates.querySelectorAll('.gate')];
+  new IntersectionObserver(([e], obs) => {
+    if (!e.isIntersecting) return;
+    obs.disconnect();
+    const vertical = getComputedStyle(gates.querySelector('.gate-row')).gridTemplateColumns.split(' ').length === 1;
+    const r = rail.getBoundingClientRect();
+    const at = checks.map((g) => { const c = g.querySelector('.gate-check').getBoundingClientRect(); return vertical ? (c.top + c.height / 2 - r.top) / r.height : (c.left + c.width / 2 - r.left) / r.width; });
+    const t0 = performance.now(), D = 2600;
+    const frame = (now) => {
+      const t = Math.min(1, (now - t0) / D), p = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      gates.style.setProperty('--run', p.toFixed(4));
+      checks.forEach((g, i) => g.classList.toggle('is-lit', p >= at[i] - 0.01));
+      if (t < 1) requestAnimationFrame(frame); else gates.classList.add('is-done');
+    };
+    requestAnimationFrame(frame);
+  }, { threshold: 0.45 }).observe(gates);
+}
 
 // ---------- Diagrams (money routes, session timeline, protection layers) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); laneObserver.unobserve(e.target); } });
 }, { threshold: 0.35 });
-document.querySelectorAll('.lane, .session, .layers, .phone-stage').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
+document.querySelectorAll('.lane, .session, .layers, .phone-stage, .stairs').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
 const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
-  '.eligibility', '.steps > li', '.trust-head', '.tabs', '#rows-panel', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
+  '.eligibility', '.trust-head', '.tabs', '#rows-panel', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
   '.tax-item', '.faq .split-top > div:first-child', '.faq-item', '.cta-inner > *'].join(', ');
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-up'); revealObserver.unobserve(e.target); } });

@@ -1253,3 +1253,133 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
   .ring-stage { perspective: 900px; }
 }
 @media (prefers-reduced-motion: reduce) { .js .ring-track { height: auto; } .js .ring-track .ring-stage { position: relative; top: 0; } }
+
+/* iter-122: no pin. The ring plays a quick intro when it comes into view (main.js), so the section is its natural height. */
+.js .ring-track { height: auto; }
+.js .ring-track .ring-stage { position: relative; top: 0; }
+@media (max-width: 900px) { .js .ring-track { height: auto; } }
+
+/* iter-122: four steps as a staircase. Each card stands on a riser that grows by one step; a flag tops the last. */
+.stairs { list-style: none; margin: 0 0 8px; padding: 56px 0 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.stairs li { position: relative; display: flex; flex-direction: column; justify-content: flex-end; }
+.stair-card { min-height: 220px; padding: 22px 22px 20px; border-radius: 20px 20px 4px 4px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05)); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 10px; }
+.stair-n { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--orange-soft); font-variant-numeric: tabular-nums; }
+.stairs h3 { margin: 0; font-size: 19px; line-height: 1.3; font-weight: 800; color: #fff; }
+.stairs p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--on-dark-2); }
+.stair-riser { position: relative; display: block; height: calc(40px + var(--i) * 56px); margin-top: 6px; border-radius: 4px 4px 14px 14px; overflow: hidden;
+  background: linear-gradient(180deg, var(--orange) 0 4px, rgba(255, 255, 255, 0.1) 4px, rgba(255, 255, 255, 0.04)); transform-origin: bottom; }
+.stair-riser b { position: absolute; right: 14px; bottom: -14px; font-size: 96px; font-weight: 800; line-height: 1; color: rgba(255, 255, 255, 0.07); }
+.stair-flag { position: absolute; left: 22px; top: -46px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--orange); color: var(--ink); font-size: 13px; font-weight: 800; white-space: nowrap; box-shadow: 0 12px 28px -12px rgba(255, 84, 0, 0.8); }
+.stair-flag svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.js .stairs .stair-riser { transform: scaleY(0); transition: transform 0.6s var(--ease) calc(var(--i) * 0.14s); }
+.js .stairs .stair-card, .js .stairs .stair-flag { opacity: 0; transform: translateY(18px); transition: opacity 0.5s var(--ease) calc(var(--i) * 0.14s + 0.25s), transform 0.5s var(--ease) calc(var(--i) * 0.14s + 0.25s); }
+.js .stairs.is-in .stair-riser, .js .stairs.is-in .stair-card, .js .stairs.is-in .stair-flag { transform: none; opacity: 1; }
+@media (max-width: 900px) {
+  .stairs { grid-template-columns: minmax(0, 1fr); gap: 10px; padding-top: 0; }
+  .stairs li { display: grid; grid-template-columns: calc(16px + var(--i) * 16px) minmax(0, 1fr); column-gap: 12px; }
+  .stair-riser { order: -1; height: auto; margin: 0; border-radius: 4px 10px 10px 4px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1) calc(100% - 4px), var(--orange) calc(100% - 4px)); transform-origin: left; }
+  .stair-riser b { display: none; }
+  .stair-card { min-height: 0; padding: 18px; border-radius: 16px; }
+  .stair-n { font-size: 30px; }
+  .stairs h3 { font-size: 17px; } .stairs p { font-size: 14px; }
+  .stair-flag { position: static; grid-column: 2; justify-self: start; margin-bottom: 4px; }
+  .stairs .stair-card { grid-column: 2; }
+  .stairs .stair-riser { grid-column: 1; grid-row: 1 / span 2; }
+  .js .stairs .stair-riser { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) { .js .stairs .stair-riser, .js .stairs .stair-card, .js .stairs .stair-flag { transform: none; opacity: 1; transition: none; } }
+
+/* iter-122: four layers as an isometric stack — foundation (RBI route) at the bottom, your stocks on top. Each slab is a
+   flat square tilted into isometric view; layered edge shadows give it thickness. */
+.vault-wrap { grid-template-columns: minmax(0, 460px) minmax(0, 1fr); }
+.stack { position: relative; height: 470px; }
+.slab { position: absolute; left: 50%; top: calc(250px - var(--k) * 64px); width: 230px; height: 230px; margin: -115px 0 0 -115px; transition: transform 0.45s var(--ease), opacity 0.6s var(--ease); }
+.slab::before { content: ''; position: absolute; inset: 0; border-radius: 22px; transform: rotateX(58deg) rotateZ(-45deg); background: var(--face); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+  1px 1px 0 var(--edge), 2px 2px 0 var(--edge), 3px 3px 0 var(--edge), 4px 4px 0 var(--edge), 5px 5px 0 var(--edge), 6px 6px 0 var(--edge), 7px 7px 0 var(--edge), 8px 8px 0 var(--edge),
+  9px 9px 0 var(--edge), 10px 10px 0 var(--edge), 11px 11px 0 var(--edge), 12px 12px 0 var(--edge), 22px 30px 40px rgba(4, 33, 63, 0.18); transition: box-shadow 0.3s, filter 0.3s; }
+.slab i { position: absolute; left: 50%; top: 50%; translate: -50% -50%; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.92); color: var(--ink); font: 800 12px var(--font); letter-spacing: 0.04em; white-space: nowrap; box-shadow: 0 6px 16px -8px rgba(4, 33, 63, 0.4); }
+.slab i b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: #fff; font-size: 11px; }
+.s1 { --face: #eef3fb; --edge: #c8d5e9; } .s2 { --face: #dfe8f6; --edge: #b4c6e1; } .s3 { --face: #c9d8ef; --edge: #98b1d6; }
+.s4 { --face: linear-gradient(135deg, #11407c, #072d5e); --edge: #041f42; }
+.s4::before { box-shadow: inset 0 0 0 2px var(--orange), 1px 1px 0 var(--edge), 2px 2px 0 var(--edge), 3px 3px 0 var(--edge), 4px 4px 0 var(--edge), 5px 5px 0 var(--edge), 6px 6px 0 var(--edge), 7px 7px 0 var(--edge),
+  8px 8px 0 var(--edge), 9px 9px 0 var(--edge), 10px 10px 0 var(--edge), 11px 11px 0 var(--edge), 12px 12px 0 var(--edge), 0 0 60px rgba(255, 84, 0, 0.35); }
+.s4 i { background: var(--orange); }
+.s4 i b { background: var(--ink); }
+.stack[data-hl="1"] .s1, .stack[data-hl="2"] .s2, .stack[data-hl="3"] .s3, .stack[data-hl="4"] .s4 { transform: translateY(-18px); }
+.stack[data-hl] .slab:not(.s4)::before { filter: saturate(0.9); }
+.stack[data-hl="1"] .s1::before, .stack[data-hl="2"] .s2::before, .stack[data-hl="3"] .s3::before { box-shadow: inset 0 0 0 2px var(--orange), 1px 1px 0 var(--edge), 2px 2px 0 var(--edge), 3px 3px 0 var(--edge), 4px 4px 0 var(--edge), 5px 5px 0 var(--edge), 6px 6px 0 var(--edge), 7px 7px 0 var(--edge), 8px 8px 0 var(--edge), 9px 9px 0 var(--edge), 10px 10px 0 var(--edge), 11px 11px 0 var(--edge), 12px 12px 0 var(--edge), 22px 30px 40px rgba(4, 33, 63, 0.22); }
+.js .layers .slab { opacity: 0; transform: translateY(-50px); transition-delay: calc(var(--k) * 0.15s); }
+.js .layers.is-in .slab { opacity: 1; transform: none; }
+.js .layers.is-in .stack[data-hl="1"] .s1, .js .layers.is-in .stack[data-hl="2"] .s2, .js .layers.is-in .stack[data-hl="3"] .s3, .js .layers.is-in .stack[data-hl="4"] .s4 { transform: translateY(-18px); transition-delay: 0s; }
+@media (max-width: 900px) {
+  .vault-wrap { grid-template-columns: minmax(0, 1fr); }
+  .stack { height: 360px; transform: scale(0.78); transform-origin: top center; margin-bottom: -60px; }
+}
+@media (prefers-reduced-motion: reduce) { .js .layers .slab { opacity: 1; transform: none; transition: none; } }
+/* iter-122: the calculator spans the stage under the phone: amount on the left, what it buys on the right. */
+@media (min-width: 901px) {
+  .buy-grid .calc { max-width: 1100px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 56px;
+    grid-template-areas: "top top" "input result" "hint result" "chips label" "go pick" "fine fine"; align-items: start; padding: 34px 40px 28px; }
+  .calc-top { grid-area: top; } .calc-input { grid-area: input; } .calc-hint { grid-area: hint; } .calc-chips { grid-area: chips; }
+  .calc-go { grid-area: go; margin-top: 18px; } .calc-result { grid-area: result; margin: 18px 0 0; }
+  .calc-pick-label { grid-area: label; margin-top: 16px; } .calc-pick { grid-area: pick; } .calc > .fine { grid-area: fine; margin-top: 8px; }
+}
+/* stack spacing: wider gaps so every slab shows its front edge; lower slabs carry their label on that edge */
+.stack { height: 540px; }
+.slab { top: calc(320px - var(--k) * 88px); }
+.slab:not(.s4) i { top: 79%; }
+@media (max-width: 900px) { .stack { height: 470px; margin-bottom: -90px; } }
+.stack { height: 600px; } .slab { top: calc(380px - var(--k) * 88px); } /* the top slab stays inside the section */
+@media (max-width: 900px) { .stack { height: 600px; margin-bottom: -130px; } }
+@media (max-width: 900px) { .stack { height: 520px; margin-bottom: -150px; } }
+/* iter-123: four layers as the route your money takes. Rupees on the left, the US market on the right, four regulated
+   checkpoints on one rail between them. On reveal an orange dot runs the rail once; each shield lights as it passes. */
+.gates { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; padding: 32px 28px 30px; border-radius: 28px; background: #fff; box-shadow: var(--card-shadow); --rail-y: 52px; }
+.gate-row { position: relative; z-index: 1; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 120px repeat(4, minmax(0, 1fr)) 120px; gap: 16px; align-items: stretch; }
+.gate-end { display: grid; justify-items: center; align-content: start; gap: 4px; padding-top: 2px; text-align: center; }
+.gate-ico { width: 40px; height: 40px; margin: 0 0 10px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: #fff; font-size: 18px; font-weight: 800; box-shadow: 0 0 0 6px #fff; }
+.gate-ico svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.gate-finish .gate-ico { background: #fff; color: var(--orange-text); box-shadow: 0 0 0 6px #fff, inset 0 0 0 2px var(--line-strong); transition: background-color 0.4s, color 0.4s, box-shadow 0.4s; }
+.gate-end b { font-size: 15px; color: var(--ink); } .gate-end small { font-size: 12px; color: var(--muted); }
+.gate { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 0 18px 18px; border-radius: 20px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); text-align: left; }
+.gate-check { width: 40px; height: 40px; margin: 2px 0 14px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--muted); box-shadow: 0 0 0 6px var(--bg), inset 0 0 0 2px var(--line-strong); transition: background-color 0.35s var(--ease), color 0.35s, box-shadow 0.35s; }
+.gate-check svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.gate-n { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.gate-name { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); }
+.gate-full { font-size: 13px; font-weight: 700; color: var(--orange-text); }
+.gate p { margin: 6px 0 12px; font-size: 14px; line-height: 1.55; color: var(--slate); }
+.gate-where { margin-top: auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 6px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 700; color: var(--navy); }
+.gate-where .flag { width: 18px; height: 12px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.12); }
+.layer-core { background: #fff4ec; box-shadow: inset 0 0 0 1px rgba(255, 84, 0, 0.35); }
+.layer-core .gate-check { box-shadow: 0 0 0 6px #fff4ec, inset 0 0 0 2px var(--line-strong); }
+/* the rail: dashed track, an orange fill that grows across it, and the travelling dot */
+.gate-rail { position: absolute; z-index: 0; left: 88px; right: 88px; top: calc(var(--rail-y) - 1px); height: 2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 12px); }
+.gate-rail::after { content: ''; position: absolute; inset: 0; background: var(--orange); transform-origin: left; transform: scaleX(1); }
+.gate-rail i { position: absolute; top: 50%; left: 100%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 5px rgba(255, 84, 0, 0.2); opacity: 0; }
+.gate.is-lit .gate-check, .gates:not(.is-run) .gate-check { background: var(--orange); color: var(--ink); box-shadow: 0 0 0 6px var(--bg), 0 8px 18px -8px rgba(255, 84, 0, 0.8); }
+.gates:not(.is-run) .layer-core .gate-check, .layer-core.is-lit .gate-check { box-shadow: 0 0 0 6px #fff4ec, 0 8px 18px -8px rgba(255, 84, 0, 0.8); }
+.gates.is-done .gate-finish .gate-ico, .gates:not(.is-run) .gate-finish .gate-ico { background: var(--orange); color: var(--ink); box-shadow: 0 0 0 6px #fff, 0 8px 18px -8px rgba(255, 84, 0, 0.8); }
+/* the run (main.js adds .is-run before it starts, .is-lit per checkpoint, .is-done at the end) */
+.gates.is-run .gate-rail::after { transform: scaleX(var(--run, 0)); }
+.gates.is-run .gate-rail i { left: calc(var(--run, 0) * 100%); opacity: 1; }
+.gates.is-done .gate-rail i { opacity: 0; transition: opacity 0.4s; }
+@media (max-width: 900px) {
+  .gates { padding: 22px 16px; border-radius: 22px; }
+  .gate-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .gate-end { grid-template-columns: 40px 1fr; justify-items: start; text-align: left; column-gap: 14px; row-gap: 0; align-items: center; }
+  .gate-ico { grid-row: span 2; margin: 0; }
+  .gate { display: grid; grid-template-columns: 40px 1fr; column-gap: 14px; padding: 16px 16px 16px 0; background: none; box-shadow: none; }
+  .gate > :not(.gate-check) { grid-column: 2; }
+  .gate-check { grid-row: 1 / span 6; margin: 0; }
+  .layer-core { background: none; box-shadow: none; }
+  .layer-core .gate-check { box-shadow: 0 0 0 6px #fff, inset 0 0 0 2px var(--line-strong); }
+  .gates:not(.is-run) .layer-core .gate-check, .layer-core.is-lit .gate-check { box-shadow: 0 0 0 6px #fff, 0 8px 18px -8px rgba(255, 84, 0, 0.8); }
+  .gate.is-lit .gate-check, .gates:not(.is-run) .gate-check { box-shadow: 0 0 0 6px #fff, 0 8px 18px -8px rgba(255, 84, 0, 0.8); }
+  .gate-name { font-size: 22px; }
+  .gate-rail { left: 36px; right: auto; top: 42px; bottom: 42px; width: 2px; height: auto; background: repeating-linear-gradient(180deg, var(--line-strong) 0 6px, transparent 6px 12px); }
+  .gate-rail::after { transform-origin: top; transform: scaleY(1); }
+  .gates.is-run .gate-rail::after { transform: scaleY(var(--run, 0)); }
+  .gate-rail i { left: 50%; top: 0; margin: -7px 0 0 -7px; }
+  .gates.is-run .gate-rail i { left: 50%; top: calc(var(--run, 0) * 100%); }
+}
+@media (max-width: 900px) { .gate-where { justify-self: start; } } /* country pills hug their text in the stacked layout */
