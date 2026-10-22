@@ -214,3 +214,8 @@
 html { scroll-padding-top: 128px; }
 .hero-in > *, .close-in > * { min-width: 0; }
 .stbl td.num { white-space: nowrap; }
+/* phones: the company name is the Invest link (no clipped last column); the market strip scrolls away */
+.co { color: var(--ink); text-decoration: none; }
+.co:hover { color: var(--orange-text); }
+@media (max-width: 900px) { .mstrip { position: static; } html { scroll-padding-top: 76px; } }
+@media (max-width: 560px) { .inv-col, .stbl thead th:last-child { display: none; } .co::after { content: '›'; margin-left: auto; color: var(--orange-text); font-weight: 800; } .co { width: 100%; } }

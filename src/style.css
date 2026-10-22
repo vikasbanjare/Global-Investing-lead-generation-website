@@ -1441,4 +1441,5 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .vswitch a { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--slate); text-decoration: none; }
 .vswitch a[aria-current] { background: var(--ink); color: #fff; }
 .hero-switch { bottom: 52px; }
-@media (max-width: 900px) { .vswitch { bottom: 84px; } .hero-switch { bottom: 124px; } }
+@media (max-width: 900px) { .vswitch { bottom: 84px; } }
+@media (max-width: 640px) { .vswitch { position: static; width: max-content; margin: 0 auto 96px; } } /* phones: at the end of the page, clear of the dock */

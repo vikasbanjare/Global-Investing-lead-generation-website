@@ -18,7 +18,7 @@ const label = await page.evaluate(() => {
   const m = /translate3d\(([\d.]+)px, ([\d.]+)px/.exec(document.querySelector('.ws-label').style.transform);
   return { x: (Number(m[1]) / canvas.clientWidth) * 100, y: ((Number(m[2]) - canvas.offsetTop) / canvas.clientHeight) * 100 };
 });
-await page.addStyleTag({ content: '.ws-label, .hero-fade, .hero-copy, .nav, .dock { visibility: hidden !important; }' });
+await page.addStyleTag({ content: '.ws-label, .hero-fade, .hero-copy, .nav, .dock, .vswitch, .hero-switch, .map-ctrl, .preview-banner { visibility: hidden !important; }' });
 const png = await page.locator('.hero-canvas').screenshot({ type: 'png', omitBackground: true });
 const webp = await page.evaluate(async (b64) => {
   const img = new Image();

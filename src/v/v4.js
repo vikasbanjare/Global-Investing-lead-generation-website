@@ -159,9 +159,9 @@ const body = $('#stbl');
 function render() {
   const rows = ALL.filter((r) => r.s === sector);
   if (sortKey) rows.sort((a, b) => (a[sortKey] - b[sortKey]) * dir);
-  body.innerHTML = rows.map((r) => `<tr><th scope="row"><span class="co">${logo(r.l, r.t)}${esc(r.n)}</span></th><td class="k">${r.t}</td>
+  body.innerHTML = rows.map((r) => `<tr><th scope="row"><a class="co" href="#lead" aria-label="Invest in ${esc(r.n)} (${r.t})">${logo(r.l, r.t)}${esc(r.n)}</a></th><td class="k">${r.t}</td>
     <td class="r num">${usd.format(r.px)}</td><td class="r num ${r.ch >= 0 ? 'up' : 'down'}">${pct(r.ch)}</td>
-    <td class="r"><a class="inv" href="#lead" aria-label="Invest in ${esc(r.n)}">Invest${icon.go}</a></td></tr>`).join('');
+    <td class="r inv-col"><a class="inv" href="#lead" tabindex="-1" aria-hidden="true">Invest${icon.go}</a></td></tr>`).join('');
 }
 $$('.filters button').forEach((b) => b.addEventListener('click', () => {
   $$('.filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
