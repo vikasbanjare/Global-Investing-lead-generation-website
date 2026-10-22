@@ -1,0 +1,39 @@
+/* v6 · Peach glow (light). Warm white page; soft orange glows; navy type; exact orange for accents and CTAs. */
+:root { --bg: #fffaf6; --card: #ffffff; --card-line: rgba(7, 45, 94, 0.08); --panel: linear-gradient(160deg, #fff1e6 0%, #ffffff 60%, #fff6ef 100%); --panel-2: linear-gradient(160deg, #fff6ef, #fff); --glow: rgba(255, 84, 0, 0.42); }
+.vh { background: rgba(255, 250, 246, 0.86); }
+.hero { position: relative; padding: 76px 0 0; overflow: hidden; text-align: center; }
+.glow { position: absolute; border-radius: 50%; pointer-events: none; }
+.g1 { left: 50%; top: 380px; width: 1200px; height: 760px; translate: -50% 0; background: radial-gradient(closest-side, rgba(255, 84, 0, 0.38), rgba(255, 140, 80, 0.16) 55%, transparent); }
+.g2 { right: -10%; top: -220px; width: 700px; height: 560px; background: radial-gradient(closest-side, rgba(255, 176, 122, 0.4), transparent); }
+.hero-copy { position: relative; display: flex; flex-direction: column; align-items: center; }
+.hero h1 { font-size: clamp(44px, 5.8vw, 82px); line-height: 1; font-weight: 800; letter-spacing: -0.045em; color: var(--navy); max-width: 13em; }
+.hero h1 span { display: block; background: var(--orange-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lead { margin: 20px auto 0; max-width: 36em; font-size: 19px; line-height: 1.55; color: var(--slate); }
+.points { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; margin-top: 18px; }
+.points li { display: flex; align-items: center; gap: 8px; font-size: 14.5px; color: var(--ink); }
+.points .i-check { padding: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--orange-grad); color: #fff; }
+.form-title { margin: 28px 0 12px; font-size: 14px; font-weight: 800; color: var(--navy); }
+.hero .capture { width: min(540px, 100%); box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.08), 0 30px 60px -24px rgba(255, 84, 0, 0.4); }
+.hero .capture-note { margin-inline: auto; }
+.hero-how { margin-top: 14px; }
+.stage { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 30px; margin-top: 60px; height: 540px; }
+.ph { margin: 0; display: grid; justify-items: center; gap: 14px; animation: float 8s ease-in-out infinite; }
+.ph figcaption { font-size: 11px; font-weight: 800; letter-spacing: 0.26em; text-transform: uppercase; color: var(--slate); }
+.ph-l { transform: translateY(80px) rotate(-7deg); animation-delay: -2s; } .ph-r { transform: translateY(80px) rotate(7deg); animation-delay: -4s; }
+.ph-c { z-index: 1; } .ph-c .dphone { width: 296px; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.7), inset 0 0 0 4px #1b2230, 0 70px 120px -40px rgba(255, 84, 0, 0.6); }
+@keyframes float { 50% { translate: 0 -12px; } }
+.s-hl { position: relative; z-index: 2; margin-top: -60px; }
+.hl-grid li { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(16px); }
+.hl-grid b { background: var(--orange-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.icon-wall { background: radial-gradient(60% 80% at 50% 0%, rgba(255, 84, 0, 0.14), transparent 70%), linear-gradient(160deg, #fff6ef, #fff); }
+.screens { background: radial-gradient(60% 70% at 50% 100%, rgba(255, 84, 0, 0.18), transparent 70%), linear-gradient(180deg, #fff, #fff4ec); }
+.close-panel { background: radial-gradient(70% 90% at 90% 100%, rgba(255, 84, 0, 0.3), transparent 70%), linear-gradient(160deg, #fff, #fff1e6); }
+.wordmark { position: relative; padding: 0 0 60px; overflow: hidden; text-align: center; }
+.wordmark p { margin: 0; white-space: nowrap; font-size: clamp(64px, 15.5vw, 250px); font-weight: 800; letter-spacing: -0.06em; line-height: 0.9;
+  background: linear-gradient(180deg, #ff6d24 0%, rgba(255, 84, 0, 0.55) 55%, rgba(255, 84, 0, 0.05) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.vf { background: #fff4ec; }
+@media (max-width: 900px) {
+  .stage { height: auto; margin-top: 40px; } .ph-l, .ph-r { display: none; } .ph-c .dphone { width: 260px; }
+  .s-hl { margin-top: 24px; }
+}
+@media (max-width: 560px) { .points { display: grid; justify-content: start; text-align: left; gap: 8px; width: 100%; } }

@@ -1468,3 +1468,17 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .journey li:last-child .j-ico { box-shadow: 0 0 0 8px var(--bg), var(--orange-glow); }
 @keyframes ex-light { to { background: var(--orange); color: #fff; } }
 .pie.is-empty { opacity: 1; } .pie.is-empty i { opacity: 0.45; }
+
+/* ===== iter-138: the closing band is light (user: light, not dark) — peach glow, navy type, white form card ===== */
+.how-dark, .cta { background: radial-gradient(60% 90% at 50% 110%, rgba(255, 84, 0, 0.32), transparent 70%), radial-gradient(40% 60% at 90% 0%, rgba(255, 176, 122, 0.3), transparent 70%), linear-gradient(180deg, #fff, #fff4ec); color: var(--ink); }
+.cta { box-shadow: inset 0 0 0 1px rgba(255, 84, 0, 0.12), 0 50px 90px -60px rgba(255, 84, 0, 0.45); }
+.cta .h2 { color: var(--navy); }
+.cta .lead { color: var(--slate); }
+.cta .eyebrow { color: var(--orange-text); }
+.cta-capture { box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.1), 0 30px 60px -28px rgba(255, 84, 0, 0.5); }
+.cta .capture-error { color: var(--down); }
+.cta-benefits { color: var(--navy); }
+.cta .capture-note, .cta-fine { color: var(--muted); }
+.cta .capture-note a { color: inherit; }
+.cta-expert { color: var(--navy); }
+.cta :focus-visible { outline-color: var(--navy); }

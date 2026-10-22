@@ -152,7 +152,7 @@ function setupMotion() {
 }
 
 // A quiet corner switcher between the live design and the variations (design-review aid, not part of any design).
-export const VERSIONS = [['', 'Live'], ['v2/', 'v2'], ['v3/', 'v3'], ['v4/', 'v4'], ['v5/', 'v5']];
+export const VERSIONS = [['', 'Live'], ['v2/', 'v2'], ['v3/', 'v3'], ['v4/', 'v4'], ['v5/', 'v5'], ['v6/', 'v6'], ['v7/', 'v7'], ['v8/', 'v8'], ['v9/', 'v9']];
 export function switcher(current) {
   const nav = document.createElement('nav');
   nav.className = 'vswitch';
@@ -188,4 +188,13 @@ export function boot(variant, html) {
   setupMotion();
   setupDock();
   switcher(variant);
+}
+
+// Dark themes: swap the logo's navy tagline for white (the orange mark stays exact).
+export async function lightLogo() {
+  try {
+    const svg = await (await fetch(`${BASE}maps-logo.svg`)).text();
+    const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/#072d5e/gi, '#ffffff'))}`;
+    $$('img.brand').forEach((img) => { img.src = url; });
+  } catch { /* keep the default logo */ }
 }

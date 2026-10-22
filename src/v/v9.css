@@ -1,0 +1,62 @@
+/* v9 · Sky. Light sky blues from the brand navy's family, white clouds, frosted glass; exact orange for CTAs. */
+:root { --bg: #f4f8ff; --card: rgba(255, 255, 255, 0.78); --card-line: rgba(255, 255, 255, 0.9); --sky: linear-gradient(180deg, #8fb6ec 0%, #b9d3f5 35%, #e4eefc 70%, #f4f8ff 100%);
+  --panel: rgba(255, 255, 255, 0.6); --panel-2: rgba(255, 255, 255, 0.7); --glow: rgba(31, 95, 214, 0.35); --r: 30px; }
+.vh { background: rgba(143, 182, 236, 0.35); backdrop-filter: blur(14px); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4); }
+.glass, .b-card, .o-card, .w-panel, .who-card, .route, .charge, .taxc, .window, .hl-grid li, .whyus li, .panel { backdrop-filter: blur(18px) saturate(1.3); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 30px 60px -40px rgba(31, 75, 140, 0.5); }
+.charge.is-hot { box-shadow: inset 0 0 0 2px var(--orange), 0 40px 70px -40px rgba(255, 84, 0, 0.5); background: rgba(255, 255, 255, 0.9); }
+.clouds { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cl { position: absolute; top: calc(6% + (var(--i) * 37 % 60) * 1%); left: calc((var(--i) * 23 % 100) * 1% - 10%); width: calc(260px + (var(--i) * 53 % 160) * 1px); height: 90px; border-radius: 999px; background: #fff; opacity: 0.85; filter: blur(14px);
+  box-shadow: 60px -30px 0 10px #fff, -50px -18px 0 6px #fff; animation: driftc calc(60s + var(--i) * 9s) linear infinite; animation-delay: calc(var(--i) * -11s); }
+@keyframes driftc { from { transform: translateX(-20vw); } to { transform: translateX(120vw); } }
+
+/* hero */
+.hero { position: relative; padding: 70px 0 0; background: var(--sky); overflow: hidden; }
+.hero-in { position: relative; z-index: 1; display: flex; justify-content: center; }
+.hero-card { max-width: 760px; padding: 48px 52px; border-radius: 36px; background: rgba(255, 255, 255, 0.6); text-align: center; display: flex; flex-direction: column; align-items: center; }
+.hero h1 { font-size: clamp(40px, 5vw, 70px); line-height: 1.02; font-weight: 800; letter-spacing: -0.045em; color: var(--navy); }
+.hero h1 span { display: block; font-weight: 500; color: #1f4f9a; }
+.hero .lead { margin: 16px auto 0; max-width: 34em; font-size: 18px; line-height: 1.55; color: var(--slate); }
+.points { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; margin-top: 16px; }
+.points li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); }
+.points .i-check { padding: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--orange-grad); color: #fff; }
+.form-title { margin: 24px 0 10px; font-size: 14px; font-weight: 800; color: var(--navy); }
+.hero .capture { width: min(520px, 100%); } .hero .capture-note { margin-inline: auto; }
+.hero-how { margin-top: 12px; }
+.land { position: relative; margin-top: -60px; height: 420px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%); mask-image: linear-gradient(180deg, transparent 0%, #000 30%); }
+.land img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+
+/* sky bands behind some sections */
+.sky-band { position: relative; background: linear-gradient(180deg, #f4f8ff 0%, #cfe0f8 30%, #b9d3f5 60%, #f4f8ff 100%); overflow: hidden; }
+.sky-band > .sec, .sky-band > .s-closing { position: relative; z-index: 1; }
+.icon-wall { background: rgba(255, 255, 255, 0.45); }
+.screens { background: rgba(255, 255, 255, 0.45); }
+.w-0 { background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(220, 234, 252, 0.8)); } .w-1 { background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 233, 220, 0.8)); } .w-2 { background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(214, 228, 250, 0.8)); }
+.sky-end .s-closing { padding: 80px 0 0; }
+.sky-end .close-panel { background: rgba(255, 255, 255, 0.62); }
+.close-city { width: 100%; max-width: 520px; border-radius: 24px; -webkit-mask-image: radial-gradient(closest-side, #000 60%, transparent); mask-image: radial-gradient(closest-side, #000 60%, transparent); }
+.sky-end .close-art { height: auto; }
+.vf { background: #eaf1fc; }
+@media (max-width: 900px) {
+  .hero-card { padding: 30px 20px; border-radius: 28px; }
+  .land { height: 260px; margin-top: -30px; }
+}
+@media (prefers-reduced-motion: reduce) { .cl { animation: none; } }
+/* text on the sky always sits on frosted white */
+.sky-band .head { padding: 26px 30px; border-radius: 28px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(14px); }
+.icon-wall .app-icon { padding: 14px 6px; border-radius: 22px; background: rgba(255, 255, 255, 0.82); }
+.screens li { padding: 18px 6px; border-radius: 24px; background: rgba(255, 255, 255, 0.85); }
+.capture-note { color: #4b6189; }
+/* round 2: a compact glass card (copy left, form right) so the city landscape shows */
+.hero { padding-top: 48px; }
+@media (min-width: 901px) {
+  .hero-card { max-width: 1080px; display: grid; grid-template-columns: 1.1fr 1fr; column-gap: 40px; text-align: left; align-items: start; padding: 40px 44px; }
+  .hero-card > .eyebrow, .hero-card > h1, .hero-card > .lead { grid-column: 1; }
+  .hero-card > .points, .hero-card > .form-title, .hero-card > .capture, .hero-card > .capture-error, .hero-card > .capture-sent, .hero-card > .capture-note, .hero-card > .hero-how { grid-column: 2; }
+  .hero-card > .points { grid-row: 1 / span 2; display: grid; justify-content: start; gap: 8px; margin: 0; align-self: end; }
+  .hero-card > .form-title { grid-row: 3; margin-top: 0; } .hero-card > .capture { grid-row: 4; width: 100%; } .hero-card > .capture-note { grid-row: 5; margin-inline: 0; } .hero-card > .hero-how { grid-row: 6; }
+  .hero-card > .lead { grid-row: 3 / span 3; margin: 14px 0 0; }
+  .hero h1 { font-size: clamp(38px, 3.8vw, 56px); }
+  .land { height: 460px; margin-top: -40px; }
+}
+@media (max-width: 560px) { .hero { padding-top: 20px; } .hero-card { padding: 26px 16px; } }
+@media (max-width: 560px) { .points { display: grid; justify-content: start; text-align: left; gap: 8px; width: 100%; } }

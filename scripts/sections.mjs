@@ -12,7 +12,7 @@ const browser = await chromium.launch({ channel: 'chrome', args: ['--use-angle=s
 const page = await browser.newPage({ viewport: { width: Number(w), height: Number(h) } });
 await page.goto(`http://localhost:4181/${pagePath}`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(1500);
-const tops = await page.evaluate(() => [...document.querySelectorAll('main > section, footer')].map((el) => ({ name: (el.id || el.className.split(' ').pop()), top: Math.round(el.getBoundingClientRect().top + scrollY) })));
+const tops = await page.evaluate(() => [...document.querySelectorAll('main > section, main > div > section, footer')].map((el) => ({ name: (el.id || el.className.split(' ').pop()), top: Math.round(el.getBoundingClientRect().top + scrollY) })));
 for (const [i, s] of tops.entries()) {
   await page.evaluate((y) => window.scrollTo(0, y), s.top);
   await page.waitForTimeout(1300); // scroll reveals finish (0.8s + stagger)
