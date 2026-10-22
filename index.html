@@ -124,28 +124,72 @@
           <p class="eyebrow">Fractional investing</p>
           <h2 class="h2">Global investing made simple.</h2>
       </div>
-      <div class="product-copy">
-        <ul class="features">
-          <li><span class="feature-mark" aria-hidden="true">$1</span><div><strong>Fractional stocks &amp; ETFs</strong><span>Buy a portion of eligible US stocks and ETFs from $1.</span></div></li>
-          <li><span class="feature-mark" aria-hidden="true">A–Z</span><div><strong>Find what interests you</strong><span>Search by company, sector or theme before you invest.</span></div></li>
-          <li><span class="feature-mark" aria-hidden="true">USD</span><div><strong>A clearer view of holdings</strong><span>Check US positions, balances and transaction history in your dedicated portal.</span></div></li>
-          <li><span class="feature-mark" aria-hidden="true">₹&thinsp;→&thinsp;$</span><div><strong>INR to USD funding</strong><span>Send INR through your bank. View USD buying power after conversion and credit.</span></div></li>
-        </ul>
+      <div class="explorer">
+        <div class="ex-list" role="tablist" aria-label="Global investing made simple">
+          <button type="button" class="ex-tab" role="tab" id="ex-tab-0" aria-controls="ex-panel" aria-selected="true" tabindex="0" data-k="0"><span class="ex-mark" aria-hidden="true">$1</span><span class="ex-txt"><strong>Fractional stocks &amp; ETFs</strong><span>Buy a portion of eligible US stocks and ETFs from $1.</span></span><i class="ex-bar" aria-hidden="true"></i></button>
+          <button type="button" class="ex-tab" role="tab" id="ex-tab-1" aria-controls="ex-panel" aria-selected="false" tabindex="-1" data-k="1"><span class="ex-mark" aria-hidden="true">A–Z</span><span class="ex-txt"><strong>Find what interests you</strong><span>Search by company, sector or theme before you invest.</span></span><i class="ex-bar" aria-hidden="true"></i></button>
+          <button type="button" class="ex-tab" role="tab" id="ex-tab-2" aria-controls="ex-panel" aria-selected="false" tabindex="-1" data-k="2"><span class="ex-mark" aria-hidden="true">USD</span><span class="ex-txt"><strong>A clearer view of holdings</strong><span>Check US positions, balances and transaction history in your dedicated portal.</span></span><i class="ex-bar" aria-hidden="true"></i></button>
+          <button type="button" class="ex-tab" role="tab" id="ex-tab-3" aria-controls="ex-panel" aria-selected="false" tabindex="-1" data-k="3"><span class="ex-mark" aria-hidden="true">₹→$</span><span class="ex-txt"><strong>INR to USD funding</strong><span>Send INR through your bank. View USD buying power after conversion and credit.</span></span><i class="ex-bar" aria-hidden="true"></i></button>
+        </div>
+        <div class="ex-stage" id="ex-panel" role="tabpanel" aria-labelledby="ex-tab-0">
+          <div class="ex-demo is-on" data-k="0">
+            <p class="ex-k">Invest by amount</p>
+            <p class="ex-amt">$<span id="ex-amt">25</span></p>
+            <label class="ex-range"><span class="sr-only">Amount to invest, in US dollars</span><input type="range" id="ex-slider" min="1" max="500" step="1" value="25"></label>
+            <div class="ex-share"><div class="ex-share-bar"><i id="ex-fill"></i></div><p><b id="ex-qty">0.1378</b> of 1 NVIDIA share <span>· $181.40 a share</span></p></div>
+            <p class="ex-note">Drag to try any amount from $1. Reference price, for illustration.</p>
+          </div>
+          <div class="ex-demo" data-k="1">
+            <div class="ex-search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><span id="ex-typed"></span><i class="ex-caret"></i></div>
+            <div class="ex-chips"><span class="on">Technology</span><span>Healthcare</span><span>Energy</span><span>ETFs</span></div>
+            <ul class="ex-results">
+              <li><span class="logo" data-logo="nvidia"></span><b>NVIDIA</b><small>NVDA · AI chips</small></li>
+              <li><span class="logo" data-logo="microsoft"></span><b>Microsoft</b><small>MSFT · Cloud and AI</small></li>
+              <li><span class="logo" data-logo="google"></span><b>Alphabet</b><small>GOOGL · Search and AI</small></li>
+            </ul>
+          </div>
+          <div class="ex-demo" data-k="2">
+            <div class="ex-port-head"><p class="ex-k">Portfolio value</p><button type="button" class="ex-ccy" id="ex-ccy" aria-pressed="false"><span>USD</span><span>INR</span></button></div>
+            <p class="ex-amt" id="ex-total">$312.40</p>
+            <ul class="ex-hold">
+              <li><span class="logo" data-logo="nvidia"></span><b>NVDA</b><small>0.5513 sh</small><em data-usd="104.20">$104.20</em></li>
+              <li><span class="logo" data-logo="apple"></span><b>AAPL</b><small>0.4308 sh</small><em data-usd="103.40">$103.40</em></li>
+              <li><span class="logo" data-logo="microsoft"></span><b>MSFT</b><small>0.2064 sh</small><em data-usd="104.80">$104.80</em></li>
+            </ul>
+            <p class="ex-note">Cash balance and transaction history sit in the same portal. Illustrative values at ₹84 per dollar.</p>
+          </div>
+          <div class="ex-demo" data-k="3">
+            <div class="ex-fx">
+              <div><p class="ex-k">You send</p><p class="ex-amt">₹25,000</p><small>From your Indian bank</small></div>
+              <span class="ex-arrow" aria-hidden="true"><i></i></span>
+              <div><p class="ex-k">Buying power</p><p class="ex-amt ex-usd">$297.62</p><small>After conversion and credit</small></div>
+            </div>
+            <ol class="ex-steps"><li>Your bank</li><li>Conversion</li><li>GIFT City account</li><li>USD buying power</li></ol>
+            <p class="ex-note">Illustrative, at ₹84 per dollar. Bank and FX charges may apply.</p>
+          </div>
+        </div>
       </div>
       <div class="orders">
       <div class="orders-head">
         <h3 class="orders-title" id="orders-title">Choose how you place your US stocks’ order</h3>
       </div>
-      <div class="table-wrap">
-        <table class="table" role="table" aria-labelledby="orders-title">
-          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Order type</th><th scope="col" role="columnheader">What it does</th><th scope="col" role="columnheader">Best for</th></tr></thead>
-          <tbody role="rowgroup">
-            <tr role="row"><th scope="row" role="rowheader">Market</th><td role="cell" data-label="What it does">Buys or sells at the available market price</td><td role="cell" data-label="Best for">Placing an order quickly</td></tr>
-            <tr role="row"><th scope="row" role="rowheader">Limit</th><td role="cell" data-label="What it does">Executes at your chosen price or better, if available</td><td role="cell" data-label="Best for">More control over price</td></tr>
-            <tr role="row"><th scope="row" role="rowheader">Stop / Stop-limit</th><td role="cell" data-label="What it does">Activates an order after a specified trigger</td><td role="cell" data-label="Best for">Setting conditional instructions</td></tr>
-            <tr role="row"><th scope="row" role="rowheader">Fractional by amount</th><td role="cell" data-label="What it does">Invests a US dollar amount in an eligible security</td><td role="cell" data-label="Best for">Starting without buying a whole share</td></tr>
-          </tbody>
-        </table>
+      <div class="osim">
+        <div class="os-tabs" role="tablist" aria-label="Order types">
+          <button type="button" class="os-tab" role="tab" id="os-tab-0" aria-controls="os-panel" aria-selected="true" tabindex="0" data-k="0" data-do="Buys or sells at the available market price" data-best="Placing an order quickly">Market</button>
+          <button type="button" class="os-tab" role="tab" id="os-tab-1" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="1" data-do="Executes at your chosen price or better, if available" data-best="More control over price">Limit</button>
+          <button type="button" class="os-tab" role="tab" id="os-tab-2" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="2" data-do="Activates an order after a specified trigger" data-best="Setting conditional instructions">Stop / Stop-limit</button>
+          <button type="button" class="os-tab" role="tab" id="os-tab-3" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="3" data-do="Invests a US dollar amount in an eligible security" data-best="Starting without buying a whole share">Fractional by amount</button>
+        </div>
+        <div class="os-panel" id="os-panel" role="tabpanel" aria-labelledby="os-tab-0">
+          <svg class="os-chart" viewBox="0 0 600 220" aria-hidden="true">
+            <g class="os-grid"><path d="M0 55h600M0 110h600M0 165h600"/></g>
+            <g class="os-level"><path id="os-level-line" d=""/><text id="os-level-text" x="8" y="0" text-anchor="start"></text></g>
+            <path class="os-line" id="os-line" d="" pathLength="1"/>
+            <g class="os-fill" id="os-fill"><circle r="7"/><circle class="os-halo" r="14"/><text id="os-fill-text" y="-18" text-anchor="middle"></text></g>
+          </svg>
+          <dl class="os-copy"><div><dt>What it does</dt><dd id="os-do">Buys or sells at the available market price</dd></div><div><dt>Best for</dt><dd id="os-best">Placing an order quickly</dd></div></dl>
+          <p class="ex-note">Illustrative price path, not market data.</p>
+        </div>
       </div>
       <div class="supports" role="group" aria-labelledby="supports-title">
         <h3 class="supports-title" id="supports-title">What does m.Stock support?</h3>
@@ -187,7 +231,7 @@
   </section>
 
   <!-- ============ HOW IT WORKS ============ -->
-  <section class="section how how-dark" id="how">
+  <section class="section how how-light" id="how">
     <div class="wrap">
       <div class="section-head section-head-row">
         <div>
@@ -196,6 +240,13 @@
         </div>
         <a class="btn btn-orange" href="#lead">Start now</a>
       </div>
+
+      <ol class="journey" aria-label="Four steps from India to US markets">
+        <li style="--i:0"><span class="j-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 19.5c.8-3.4 3.3-5.2 6.5-5.2s5.7 1.8 6.5 5.2M18.5 6.5v6M15.5 9.5h6"/></svg></span><span class="j-n">Step 1</span><h3>Open your account</h3><p>Apply online and complete the required checks.</p></li>
+        <li style="--i:1"><span class="j-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 4.5 5.6v5.6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10V5.6Z"/><path d="m8.6 12.2 2.4 2.4 4.5-4.6"/></svg></span><span class="j-n">Step 2</span><h3>Get verified</h3><p>Submit documents and await account approval.</p></li>
+        <li style="--i:2"><span class="j-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18M15.5 15h2.5"/><path d="M7 3.5h10"/></svg></span><span class="j-n">Step 3</span><h3>Add USD buying power</h3><p>Remit INR through your bank for USD conversion.</p></li>
+        <li style="--i:3"><span class="j-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5v15h16"/><path d="m7.5 15 3.5-3.6 3 3 5.2-5.6"/><path d="M15.5 8.8h3.7v3.7"/></svg></span><span class="j-n">Step 4</span><h3>Find, invest, track</h3><p>Explore securities and monitor your US investments.</p></li>
+      </ol>
       <div class="eligibility" role="group" aria-labelledby="elig-title">
         <p class="eligibility-title" id="elig-title">Who can start investing?</p>
         <ul>
@@ -204,12 +255,6 @@
           <li><strong>Who else can apply?</strong><span>Eligible NRIs may apply, subject to residence-country restrictions and verification.</span></li>
         </ul>
       </div>
-      <ol class="stairs" aria-label="Four steps, from opening an account to your first US stock">
-        <li style="--i:0"><div class="stair-card"><span class="stair-n">01</span><h3>Open your account</h3><p>Apply online and complete the required checks.</p></div><span class="stair-riser" aria-hidden="true"><b>1</b></span></li>
-        <li style="--i:1"><div class="stair-card"><span class="stair-n">02</span><h3>Get verified</h3><p>Submit documents and await account approval.</p></div><span class="stair-riser" aria-hidden="true"><b>2</b></span></li>
-        <li style="--i:2"><div class="stair-card"><span class="stair-n">03</span><h3>Add USD buying power</h3><p>Remit INR through your bank for USD conversion.</p></div><span class="stair-riser" aria-hidden="true"><b>3</b></span></li>
-        <li style="--i:3"><span class="stair-flag" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M4 14V2.5M4 3h7.5l-1.6 2.6L11.5 8.2H4"/></svg>Your first US stock</span><div class="stair-card"><span class="stair-n">04</span><h3>Find, invest, track</h3><p>Explore securities and monitor your US investments.</p></div><span class="stair-riser" aria-hidden="true"><b>4</b></span></li>
-      </ol>
 
       <div class="route">
         <div class="lane">
@@ -250,21 +295,15 @@
           <p class="eyebrow">US stocks</p>
           <h2 class="h2">Explore US stocks by sector.</h2>
         </div>
-        <div class="tabs" id="tabs" role="tablist" aria-label="Sectors"></div>
-      </div>
-      <div role="tabpanel" id="rows-panel">
-        <div class="board">
-          <div class="board-top">
-            <p class="board-title">Tonight on Wall Street</p>
-            <p class="board-status"><span class="live-dot" data-market-dot></span><span data-bind="status"></span></p>
+        <div class="sc-side">
+          <p class="sc-status"><span class="live-dot" data-market-dot></span><span data-bind="status"></span></p>
+          <div class="sc-nav">
+            <button type="button" class="sc-btn" data-dir="-1" aria-label="Previous sectors" aria-controls="sector-cols"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5"/></svg></button>
+            <button type="button" class="sc-btn" data-dir="1" aria-label="Next sectors" aria-controls="sector-cols"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
           </div>
-          <table class="board-table">
-            <caption class="sr-only">Popular US stocks in the selected sector</caption>
-            <thead><tr><th scope="col">Company</th><th scope="col">Ticker</th><th scope="col" class="b-px">Price (USD)</th><th scope="col" class="b-ch">1D %</th><th scope="col" class="b-go"><span class="sr-only">Action</span></th></tr></thead>
-            <tbody id="rows"><!-- rendered by main.js (sector tabs) --></tbody>
-          </table>
         </div>
       </div>
+      <div class="sector-cols" id="sector-cols" role="region" aria-label="Popular US stocks by sector" tabindex="0"><!-- rendered by main.js --></div>
       <div class="popular-foot">
         <a class="text-link" href="#lead">View all US stocks &amp; ETFs<svg class="link-go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></a>
         <p class="fine">Illustrative prices, not live quotes. In the app, market prices may be delayed; check the timestamp displayed with each quote. Not investment advice.</p>
@@ -400,6 +439,7 @@
         <nav aria-label="Learn"><h3>Learn</h3><a href="#how">How it works</a><a href="#tax">Tax guide</a><a href="#faq">FAQs</a></nav>
         <nav aria-label="Legal"><h3>Legal</h3><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#disclosures">Disclosures</a><a href="#charges">Schedule of charges</a></nav>
       </div>
+      <div class="footer-mark" aria-hidden="true"></div>
       <p class="footer-fine">IFSCA Broker Dealer Registration No. [REGISTRATION NUMBER] · [REGISTERED OFFICE ADDRESS]. Investments in securities markets are subject to market risks. Read all related documents carefully before investing. Brand names and logos are for identification only and do not imply endorsement. Map data © OpenStreetMap contributors, available under the Open Database License. © 2026 Mirae Asset Capital Markets (IFSC) Private Limited.</p>
     </div>
   </footer>

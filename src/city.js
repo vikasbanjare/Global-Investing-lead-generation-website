@@ -636,7 +636,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     if (!w || !h) return;
     size = { w, h, top: canvas.offsetTop };
     const split = w >= 900 && layout === 'split';
-    zoom = w >= 900 ? (split ? 0.72 : 1) : 0.68; // phones: a little further back at the low angle, so the skyline fits the band // phones/tablets: the city band is small, bring the Financial District closer
+    zoom = w >= 900 ? (split ? 0.67 : 1) : 0.68; // phones: a little further back at the low angle, so the skyline fits the band // phones/tablets: the city band is small, bring the Financial District closer
     renderer.setSize(w, h, false);
     // Desktop: the framing is set for a 1040 px stage; a taller hero extends the view downward (more harbour under the
     // island) at the same scale, instead of shrinking the city.
@@ -701,7 +701,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     const settling = Math.abs(dx) > 0.002 || Math.abs(dy) > 0.002 || Math.abs(ds) > 0.001 || Math.abs(view.z - view.ez) > 0.002 || Math.abs(view.t - view.et) > 0.001;
 
     const az = rig.az + ptr.sx * 0.08;
-    const splitTilt = layout === 'split' && size.w >= 900 ? -0.2 : 0; // split looks more from above, so the city fills its half
+    const splitTilt = layout === 'split' && size.w >= 900 ? -0.04 : 0; // split: nearly the same low angle as A, the skyline against the horizon
     const pol = THREE.MathUtils.clamp(rig.pol + splitTilt + view.et - ptr.sy * 0.035 - scrollEased * 0.16, 0.6, 1.42);
     const r = rig.r * zoom * view.ez + scrollEased * 90;
     camera.position.set(target.x + r * Math.sin(pol) * Math.sin(az), target.y + r * Math.cos(pol), target.z + r * Math.sin(pol) * Math.cos(az));

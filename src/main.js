@@ -62,7 +62,7 @@ const lazyLogos = new IntersectionObserver((entries, obs) => entries.forEach((e)
   e.target.querySelectorAll('[data-logo]').forEach((el) => el.style.setProperty('--logo', `url(${import.meta.env.BASE_URL}logos/${el.dataset.logo}.svg)`));
   obs.unobserve(e.target);
 }), { rootMargin: '400px 0px' });
-document.querySelectorAll('.ticker, .tile-marks, .floaters').forEach((el) => lazyLogos.observe(el));
+document.querySelectorAll('.ticker, .tile-marks, .explorer').forEach((el) => lazyLogos.observe(el));
 
 // ---------- Ticker prices: an illustrative trading tape (no market-data feed is connected; the note on the page says so).
 const PX = REF_PRICES;
@@ -83,6 +83,9 @@ function paintQuote(it, dir) {
 tickerItems.forEach((it) => paintQuote(it));
 let tickerOn = false;
 new IntersectionObserver(([e]) => { tickerOn = e.isIntersecting; }).observe($('.ticker'));
+// Looping CSS animations stop while their section is off-screen (style.css: .is-off).
+const offscreen = new IntersectionObserver((entries) => entries.forEach((e) => e.target.classList.toggle('is-off', !e.isIntersecting)));
+document.querySelectorAll('main > section').forEach((s) => offscreen.observe(s));
 setInterval(() => {
   if (!tickerOn || document.hidden || reducedMotion) return;
   for (const sym of Object.keys(quotes).sort(() => Math.random() - 0.5).slice(0, 3)) { // a few trades per beat, like a real tape
@@ -171,15 +174,15 @@ dockLink.addEventListener('click', (e) => {
   setTimeout(() => input.focus({ preventScroll: true }), reducedMotion ? 0 : 500);
 });
 
-// ---------- Diagrams (money routes, the four-step staircase) reveal when first seen
+// ---------- Diagrams (money routes, the four-step journey) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); laneObserver.unobserve(e.target); } });
 }, { threshold: 0.35 });
-document.querySelectorAll('.lane, .stairs').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
+document.querySelectorAll('.lane, .journey, .sector-cols').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
 const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
-  '.eligibility', '.trust-head', '.tabs', '#rows-panel', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
+  '.eligibility', '.trust-head', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
   '.tax-item', '.faq .split-top > div:first-child', '.faq-item', '.cta-inner > *'].join(', ');
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-up'); revealObserver.unobserve(e.target); } });
@@ -202,71 +205,47 @@ const sectors = {
 };
 const esc = (s) => s.replace(/&/g, '&amp;');
 const WIDE = new Set(['visa', 'goldmansachs']); // wordmarks in square viewBoxes: size their mask by width
-// "Tonight on Wall Street": a split-flap board. Tickers flip letter by letter into place.
 const GO = '<svg class="link-go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
-// Columns follow the reviewed copy: Company, Ticker (split-flap), Price (USD), 1D %, Invest. Prices are illustrative
-// reference values (REF_PRICES) with a stable pseudo day-change per ticker, labelled as such under the board.
+// One light column per sector (after Dhan's sector columns). Each row: Company, Ticker, Price (USD), 1D %, and the whole
+// row is the Invest link. Prices are illustrative reference values (REF_PRICES) with a stable pseudo day-change per ticker.
+const SECTOR_ICON = {
+  Technology: '<rect x="5" y="5" width="10" height="10" rx="2"/><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"/>',
+  Healthcare: '<path d="M10 16.5s-6-3.6-6-8.2A3.3 3.3 0 0 1 10 6.4a3.3 3.3 0 0 1 6 1.9c0 4.6-6 8.2-6 8.2Z"/>',
+  Financials: '<path d="M3 8h14L10 3.5 3 8ZM5 8v6M8.3 8v6M11.7 8v6M15 8v6M3 16.5h14"/>',
+  Consumer: '<path d="M4.5 7h11l-1 9.5h-9L4.5 7ZM7.5 7V5.5a2.5 2.5 0 0 1 5 0V7"/>',
+  Energy: '<path d="M11 2.5 4.5 11.5H10l-1 6 6.5-9H10l1-6Z"/>',
+  ETFs: '<path d="m10 3 7 3.8-7 3.8-7-3.8L10 3ZM3 10.2l7 3.8 7-3.8M3 13.6l7 3.8 7-3.8"/>',
+};
 const dayChange = (t) => { let h = 7; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 997; return ((h % 400) - 160) / 100; };
-function boardRow([name, ticker, logo]) {
-  const cells = [...ticker.padEnd(5)].map((c) => `<span class="flap">${c === ' ' ? '' : c}</span>`).join('');
-  const mark = logo ? `<span class="logo${WIDE.has(logo) ? ' logo-wide' : ''}" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span>` : `<span class="board-mono" aria-hidden="true">${ticker.slice(0, 2)}</span>`;
+function sectorRow([name, ticker, logo], i) {
+  const mark = logo ? `<span class="logo${WIDE.has(logo) ? ' logo-wide' : ''}" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span>` : `<span class="sc-mono">${ticker.slice(0, 2)}</span>`;
   const px = REF_PRICES[ticker], ch = dayChange(ticker);
-  return `<tr>
-    <td class="b-co"><span class="b-co-in">${mark}<span>${esc(name)}</span></span></td>
-    <td class="b-tick"><span class="sr-only">${ticker}</span><span class="flaps" aria-hidden="true" data-t="${ticker.padEnd(5)}">${cells}</span></td>
-    <td class="b-px">${px ? usd.format(px) : '—'}</td>
-    <td class="b-ch"><span class="${ch >= 0 ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span></td>
-    <td class="b-go"><a class="text-link board-go" href="#lead">Invest${GO}</a></td>
-  </tr>`;
+  return `<li style="--i: ${i}"><a class="sc-row" href="#lead" aria-label="Invest in ${esc(name)} (${ticker})">
+    <span class="sc-mark" aria-hidden="true">${mark}</span>
+    <span class="sc-co"><b>${esc(name)}</b><small>${ticker}</small></span>
+    <span class="sc-q"><b class="sc-px">${px ? usd.format(px) : '—'}</b><span class="sc-ch ${ch >= 0 ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span></span>
+    <span class="sc-go" aria-hidden="true">Invest${GO}</span>
+  </a></li>`;
 }
-const FLAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-let boardSeen = false;
-function flipBoard() {
-  if (!boardSeen || reducedMotion) return;
-  document.querySelectorAll('#rows .flaps').forEach((row, r) => {
-    const target = row.dataset.t;
-    row.querySelectorAll('.flap').forEach((cell, i) => {
-      const settle = performance.now() + 260 + i * 80 + r * 110;
-      const spin = setInterval(() => {
-        const done = performance.now() >= settle;
-        cell.textContent = done ? target[i].trim() : FLAP[(Math.random() * FLAP.length) | 0];
-        cell.classList.remove('is-flip'); void cell.offsetWidth; cell.classList.add('is-flip');
-        if (done) clearInterval(spin);
-      }, 55);
-    });
-  });
-}
-new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { boardSeen = true; flipBoard(); obs.disconnect(); } }, { threshold: 0.35 }).observe($('#rows-panel'));
-let sector = 'Technology';
-const tabs = $('#tabs');
-const rows = $('#rows');
-const panel = $('#rows-panel');
-const slug = (name) => `tab-${name.toLowerCase()}`;
-function renderSector(focus = false) {
-  // WAI-ARIA tabs: roving tabindex, arrow/Home/End keys, tab ↔ panel linked.
-  tabs.innerHTML = Object.keys(sectors).map((name) => {
-    const on = name === sector;
-    return `<button type="button" class="tab" role="tab" id="${slug(name)}" data-s="${name}" aria-selected="${on}" aria-controls="rows-panel" tabindex="${on ? 0 : -1}">${name}</button>`;
-  }).join('');
-  panel.setAttribute('aria-labelledby', slug(sector));
-  rows.innerHTML = sectors[sector].map(boardRow).join('');
-  flipBoard();
-  if (focus) document.getElementById(slug(sector)).focus();
-}
-tabs.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (b) { sector = b.dataset.s; renderSector(true); }
-});
-tabs.addEventListener('keydown', (e) => {
-  const names = Object.keys(sectors);
-  const i = names.indexOf(sector);
-  const next = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: names.length - 1 }[e.key];
-  if (next === undefined) return;
-  e.preventDefault();
-  sector = names[(next + names.length) % names.length];
-  renderSector(true);
-});
-renderSector();
+const cols = $('#sector-cols');
+cols.innerHTML = Object.entries(sectors).map(([name, list]) => `<section class="sc" aria-label="${name}">
+  <h3 class="sc-head"><svg viewBox="0 0 20 20" aria-hidden="true">${SECTOR_ICON[name]}</svg>${name}<span class="sc-cols-label" aria-hidden="true">USD · 1D</span></h3>
+  <ul class="sc-list">${list.map(sectorRow).join('')}</ul>
+</section>`).join('');
+// Arrows page one column at a time; they disable at either end (state read on scroll, nothing animates from it).
+const scBtns = document.querySelectorAll('.sc-btn');
+const scEnds = () => {
+  const max = cols.scrollWidth - cols.clientWidth - 2;
+  scBtns[0].disabled = cols.scrollLeft <= 2;
+  scBtns[1].disabled = cols.scrollLeft >= max;
+};
+scBtns.forEach((b) => b.addEventListener('click', () => {
+  const step = cols.querySelector('.sc').offsetWidth + 16;
+  cols.scrollBy({ left: step * Number(b.dataset.dir), behavior: reducedMotion ? 'auto' : 'smooth' });
+}));
+cols.addEventListener('scroll', scEnds, { passive: true });
+addEventListener('resize', scEnds);
+scEnds();
 
 // ---------- FAQ
 // Markup lives in index.html (readable without JS and by crawlers); this only toggles it.
@@ -322,3 +301,102 @@ document.querySelector('.map-ctrl')?.addEventListener('click', (e) => {
   if (!b || !city) return;
   ({ in: () => city.zoomBy(0.85), out: () => city.zoomBy(1 / 0.85), up: () => city.tiltBy(-0.08), down: () => city.tiltBy(0.08), reset: () => city.resetView() })[b.dataset.map]();
 });
+
+// ---------- Global investing made simple: a feature explorer. Four tabs, each with a small live demo; it cycles every
+// 6 s while on screen until the visitor takes over (click, key, slider, hover).
+const ex = document.querySelector('.explorer');
+if (ex) {
+  const tabs = [...ex.querySelectorAll('.ex-tab')], demos = [...ex.querySelectorAll('.ex-demo')], panel = ex.querySelector('.ex-stage');
+  let k = 0, auto = !reducedMotion, timer = 0, typing = 0;
+  const typeSearch = () => { // the search demo types its query
+    clearInterval(typing);
+    const el = ex.querySelector('#ex-typed'), q = 'AI and semiconductors';
+    let i = 0; el.textContent = '';
+    if (reducedMotion) { el.textContent = q; return; }
+    typing = setInterval(() => { el.textContent = q.slice(0, ++i); if (i >= q.length) clearInterval(typing); }, 70);
+  };
+  const show = (n, focus) => {
+    k = n;
+    tabs.forEach((t, i) => { const on = i === n; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; t.classList.toggle('is-auto', on && auto); });
+    demos.forEach((d, i) => d.classList.toggle('is-on', i === n));
+    panel.setAttribute('aria-labelledby', tabs[n].id);
+    if (n === 1) typeSearch();
+    if (focus) tabs[n].focus();
+    clearTimeout(timer);
+    if (auto) timer = setTimeout(() => show((k + 1) % tabs.length), 6000);
+  };
+  const stop = () => { auto = false; clearTimeout(timer); tabs.forEach((t) => t.classList.remove('is-auto')); };
+  tabs.forEach((t, i) => t.addEventListener('click', () => { stop(); show(i); track('feature_tab', { feature: i + 1 }); }));
+  ex.querySelector('.ex-list').addEventListener('keydown', (e) => {
+    const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+    if (d) { e.preventDefault(); stop(); show((k + d + tabs.length) % tabs.length, true); }
+  });
+  ex.addEventListener('pointerenter', stop, { once: true });
+  // Fractional: the slider sets the amount; the bar fills to the fraction of one share.
+  const slider = ex.querySelector('#ex-slider');
+  const paintAmt = () => {
+    const v = Number(slider.value), q = v / REF_PRICES.NVDA;
+    ex.querySelector('#ex-amt').textContent = v;
+    ex.querySelector('#ex-qty').textContent = q < 1 ? q.toFixed(4) : q.toFixed(3);
+    ex.querySelector('#ex-fill').style.transform = `scaleX(${Math.min(1, q % 1 || 1)})`;
+    slider.style.setProperty('--v', `${((v - 1) / 499) * 100}%`);
+  };
+  slider.addEventListener('input', () => { stop(); paintAmt(); });
+  paintAmt();
+  // Holdings: flip USD and INR (illustrative rate).
+  const ccy = ex.querySelector('#ex-ccy');
+  ccy.addEventListener('click', () => {
+    stop();
+    const inr = ccy.getAttribute('aria-pressed') !== 'true';
+    ccy.setAttribute('aria-pressed', String(inr));
+    const fmt = (v) => (inr ? `₹${Math.round(v * 84).toLocaleString('en-IN')}` : `$${v.toFixed(2)}`);
+    ex.querySelectorAll('.ex-hold em').forEach((e) => { e.textContent = fmt(Number(e.dataset.usd)); });
+    ex.querySelector('#ex-total').textContent = fmt(312.4);
+  });
+  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); show(0); } }, { threshold: 0.4 }).observe(ex);
+}
+
+// ---------- Order types: a small simulator. Each order type replays an illustrative price path and marks where the
+// order fills (market: now; limit: when price comes down to your price; stop: when price crosses the trigger).
+const osim = document.querySelector('.osim');
+if (osim) {
+  const tabs = [...osim.querySelectorAll('.os-tab')];
+  const W = 600, H = 220, lo = 176.5, hi = 187, Y = (p) => 18 + ((hi - p) / (hi - lo)) * (H - 36), X = (i, n) => 12 + (i / (n - 1)) * (W - 24);
+  const noise = (i) => Math.sin(i * 0.9) * 0.55 + Math.sin(i * 2.3 + 1) * 0.35;
+  const N = 60;
+  const series = {
+    0: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.8 + i * 0.01),
+    1: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.6 - 3.6 * Math.sin(Math.min(1, i / 40) * Math.PI / 2) + Math.max(0, i - 44) * 0.12),
+    2: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.6 + 4.6 * Math.sin(Math.min(1, i / 42) * Math.PI / 2)),
+    3: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.8 + i * 0.01),
+  };
+  const levels = { 1: [178, 'Your limit $178.00'], 2: [185, 'Trigger $185.00'] };
+  const play = (n) => {
+    const pts = series[n](), level = levels[n];
+    let fi = 40; // market and fractional: the moment you place the order
+    if (n === 1) fi = pts.findIndex((p) => p <= level[0]);
+    if (n === 2) fi = pts.findIndex((p) => p >= level[0]);
+    if (fi < 0) fi = 40;
+    osim.querySelector('#os-line').setAttribute('d', pts.map((p, i) => `${i ? 'L' : 'M'}${X(i, N).toFixed(1)} ${Y(p).toFixed(1)}`).join(' '));
+    const lv = osim.querySelector('#os-level-line'), lt = osim.querySelector('#os-level-text');
+    lv.setAttribute('d', level ? `M0 ${Y(level[0]).toFixed(1)}H600` : ''); lt.textContent = level ? level[1] : ''; lt.setAttribute('y', level ? (Y(level[0]) + (n === 1 ? 18 : -8)).toFixed(1) : 0);
+    const f = osim.querySelector('#os-fill');
+    f.setAttribute('transform', `translate(${X(fi, N).toFixed(1)} ${Y(pts[fi]).toFixed(1)})`);
+    osim.querySelector('#os-fill-text').textContent = n === 2 ? 'Order activates' : n === 3 ? '$25 → 0.1378 sh' : `Filled at $${(n === 1 ? level[0] : pts[fi]).toFixed(2)}`;
+    osim.style.setProperty('--fill-at', `${(fi / (N - 1)).toFixed(3)}`);
+    osim.classList.remove('is-play'); void osim.offsetWidth; osim.classList.add('is-play');
+    tabs.forEach((t, i) => { const on = i === n; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
+    osim.querySelector('#os-do').textContent = tabs[n].dataset.do;
+    osim.querySelector('#os-best').textContent = tabs[n].dataset.best;
+    osim.querySelector('.os-panel').setAttribute('aria-labelledby', tabs[n].id);
+  };
+  tabs.forEach((t, i) => t.addEventListener('click', () => { play(i); track('order_type_tab', { type: t.textContent }); }));
+  osim.querySelector('.os-tabs').addEventListener('keydown', (e) => {
+    const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!d) return; e.preventDefault();
+    const n = (tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true') + d + tabs.length) % tabs.length;
+    play(n); tabs[n].focus();
+  });
+  play(0);
+  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); play(0); } }, { threshold: 0.4 }).observe(osim);
+}
