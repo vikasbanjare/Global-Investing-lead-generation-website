@@ -19,8 +19,9 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gi-site-'));
 const onAuth = () => ({ username: 'x-access-token', password: token });
 
 await git.clone({ fs, http, dir, url: REPO, singleBranch: true, depth: 1, onAuth });
-for (const p of ['src', 'public', 'scripts']) fs.rmSync(path.join(dir, p), { recursive: true, force: true });
-for (const p of ['index.html', 'vite.config.js', 'src', 'public', 'scripts']) {
+const variations = (d) => fs.readdirSync(d).filter((f) => /^v\d+$/.test(f)); // design variations: v2/, v3/ …
+for (const p of ['src', 'public', 'scripts', ...variations(dir)]) fs.rmSync(path.join(dir, p), { recursive: true, force: true });
+for (const p of ['index.html', 'vite.config.js', 'src', 'public', 'scripts', ...variations(src)]) {
   fs.cpSync(path.join(src, p), path.join(dir, p), { recursive: true, filter: (f) => !/[\\/]public[\\/]data[\\/]ortho\./.test(f) });
 }
 if (fs.readdirSync(path.join(dir, 'public/data')).some((f) => f.startsWith('ortho.'))) throw new Error('aerial photo must not ship');

@@ -3,13 +3,17 @@
 // which serves from a subfolder, makes the share image absolute, and marks the page as an unofficial,
 // non-indexed preview (it carries mStock's brand and a phone-number form that sends nothing).
 import { defineConfig } from 'vite';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
+
+// Design variations live beside the live page as their own pages (v2/index.html … → /v2/ …).
+const variations = readdirSync('.').filter((d) => /^v\d+$/.test(d) && existsSync(`${d}/index.html`));
 
 const preview = process.env.PREVIEW === '1';
 const site = process.env.SITE_URL || '';
 
 export default defineConfig({
   base: process.env.BASE_PATH || '/',
+  build: { rollupOptions: { input: Object.fromEntries([['main', 'index.html'], ...variations.map((d) => [d, `${d}/index.html`])]) } },
   // The NYS aerial photo ships only where it exists (it is held back from the hosted preview); skip its requests otherwise.
   define: { __HAS_ORTHO__: JSON.stringify(existsSync('public/data/ortho.webp')) },
   plugins: [{

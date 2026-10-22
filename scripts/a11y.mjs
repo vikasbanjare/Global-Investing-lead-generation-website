@@ -1,6 +1,6 @@
 // Full axe-core audit (all WCAG 2.x A/AA rules + best practices) at 375 and 1440, plus an
 // accessibility-tree dump of the hero and first landmarks for a screen-reader-style review.
-// Usage: npx vite build && node scripts/a11y.mjs
+// Usage: npx vite build && node scripts/a11y.mjs [page path, e.g. v2/]
 import { preview } from 'vite';
 import { chromium } from 'playwright-core';
 import { readFileSync } from 'node:fs';
@@ -10,9 +10,10 @@ const axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/
 const server = await preview({ preview: { port: 4197, strictPort: true }, logLevel: 'silent' });
 const browser = await chromium.launch({ channel: 'chrome' });
 let total = 0;
+const pagePath = process.argv[2] || '';
 for (const [w, h] of [[375, 812], [1440, 900]]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
-  await page.goto('http://localhost:4197/', { waitUntil: 'networkidle' });
+  await page.goto(`http://localhost:4197/${pagePath}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1500); // let entrance animations finish (mid-fade text reads as low contrast)
   await page.addScriptTag({ content: axeSource });
   const res = await page.evaluate(async () => {

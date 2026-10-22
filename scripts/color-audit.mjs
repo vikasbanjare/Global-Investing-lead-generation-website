@@ -5,10 +5,11 @@ import { chromium } from 'playwright-core';
 const server = await preview({ preview: { port: 4370 }, logLevel: 'silent' });
 const b = await chromium.launch({ channel: 'chrome' });
 const out = {};
+const pagePath = process.argv[2] || ''; // e.g. v2/ for a design variation
 for (const w of [1440, 375]) {
   const p = await b.newPage({ viewport: { width: w, height: 900 } });
-  await p.goto('http://localhost:4370/', { waitUntil: 'networkidle' });
-  await p.addStyleTag({ content: '.reveal,.floater{opacity:1!important;scale:1!important;transform:none!important;transition:none!important}' });
+  await p.goto(`http://localhost:4370/${pagePath}`, { waitUntil: 'networkidle' });
+  await p.addStyleTag({ content: '.reveal,.floater,.rv{opacity:1!important;scale:1!important;transform:none!important;transition:none!important}' });
   await p.evaluate(() => document.querySelectorAll('.lane,.journey').forEach((e) => e.classList.add('is-in')));
   out[w] = await p.evaluate(() => {
     const parse = (c) => { const m = c.match(/[\d.]+/g); return m ? m.map(Number) : null; };

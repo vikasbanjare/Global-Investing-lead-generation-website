@@ -1,0 +1,147 @@
+/* Shared base for the design variations: brand font and colours, reset, buttons, lead form, FAQ, reveals,
+   the preview banner and the version switcher. Each variation's stylesheet sets its own look on top.
+   Colour pairings (checked by scripts/color-audit.mjs): orange #ff5400 only behind ink text; orange text on light
+   is #bf3f00; on navy/ink, soft orange #ff8a4c; up/down #177a42 / #c0262d on light. */
+@font-face { font-family: 'Open Sans'; font-style: normal; font-weight: 400 800; font-stretch: 87.5% 100%; font-display: swap; src: url(/fonts/open-sans.woff2) format('woff2'); }
+
+:root {
+  --ink: #04213f;
+  --navy: #072d5e;
+  --slate: #4b6189;
+  --muted: #5a6d92;
+  --line: rgba(7, 45, 94, 0.12);
+  --line-strong: rgba(7, 45, 94, 0.22);
+  --orange: #ff5400;
+  --orange-text: #bf3f00;
+  --orange-soft: #ff8a4c;
+  --cream: #fff4ec;
+  --cloud: #f3f8ff;
+  --tint: #e8f0fc;
+  --up: #177a42;
+  --down: #c0262d;
+  --font: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wrap: 1200px;
+  --gutter: 32px;
+  --page: #fff;
+  --z-header: 40; --z-banner: 60; --z-switch: 61;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scroll-padding-top: 84px; }
+body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--page); -webkit-font-smoothing: antialiased; }
+img, svg { display: block; }
+a { color: var(--navy); }
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+h1, h2, h3 { text-wrap: balance; }
+p, li, dd { text-wrap: pretty; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; border-radius: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: 16px; top: -48px; z-index: 70; padding: 10px 14px; background: var(--navy); color: #fff; border-radius: 8px; text-decoration: none; }
+.skip:focus { top: 16px; }
+.vw { max-width: var(--wrap); margin: 0 auto; padding-inline: var(--gutter); }
+@media (max-width: 640px) { :root { --gutter: 20px; } }
+.num, [data-bind] { font-variant-numeric: tabular-nums; }
+
+/* buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 52px; padding: 0 24px; border: 0; border-radius: 12px; font: 700 16px/1 var(--font); text-decoration: none; cursor: pointer; white-space: nowrap; transition: background-color 0.15s ease-out, transform 0.15s ease-out; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--orange); color: var(--ink); }
+.btn-primary:hover { background: #ff6a1f; color: var(--ink); }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-ink:hover { background: var(--navy); color: #fff; }
+.btn-ghost { background: transparent; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.btn-ghost:hover { background: var(--tint); }
+.btn-sm { height: 42px; padding: 0 18px; font-size: 14px; border-radius: 10px; }
+.i-go { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.i-check { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.tlink { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: none; color: var(--navy); }
+.tlink:hover { color: var(--orange-text); }
+
+/* header (each variation may restyle) */
+.vh { position: sticky; top: 0; z-index: var(--z-header); background: rgba(255, 255, 255, 0.94); backdrop-filter: saturate(1.4) blur(8px); box-shadow: 0 1px 0 var(--line); }
+.vh-in { display: flex; align-items: center; gap: 28px; height: 72px; }
+.vh .brand { width: 112px; height: auto; }
+.vh-nav { display: flex; gap: 26px; margin-left: auto; }
+.vh-nav a { font-size: 15px; font-weight: 600; text-decoration: none; color: var(--ink); }
+.vh-nav a:hover { color: var(--orange-text); }
+@media (max-width: 900px) { .vh-nav { display: none; } .vh-in { justify-content: space-between; height: 64px; } }
+
+/* lead form */
+.capture { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 16px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line-strong), 0 18px 40px -28px rgba(4, 33, 63, 0.45); max-width: 520px; }
+.capture:focus-within { box-shadow: inset 0 0 0 2px var(--navy), 0 18px 40px -28px rgba(4, 33, 63, 0.45); }
+.capture-cc { font-weight: 700; color: var(--ink); padding-right: 10px; border-right: 1px solid var(--line-strong); }
+.capture input { flex: 1; min-width: 0; height: 48px; border: 0; background: none; font: 500 16px var(--font); color: var(--ink); outline: none; }
+.capture input::placeholder { color: var(--muted); }
+.capture-sent { padding: 14px 14px 14px 18px; justify-content: space-between; }
+.capture-sent strong { display: block; font-size: 15px; }
+.capture-sent span { font-size: 13px; color: var(--slate); }
+.capture-error { margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--down); }
+.capture-note { margin-top: 10px; max-width: 520px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.capture-note a { color: inherit; }
+@media (max-width: 480px) {
+  .capture:not(.capture-sent) { flex-wrap: wrap; padding: 8px; }
+  .capture:not(.capture-sent) .capture-cc { padding-left: 8px; }
+  .capture:not(.capture-sent) .btn { width: 100%; }
+}
+
+/* FAQ */
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-item h3 { font-size: inherit; }
+.faq-q { display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 100%; padding: 22px 0; border: 0; background: none; text-align: left; font: 700 17px/1.4 var(--font); color: var(--ink); cursor: pointer; }
+.faq-q::after { content: '+'; flex: none; font-size: 24px; font-weight: 400; line-height: 1; color: var(--orange-text); transition: transform 0.2s ease-out; }
+.faq-q[aria-expanded="true"]::after { transform: rotate(45deg); }
+.faq-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.25s ease-out; }
+.faq-panel > p { overflow: hidden; font-size: 15.5px; line-height: 1.65; color: var(--slate); max-width: 62em; }
+.faq-panel.is-open { grid-template-rows: 1fr; }
+.faq-panel.is-open > p { padding-bottom: 22px; }
+
+/* logos (masked, so they take the text colour) */
+.logo { display: inline-block; width: 22px; height: 22px; background: currentColor; -webkit-mask: var(--logo) center / contain no-repeat; mask: var(--logo) center / contain no-repeat; }
+.logo-wide { width: 34px; -webkit-mask-size: 100% auto; mask-size: 100% auto; }
+.logo-mono { font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
+.up { color: var(--up); } .down { color: var(--down); }
+.live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.live-dot.is-open { background: #1f8a4c; box-shadow: 0 0 0 4px rgba(31, 138, 76, 0.16); }
+
+/* orders table */
+.otable { width: 100%; border-collapse: collapse; font-size: 15px; }
+.otable th, .otable td { padding: 16px 18px; text-align: left; vertical-align: top; border-top: 1px solid var(--line); }
+.otable thead th { border-top: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.otable tbody th { font-weight: 800; color: var(--ink); white-space: nowrap; }
+.otable td { color: var(--slate); }
+@media (max-width: 700px) {
+  .otable thead { display: none; }
+  .otable tr { display: grid; padding: 16px 0; border-top: 1px solid var(--line); }
+  .otable th, .otable td { padding: 2px 0; border: 0; }
+  .otable td:last-child::before { content: 'Best for: '; font-weight: 700; color: var(--ink); }
+}
+
+/* footer */
+.vf { padding: 72px 0 110px; background: var(--cloud); }
+.vf-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 32px; }
+.vf .brand-foot { width: 120px; height: auto; margin-bottom: 14px; }
+.vf p { font-size: 14px; line-height: 1.6; color: var(--slate); max-width: 34em; }
+.vf h3 { margin-bottom: 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange-text); }
+.vf nav a { display: block; padding: 5px 0; font-size: 14px; color: var(--ink); text-decoration: none; }
+.vf nav a:hover { color: var(--orange-text); }
+.vf-fine { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px !important; color: var(--muted) !important; max-width: none !important; }
+@media (max-width: 760px) { .vf-grid { grid-template-columns: 1fr 1fr; } .vf-grid > div:first-child { grid-column: 1 / -1; } }
+
+/* reveal on scroll (one-shot) and off-screen pause */
+.js .rv { opacity: 0; transform: translateY(18px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; transition-delay: calc(var(--i, 0) * 80ms); }
+.js .rv.is-in { opacity: 1; transform: none; }
+.is-off .loop, .is-off .loop::before, .is-off .loop::after { animation-play-state: paused !important; } /* loops only: one-shot entrances must finish */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .rv { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* preview banner (added by vite.config.js on the hosted preview) and the version switcher */
+.preview-banner { position: fixed; left: 12px; bottom: 12px; z-index: var(--z-banner); max-width: calc(100vw - 24px); margin: 0; padding: 8px 12px; border-radius: 10px; font-size: 12px; line-height: 1.4; color: #fff; background: rgba(4, 33, 63, 0.92); }
+.preview-banner b { color: var(--orange-soft); }
+.vswitch { position: fixed; right: 12px; bottom: 12px; z-index: var(--z-switch); display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 0 0 1px var(--line), 0 6px 18px -10px rgba(4, 33, 63, 0.5); }
+.vswitch a { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--slate); text-decoration: none; }
+.vswitch a[aria-current] { background: var(--ink); color: #fff; }
+@media (max-width: 640px) { .preview-banner { left: 8px; right: 8px; bottom: 52px; font-size: 11px; } .vswitch { right: 8px; bottom: 8px; } }

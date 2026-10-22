@@ -1432,3 +1432,13 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .sc-row:hover, .sc-row:focus-visible { color: var(--ink); }
 .sc-q { transition: opacity 0.15s ease-out; }
 @media (hover: hover) { .sc-row:hover .sc-q, .sc-row:focus-visible .sc-q { opacity: 0; } }
+/* the ₹0 account-opening card sits in the centre and carries the highlight (user request, iter-133) */
+.prices-3 .price-zero { position: relative; }
+.prices-3 .price-zero .price-num { font-size: clamp(56px, 6vw, 84px); line-height: 1; }
+.price-tag { align-self: flex-start; margin-bottom: 6px; padding: 5px 12px; border-radius: 999px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; white-space: nowrap; }
+/* design versions switcher (live page and /v2/–/v5/ variations; a review aid) */
+.vswitch { position: fixed; right: 12px; bottom: 12px; z-index: 61; display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.86); box-shadow: 0 0 0 1px var(--line), 0 6px 18px -10px rgba(4, 33, 63, 0.5); }
+.vswitch a { padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: var(--slate); text-decoration: none; }
+.vswitch a[aria-current] { background: var(--ink); color: #fff; }
+.hero-switch { bottom: 52px; }
+@media (max-width: 900px) { .vswitch { bottom: 84px; } .hero-switch { bottom: 124px; } }
