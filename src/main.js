@@ -1,5 +1,5 @@
 import './style.css';
-import { marketStatus, cityTime, usSessionInIST, istClock, formatWait, REF_PRICES } from './market.js';
+import { marketStatus, cityTime, REF_PRICES } from './market.js';
 
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
@@ -14,7 +14,7 @@ const hero = $('.hero');
 const canvas = $('.hero-canvas');
 const label = $('.ws-label');
 const poster = $('.hero-poster');
-const POSTER_LABEL = { x: 0.522, y: 0.625 }; // from render-poster.mjs: fraction of the 1600×840 poster
+const POSTER_LABEL = { x: 0.521, y: 0.496 }; // from render-poster.mjs: fraction of the 1600×840 poster
 function placePosterLabel() {
   // Mirror object-fit: cover on the poster's real box (CSS owns the band's size, zoom and offset).
   const hb = hero.getBoundingClientRect();
@@ -101,52 +101,6 @@ function tick() {
   bind('nyc', cityTime(now, 'America/New_York'));
   bind('status', status.text);
   document.querySelectorAll('#mkt-dot, [data-market-dot]').forEach((d) => d.classList.toggle('is-open', status.open));
-  // Session chart: one US trading day drawn on an India-time axis (opening bell at the left edge, closing bell at the right).
-  const session = usSessionInIST(now);
-  bind('openIST', istClock(session.open));
-  bind('closeIST', istClock(session.close));
-  bind('statusShort', status.open ? `US market open · closes in ${formatWait(status.minutesLeft)}` : `US market opens in ${formatWait(status.minutesLeft)}`);
-  bind('sessionText', `${istClock(session.open)} – ${istClock(session.close)}`);
-  drawSession(session, status);
-}
-// Illustrative intraday path: a seeded random walk (same shape all day), busier at the open and close like real sessions.
-const SESSION_MIN = 390;
-const sessPath = (() => {
-  let seed = Number(new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date()).replaceAll('-', ''));
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const pts = [0];
-  for (let i = 1; i <= 78; i++) { const u = i / 78, vol = 0.6 + 1.6 * (Math.exp(-u * 8) + Math.exp(-(1 - u) * 10)); pts.push(pts[i - 1] + (rnd() - 0.47) * vol); }
-  return pts;
-})();
-const hourLabel = (min) => { const m = ((min % 1440) + 1440) % 1440, h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}${mm ? ':' + String(mm).padStart(2, '0') : ''}\u00a0${h < 12 ? 'am' : 'pm'}`; };
-function drawSession(session, status) {
-  const lo = Math.min(...sessPath), hi = Math.max(...sessPath);
-  const y = (v) => 210 - ((v - lo) / (hi - lo || 1)) * 180;
-  const x = (i) => (i / (sessPath.length - 1)) * 1000;
-  const line = sessPath.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
-  $('#sess-line').setAttribute('d', line);
-  $('#sess-area').setAttribute('d', `${line} L1000 240 L0 240 Z`);
-  $('.session-base').setAttribute('y1', y(sessPath[0]).toFixed(1));
-  $('.session-base').setAttribute('y2', y(sessPath[0]).toFixed(1));
-  // Live: draw up to now. Closed: the whole day, as a typical session.
-  const elapsed = status.open ? SESSION_MIN - status.minutesLeft : SESSION_MIN;
-  const k = Math.min(sessPath.length - 1, Math.round((elapsed / SESSION_MIN) * (sessPath.length - 1)));
-  $('#sess-clip-r').setAttribute('width', x(k).toFixed(1));
-  const pct = (sessPath[k] - sessPath[0]) * 0.18; // ponytail: walk units → % move, tuned to read like a normal day (±1–2%)
-  const up = pct >= 0;
-  $('.session').classList.toggle('is-down', !up);
-  const ch = $('#sess-ch');
-  ch.textContent = `${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%`;
-  ch.className = `tk-ch ${up ? 'up' : 'down'}`;
-  const nowEl = $('#sess-now');
-  nowEl.hidden = !status.open;
-  nowEl.style.left = `${(x(k) / 10).toFixed(2)}%`;
-  nowEl.style.top = `${((y(sessPath[k]) / 240) * 100).toFixed(2)}%`;
-  // Axis: India time in bold on every full hour, New York time beneath.
-  const ticks = [session.open];
-  for (let t = Math.ceil((session.open + 1) / 60) * 60; t <= session.close - 45; t += 60) ticks.push(t); // no hour label crowding the close
-  ticks.push(session.close);
-  $('#sess-axis').innerHTML = ticks.map((t, i) => `<span class="${i % 2 && i !== ticks.length - 1 ? 'minor' : ''}" style="left:${(((t - session.open) / SESSION_MIN) * 100).toFixed(2)}%"><b>${hourLabel(t)}${i ? '' : ' IST'}</b><small>${hourLabel(570 + t - session.open)}${i ? '' : ' ET'}</small></span>`).join('');
 }
 tick();
 setInterval(tick, 20_000);
@@ -154,9 +108,8 @@ setInterval(tick, 20_000);
 // ---------- Lead capture (hero + closing band share the same behaviour)
 // ponytail: front-end only. POST { mobile } to the lead endpoint (CRM) where marked.
 // ---------- Funnel analytics. Events go to window.dataLayer (Google Tag Manager's standard queue), so whichever
-// analytics/A-B tool mStock uses can read them; no third-party script is loaded here. Never includes the number.
+// analytics/A-B tool m.Stock uses can read them; no third-party script is loaded here. Never includes the number.
 window.dataLayer = window.dataLayer || [];
-const calcContext = {}; // set once the visitor uses the calculator: { calc_amount, calc_sym } ride along with the lead
 const track = (event, props = {}) => window.dataLayer.push({ event, ...props, variant: document.documentElement.dataset.variant || 'default' });
 const seen = new Set();
 const leadViews = new IntersectionObserver((entries) => entries.forEach((e) => {
@@ -172,9 +125,9 @@ function setupCapture(formSel, sentSel, errorSel, editSel) {
     const valid = /^[6-9]\d{9}$/.test(digits);
     error.hidden = valid;
     field.setAttribute('aria-invalid', String(!valid));
-    track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: form.id, ...calcContext });
+    track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: form.id });
     if (!valid) { field.focus(); return; }
-    // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile: digits, source: form.id, ...calcContext }) })
+    // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile: digits, source: form.id }) })
     form.hidden = true;
     sent.hidden = false;
   });
@@ -218,214 +171,11 @@ dockLink.addEventListener('click', (e) => {
   setTimeout(() => input.focus({ preventScroll: true }), reducedMotion ? 0 : 500);
 });
 
-// ---------- Buy-by-amount ticket
-const FX = 84; // ponytail: indicative rate; replace with live FX before launch
-const amounts = [10, 25, 50, 100, 500];
-let amount = 25;
-const chips = $('#amounts');
-let shown = amount; // value currently on screen, eased toward `amount`
-function paintAmount(v) {
-  bind('amt', Math.round(v));
-  bind('amtInr', Math.round(v * FX).toLocaleString('en-IN'));
-  bind('fee', (v * 0.0025).toFixed(2));
-  bind('total', (v * 1.0025).toFixed(2));
-}
-function renderAmount() {
-  bind('fx', FX);
-  chips.innerHTML = amounts.map((v) => `<button type="button" class="chip" data-v="${v}" aria-pressed="${v === amount}">$${v}</button>`).join('');
-  const from = shown, to = amount, start = performance.now(), dur = reducedMotion ? 0 : 320;
-  const step = (now) => {
-    const t = dur ? Math.min(1, (now - start) / dur) : 1;
-    shown = from + (to - from) * (1 - Math.pow(1 - t, 3));
-    paintAmount(t === 1 ? to : shown);
-    if (t < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-chips.addEventListener('click', (e) => {
-  const b = e.target.closest('button');
-  if (b) { amount = Number(b.dataset.v); renderAmount(); paintFrac(amount, true); $('#calc-amt').value = String(amount); noteCalc('amount_chip'); }
-});
-paintAmount(amount);
-renderAmount();
-
-// ---------- Fractional calculator: type any amount, pick a company, see the exact fraction (and the phone follows).
-const STOCKS = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq'], ['AAPL', 'Apple', 'apple', 'Nasdaq'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq'], ['META', 'Meta', 'meta', 'Nasdaq'], ['NFLX', 'Netflix', 'netflix', 'Nasdaq'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE']];
-const logoUrl = (logo) => `url(${import.meta.env.BASE_URL}logos/${logo}.svg)`;
-let sel = 'NVDA';
-const qtyText = (q) => (q < 1 ? q.toFixed(4) : q.toFixed(q < 100 ? 3 : 1));
-const ringOffset = (q) => (100 - (q >= 1 && q % 1 < 0.0005 ? 100 : (q % 1) * 100)).toFixed(2); // a whole share closes the ring
-const pick = $('#calc-pick');
-pick.innerHTML = STOCKS.map(([sym, name, logo]) => `<button type="button" role="radio" data-sym="${sym}"><span class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle class="ring-track" cx="60" cy="60" r="52"/><circle class="ring-fill" cx="60" cy="60" r="52" pathLength="100"/></svg><span class="logo" style="--logo: ${logoUrl(logo)}"></span></span><span class="sr-only">${name}, </span><b class="pick-qty"></b> <small>${sym}</small></button>`).join('');
-function paintFrac(v, pop) {
-  const [sym, name, logo, exch] = STOCKS.find((s) => s[0] === sel);
-  const px = REF_PRICES[sym], q = v / px;
-  bind('qty', qtyText(q));
-  bind('qtyUnit', q < 1 ? 'of a share of' : q < 2 ? 'share of' : 'shares of');
-  bind('wholeNote', q >= 1 ? ` · ${Math.floor(q)} whole + ${(q % 1).toFixed(2)}` : '');
-  bind('sym', sym); bind('stockName', name); bind('exch', exch); bind('px', px.toFixed(2));
-  bind('amtFinal', v.toLocaleString('en-US', { maximumFractionDigits: 2 }));
-  bind('amtInrFinal', Math.round(v * FX).toLocaleString('en-IN'));
-  $('#ring-logo').style.setProperty('--logo', logoUrl(logo));
-  $('#ring-main').style.strokeDashoffset = ringOffset(q);
-  pick.querySelectorAll('button').forEach((b) => {
-    const pq = v / REF_PRICES[b.dataset.sym];
-    b.setAttribute('aria-checked', String(b.dataset.sym === sel));
-    b.querySelector('.ring-fill').style.strokeDashoffset = ringOffset(pq);
-    b.querySelector('.pick-qty').textContent = qtyText(pq);
-  });
-  ringTo(sel, pop);
-}
-pick.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { sel = b.dataset.sym; paintFrac(amount, true); noteCalc('calc_pick'); } });
-// Calculator events: what people try is a leading signal for who signs up (and which stocks to lead with).
-const noteCalc = (event) => { Object.assign(calcContext, { calc_amount: amount, calc_sym: sel }); track(event, { amount, sym: sel }); };
-let calcTimer = 0;
-// The calculator's answer leads straight to the form: the amount and stock travel with the lead.
-$('#calc-cta').addEventListener('click', (e) => {
-  e.preventDefault();
-  noteCalc('calc_cta_click');
-  const form = $('#lead'), field = $('#mobile');
-  form.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
-  setTimeout(() => { field.focus({ preventScroll: true }); form.classList.add('is-primed'); setTimeout(() => form.classList.remove('is-primed'), 1600); }, reducedMotion ? 0 : 600);
-});
-// Typed amounts: digits and one decimal point, $1 to $1,000,000 (the order minimum and a sane ceiling).
-const calcIn = $('#calc-amt');
-calcIn.addEventListener('input', () => {
-  const clean = calcIn.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1').replace(/^(\d*\.\d{0,2}).*$/, '$1');
-  if (clean !== calcIn.value) calcIn.value = clean;
-  const v = Math.min(1e6, Number(clean) || 0);
-  const ok = v >= 1;
-  calcIn.closest('.calc').classList.toggle('is-invalid', !ok);
-  $('#calc-hint').lastChild.textContent = ok ? ' · type any amount from $1' : ' · the minimum is $1';
-  if (!ok) return;
-  amount = v; renderAmount(); paintFrac(v);
-  clearTimeout(calcTimer); calcTimer = setTimeout(() => noteCalc('calc_input'), 900); // once the visitor stops typing
-});
-calcIn.addEventListener('blur', () => { if (!(Number(calcIn.value) >= 1)) { calcIn.value = String(amount); calcIn.closest('.calc').classList.remove('is-invalid'); $('#calc-hint').lastChild.textContent = ' · type any amount from $1'; } });
-// ---------- Card ring (after gettakecontrol.app's hero). The selected stock's card sits on the phone, wider than its
-// screen; the other leaders bend away around a tilted 3D cylinder. Each card is cut into thin vertical slices, each
-// turned a little further, so the cards curve with the ring (the reference builds its cards the same way).
-// The intro spins the ring once when it comes into view (the pill names each sector); after that, picking a company in
-// the calculator turns the ring to it.
-const ringEl = $('#ring'), ringStage = $('#ring-stage'), ringPill = $('#ring-pill');
-const RING = [['NVDA', 'NVIDIA', 'nvidia', 'Nasdaq', 'AI chips'], ['AAPL', 'Apple', 'apple', 'Nasdaq', 'Consumer tech'], ['TSLA', 'Tesla', 'tesla', 'Nasdaq', 'EVs'], ['META', 'Meta', 'meta', 'Nasdaq', 'Social'],
-  ['NFLX', 'Netflix', 'netflix', 'Nasdaq', 'Streaming'], ['KO', 'Coca-Cola', 'cocacola', 'NYSE', 'Beverages'], ['GOOGL', 'Alphabet', 'google', 'Nasdaq', 'Search and cloud'], ['AMZN', 'Amazon', 'amazon', 'Nasdaq', 'E-commerce']];
-const STEP = (2 * Math.PI) / RING.length;
-const geo = () => (innerWidth < 900 ? { r: 360, w: 272, h: 142, n: 12 } : { r: 480, w: 360, h: 160, n: 14 }); // card arc (w / r) stays under the 45° step, or neighbours overlap
-let ringGeo = null, rot = 0, rotTarget = 0, spread = 1, ringRaf = 0, scrollTurning = false;
-const cardHTML = ([sym, name, logo, exch]) => `<div class="rcard"><span class="rc-logo"><span class="logo" style="--logo: ${logoUrl(logo)}"></span></span><div class="rc-body"><b class="rc-name">${name}</b><span class="rc-sym">${sym} · ${exch}</span></div><p class="rc-own">You’d own <b class="rc-qty"></b> for <b class="rc-amt"></b>.</p><div class="rc-chips"><span>Price $${REF_PRICES[sym].toFixed(2)}</span><span>From $1</span></div></div>`;
-function buildRing() {
-  ringGeo = geo();
-  const { r, w, h, n } = ringGeo, arc = w / r, d = arc / n, sw = 2 * r * Math.tan(d / 2) + 0.6; // +0.6 px: no hairline seams
-  ringEl.innerHTML = RING.map((c, i) => `<div class="rgroup" data-sym="${c[0]}" style="transform: rotateY(${((i * STEP * 180) / Math.PI).toFixed(3)}deg)">${Array.from({ length: n }, (_, j) => `<div class="rslice" style="width:${sw.toFixed(2)}px;height:${h}px;margin:${-h / 2}px 0 0 ${(-sw / 2).toFixed(2)}px;transform: rotateY(${(((j - (n - 1) / 2) * d * 180) / Math.PI).toFixed(3)}deg) translateZ(${r}px)"><div style="position:absolute;top:0;left:${(-j * (w / n)).toFixed(2)}px;width:${w}px;height:${h}px">${cardHTML(c)}</div></div>`).join('')}</div>`).join('');
-  ringStage.style.setProperty('--ring-r', `${r}px`);
-  fillRing();
-}
-function fillRing() {
-  ringEl.querySelectorAll('.rgroup').forEach((g) => {
-    const q = amount / REF_PRICES[g.dataset.sym];
-    g.querySelectorAll('.rc-qty').forEach((e) => { e.textContent = `${qtyText(q)} sh`; });
-    g.querySelectorAll('.rc-amt').forEach((e) => { e.textContent = usd.format(amount).replace('.00', ''); });
-  });
-}
-function layoutRing() {
-  ringEl.style.transform = `translateZ(${-ringGeo.r}px) rotateX(-4deg) rotateY(${((-rot * 180) / Math.PI).toFixed(3)}deg)`;
-  ringEl.querySelectorAll('.rgroup').forEach((g, i) => {
-    let th = i * STEP - rot; th = Math.atan2(Math.sin(th), Math.cos(th));
-    g.style.transform = `rotateY(${(((rot + th * spread) * 180) / Math.PI).toFixed(3)}deg)`; // spread < 1: cards gather behind the front one
-    g.classList.toggle('is-front', Math.cos(th) > 0.97);
-  });
-}
-function turnRing() {
-  ringRaf = 0;
-  const d = rotTarget - rot;
-  rot = Math.abs(d) < 0.002 || reducedMotion ? rotTarget : rot + d * 0.14;
-  layoutRing();
-  if (rot !== rotTarget) ringRaf = requestAnimationFrame(turnRing);
-}
-function ringTo(sym, pop) {
-  fillRing();
-  const [, , , , sector] = RING.find((s) => s[0] === sym) || RING[0];
-  bind('sector', sector);
-  if (pop && !reducedMotion) { ringPill.classList.remove('is-pop'); void ringPill.offsetWidth; ringPill.classList.add('is-pop'); }
-  if (scrollTurning) return; // the intro owns the rotation while it plays
-  const target = RING.findIndex((s) => s[0] === sym) * STEP;
-  rotTarget += Math.atan2(Math.sin(target - rotTarget), Math.cos(target - rotTarget)); // the short way round
-  if (!ringRaf) ringRaf = requestAnimationFrame(turnRing);
-}
-const ease = (t) => 1 - Math.pow(1 - t, 3), easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-// Intro, once per visit: as soon as the phone is a quarter on screen it rises, the cards fan out of the front card and
-// the ring makes one quick full turn (the pill flicks through the sectors), then settles on the selection.
-const ringIntro = () => {
-  const t0 = performance.now(), D = 2400, start = rot;
-  let lastK = -1;
-  scrollTurning = true; // calculator picks wait for the turn to finish
-  const frame = (now) => {
-    const t = Math.min(1, (now - t0) / D);
-    spread = ease(Math.min(1, t / 0.3));
-    ringStage.style.setProperty('--rise', (1 - spread).toFixed(3));
-    rot = start + easeInOut(Math.max(0, (t - 0.12) / 0.88)) * 2 * Math.PI;
-    const k = ((Math.round(rot / STEP) % RING.length) + RING.length) % RING.length;
-    if (k !== lastK) { lastK = k; bind('sector', RING[k][4]); }
-    layoutRing();
-    if (t < 1) { requestAnimationFrame(frame); return; }
-    rot = rotTarget = start; scrollTurning = false; layoutRing(); ringTo(sel, true);
-    ringStage.dataset.intro = 'done';
-  };
-  requestAnimationFrame(frame);
-};
-const showRingStill = () => { spread = 1; ringStage.style.setProperty('--rise', '0'); layoutRing(); ringStage.dataset.intro = 'done'; };
-const onRingResize = () => {
-  const g = geo();
-  if (!ringGeo || g.r !== ringGeo.r) buildRing();
-  const slot = ringStage.querySelector('.rs-slot'), rise = getComputedStyle(ringStage).getPropertyValue('--rise');
-  ringStage.style.setProperty('--rise', '0');
-  ringStage.style.setProperty('--ring-y', `${Math.round(slot.getBoundingClientRect().top + slot.offsetHeight / 2 - ringStage.getBoundingClientRect().top)}px`);
-  ringStage.style.setProperty('--rise', rise);
-  layoutRing();
-};
-window.addEventListener('resize', onRingResize, { passive: true });
-document.fonts?.ready.then(onRingResize);
-buildRing();
-rot = rotTarget = RING.findIndex((s) => s[0] === sel) * STEP;
-onRingResize();
-if (reducedMotion) showRingStill();
-else {
-  spread = 0; ringStage.style.setProperty('--rise', '1'); layoutRing();
-  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); ringIntro(); } }, { threshold: 0.25 }).observe(ringStage);
-}
-{ const hr = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
-  bind('greeting', hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'); }
-
-paintFrac(amount);
-// ---------- Four layers: the first time the route is seen, a dot runs from your rupees to the US market and each
-// checkpoint lights as it passes. Without JS, or with reduced motion, every checkpoint is simply lit.
-const gates = $('.gates');
-if (gates && !reducedMotion) {
-  gates.classList.add('is-run');
-  const rail = gates.querySelector('.gate-rail'), checks = [...gates.querySelectorAll('.gate')];
-  new IntersectionObserver(([e], obs) => {
-    if (!e.isIntersecting) return;
-    obs.disconnect();
-    const vertical = getComputedStyle(gates.querySelector('.gate-row')).gridTemplateColumns.split(' ').length === 1;
-    const r = rail.getBoundingClientRect();
-    const at = checks.map((g) => { const c = g.querySelector('.gate-check').getBoundingClientRect(); return vertical ? (c.top + c.height / 2 - r.top) / r.height : (c.left + c.width / 2 - r.left) / r.width; });
-    const t0 = performance.now(), D = 2600;
-    const frame = (now) => {
-      const t = Math.min(1, (now - t0) / D), p = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      gates.style.setProperty('--run', p.toFixed(4));
-      checks.forEach((g, i) => g.classList.toggle('is-lit', p >= at[i] - 0.01));
-      if (t < 1) requestAnimationFrame(frame); else gates.classList.add('is-done');
-    };
-    requestAnimationFrame(frame);
-  }, { threshold: 0.45 }).observe(gates);
-}
-
-// ---------- Diagrams (money routes, session timeline, protection layers) reveal when first seen
+// ---------- Diagrams (money routes, the four-step staircase) reveal when first seen
 const laneObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); laneObserver.unobserve(e.target); } });
 }, { threshold: 0.35 });
-document.querySelectorAll('.lane, .session, .layers, .phone-stage, .stairs').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
+document.querySelectorAll('.lane, .stairs').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
 const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
@@ -443,29 +193,30 @@ document.querySelectorAll(REVEAL).forEach((el) => {
 
 // ---------- Popular stocks by sector
 const sectors = {
-  Technology: [['Apple', 'AAPL', 'apple'], ['NVIDIA', 'NVDA', 'nvidia'], ['Broadcom', 'AVGO', 'broadcom'], ['Alphabet', 'GOOGL', 'google'], ['Meta', 'META', 'meta']],
-  Consumer: [['Amazon', 'AMZN', 'amazon'], ['Tesla', 'TSLA', 'tesla'], ['Netflix', 'NFLX', 'netflix'], ['Coca-Cola', 'KO', 'cocacola'], ['Starbucks', 'SBUX', 'starbucks']],
-  Financials: [['Visa', 'V', 'visa'], ['Mastercard', 'MA', 'mastercard'], ['Goldman Sachs', 'GS', 'goldmansachs'], ['Bank of America', 'BAC', 'bankofamerica'], ['American Express', 'AXP', 'americanexpress']],
+  Technology: [['Apple', 'AAPL', 'apple'], ['Microsoft', 'MSFT', 'microsoft'], ['NVIDIA', 'NVDA', 'nvidia'], ['Alphabet', 'GOOGL', 'google'], ['Amazon', 'AMZN', 'amazon']],
   Healthcare: [['Eli Lilly', 'LLY'], ['Johnson & Johnson', 'JNJ'], ['UnitedHealth', 'UNH'], ['AbbVie', 'ABBV'], ['Merck', 'MRK']],
+  Financials: [['Visa', 'V', 'visa'], ['Mastercard', 'MA', 'mastercard'], ['Goldman Sachs', 'GS', 'goldmansachs'], ['Bank of America', 'BAC', 'bankofamerica'], ['American Express', 'AXP', 'americanexpress']],
+  Consumer: [['Tesla', 'TSLA', 'tesla'], ['Netflix', 'NFLX', 'netflix'], ['Coca-Cola', 'KO', 'cocacola'], ['Starbucks', 'SBUX', 'starbucks'], ['McDonald’s', 'MCD', 'mcdonalds']],
+  Energy: [['Exxon Mobil', 'XOM'], ['Chevron', 'CVX'], ['ConocoPhillips', 'COP'], ['NextEra Energy', 'NEE'], ['SLB', 'SLB']],
   ETFs: [['S&P 500 ETF', 'SPY'], ['Nasdaq-100 ETF', 'QQQ'], ['Vanguard S&P 500', 'VOO'], ['Total Stock Market', 'VTI'], ['Core S&P 500', 'IVV']],
 };
 const esc = (s) => s.replace(/&/g, '&amp;');
-// Listing venue per ticker (Nasdaq unless listed here).
-const VENUE = { KO: 'NYSE', V: 'NYSE', MA: 'NYSE', GS: 'NYSE', BAC: 'NYSE', AXP: 'NYSE', LLY: 'NYSE', JNJ: 'NYSE', UNH: 'NYSE', ABBV: 'NYSE', MRK: 'NYSE', SPY: 'NYSE Arca', VOO: 'NYSE Arca', VTI: 'NYSE Arca', IVV: 'NYSE Arca' };
 const WIDE = new Set(['visa', 'goldmansachs']); // wordmarks in square viewBoxes: size their mask by width
-const CHEVRON = '<svg class="stock-go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
-// "Tonight on Wall Street": a split-flap board. Tickers flip letter by letter into place; no prices, so nothing reads as a quote.
+// "Tonight on Wall Street": a split-flap board. Tickers flip letter by letter into place.
 const GO = '<svg class="link-go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
-const session = () => $('.when [data-bind="sessionText"]')?.textContent || '7:00\u00a0pm – 1:30\u00a0am';
+// Columns follow the reviewed copy: Company, Ticker (split-flap), Price (USD), 1D %, Invest. Prices are illustrative
+// reference values (REF_PRICES) with a stable pseudo day-change per ticker, labelled as such under the board.
+const dayChange = (t) => { let h = 7; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 997; return ((h % 400) - 160) / 100; };
 function boardRow([name, ticker, logo]) {
   const cells = [...ticker.padEnd(5)].map((c) => `<span class="flap">${c === ' ' ? '' : c}</span>`).join('');
   const mark = logo ? `<span class="logo${WIDE.has(logo) ? ' logo-wide' : ''}" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span>` : `<span class="board-mono" aria-hidden="true">${ticker.slice(0, 2)}</span>`;
+  const px = REF_PRICES[ticker], ch = dayChange(ticker);
   return `<tr>
-    <td class="b-tick"><span class="sr-only">${ticker}</span><span class="flaps" aria-hidden="true" data-t="${ticker.padEnd(5)}">${cells}</span></td>
     <td class="b-co"><span class="b-co-in">${mark}<span>${esc(name)}</span></span></td>
-    <td class="b-ex">${VENUE[ticker] || 'Nasdaq'}</td>
-    <td class="b-tr"><span data-bind="sessionText">${session()}</span>&nbsp;IST</td>
-    <td class="b-go"><a class="text-link board-go" href="#lead">From $1${GO}</a></td>
+    <td class="b-tick"><span class="sr-only">${ticker}</span><span class="flaps" aria-hidden="true" data-t="${ticker.padEnd(5)}">${cells}</span></td>
+    <td class="b-px">${px ? usd.format(px) : '—'}</td>
+    <td class="b-ch"><span class="${ch >= 0 ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${Math.abs(ch).toFixed(2)}%</span></td>
+    <td class="b-go"><a class="text-link board-go" href="#lead">Invest${GO}</a></td>
   </tr>`;
 }
 const FLAP = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -541,7 +292,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href="#lead"], a[href="#lead-2"]');
-  if (a && a.id !== 'calc-cta') track('cta_click', { label: a.textContent.trim().slice(0, 40), from: a.closest('section[id], header, footer')?.id || a.closest('header, footer')?.tagName.toLowerCase() || 'page' });
+  if (a) track('cta_click', { label: a.textContent.trim().slice(0, 40), from: a.closest('section[id], header, footer')?.id || a.closest('header, footer')?.tagName.toLowerCase() || 'page' });
 });
 
 // ---------- Stale-page check (production). GitHub Pages lets browsers reuse the page for 10 minutes; after a deploy

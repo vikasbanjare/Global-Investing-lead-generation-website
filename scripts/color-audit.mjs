@@ -9,7 +9,7 @@ for (const w of [1440, 375]) {
   const p = await b.newPage({ viewport: { width: w, height: 900 } });
   await p.goto('http://localhost:4370/', { waitUntil: 'networkidle' });
   await p.addStyleTag({ content: '.reveal,.floater{opacity:1!important;scale:1!important;transform:none!important;transition:none!important}' });
-  await p.evaluate(() => document.querySelectorAll('.lane,.session,.layers,.phone-stage').forEach((e) => e.classList.add('is-in')));
+  await p.evaluate(() => document.querySelectorAll('.lane,.stairs').forEach((e) => e.classList.add('is-in')));
   out[w] = await p.evaluate(() => {
     const parse = (c) => { const m = c.match(/[\d.]+/g); return m ? m.map(Number) : null; };
     const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };

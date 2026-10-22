@@ -58,4 +58,5 @@ export function istClock(min) {
 
 // Reference prices (USD) for the page's illustrations: the ticker's starting points and the fraction examples.
 // ponytail: fixed, illustrative; replace with a quotes API (needs a market-data provider key) before launch.
-export const REF_PRICES = { AAPL: 232.1, NVDA: 181.4, GOOGL: 196.2, AMZN: 224.6, TSLA: 318.9, META: 702.3, NFLX: 1185, V: 342.5, AVGO: 298.7, MA: 571.2, KO: 69.8, SBUX: 92.4, MCD: 301.6, GS: 712.8, AXP: 305.1, BAC: 47.9 };
+export const REF_PRICES = { AAPL: 232.1, MSFT: 508.6, NVDA: 181.4, GOOGL: 196.2, AMZN: 224.6, TSLA: 318.9, META: 702.3, NFLX: 1185, V: 342.5, AVGO: 298.7, MA: 571.2, KO: 69.8, SBUX: 92.4, MCD: 301.6, GS: 712.8, AXP: 305.1, BAC: 47.9,
+  LLY: 768.2, JNJ: 177.5, UNH: 312.4, ABBV: 214.9, MRK: 84.1, XOM: 113.6, CVX: 155.2, COP: 94.8, NEE: 74.3, SLB: 34.9, SPY: 664.1, QQQ: 598.7, VOO: 610.4, VTI: 327.9, IVV: 667.3 };

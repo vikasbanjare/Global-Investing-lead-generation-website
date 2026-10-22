@@ -377,12 +377,47 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       }
     }
     const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-    const ctxMesh = new THREE.InstancedMesh(boxGeo, mat.clay, fill.length);
+    // Context blocks get a facade like the real towers: floor bands, punched windows (glass blocks: spandrels and
+    // mullions), a darker roof and a street-level shadow, all from world position, so every block is detailed for free.
+    const ctxMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+    ctxMat.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vCW;\nvarying vec3 vCN;')
+        .replace('#include <project_vertex>', `#include <project_vertex>
+          { vec4 w_ = vec4(transformed, 1.0);
+            #ifdef USE_INSTANCING
+              w_ = instanceMatrix * w_; vCN = normalize(mat3(instanceMatrix) * objectNormal);
+            #else
+              vCN = objectNormal;
+            #endif
+            vCW = (modelMatrix * w_).xyz; }`);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vCW;\nvarying vec3 vCN;')
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          { float side = 1.0 - step(0.5, abs(vCN.y));
+            float u = abs(vCN.x) > 0.5 ? vCW.z : vCW.x;
+            // Distance-aware grid: the floor/bay period doubles until a band spans ≥ 5 px, so far blocks still show
+            // window bands instead of an averaged-out blank face.
+            float py = 0.45 * exp2(max(0.0, ceil(log2(fwidth(vCW.y) * 5.0 / 0.45))));
+            float pu = 0.42 * exp2(max(0.0, ceil(log2(fwidth(u) * 5.0 / 0.42))));
+            float fy = fract((vCW.y - ${GROUND.toFixed(2)}) / py), fu = fract(u / pu);
+            float aa = 0.8;
+            float glassy = step(0.5, diffuseColor.b - diffuseColor.r + 0.5);                     // the cool blue-grey tones read as glass
+            float win = step(0.3, fy) * step(fy, 0.78) * step(0.22, fu) * step(fu, 0.78);
+            vec3 pane = vec3(0.17, 0.21, 0.28);
+            diffuseColor.rgb = mix(diffuseColor.rgb, pane, win * side * (1.0 - glassy) * mix(0.18, 0.55, aa));
+            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25 + 0.03, step(0.86, fy) * side * glassy * mix(0.2, 0.7, aa));
+            diffuseColor.rgb = mix(diffuseColor.rgb, pane * 1.4, step(0.94, fu) * side * glassy * mix(0.1, 0.5, aa));
+            diffuseColor.rgb *= mix(1.0, 0.82, 1.0 - side);                                     // roofs a shade darker
+            diffuseColor.rgb *= mix(1.0, mix(0.72, 1.0, smoothstep(0.6, 6.0, vCW.y)), side);    // grounded at street level
+          }`);
+    };
+    const ctxMesh = new THREE.InstancedMesh(boxGeo, ctxMat, fill.length);
     ctxMesh.castShadow = false; ctxMesh.receiveShadow = true; // no shadow clutter from context blocks
     const CTX = ['#b9a48c', '#a7856c', '#c8b9a3', '#9fa6ad', '#8d9fb2', '#c3ad94', '#a8968a'].map((h) => new THREE.Color(h)); // brownstone, brick, limestone, glass
     const bgC = new THREE.Color(PAGE_BG), tc = new THREE.Color();
     // Atmospheric perspective: context blocks fade toward the page colour with distance, so the real island stays the subject.
-    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.78, 0.2 + Math.hypot(bk.x, bk.z) / 900))));
+    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.55, 0.08 + Math.hypot(bk.x, bk.z) / 1400)))); // less wash-out, so the detail reads (the fog still hazes the far ones)
     scene.add(ctxMesh);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
     placeContext = (time) => {
@@ -587,8 +622,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
   // the hero, Midtown and the Empire State in the haze), not a map of rooftops. Real towers hide the NYSE from here
   // (ray-marched), so an orange map pin rises above the skyline at its spot.
   // From over the harbour, south of the tip, looking up the island: the tip centred under the headline, water on both sides.
-  const target = new THREE.Vector3(-5, 46, -64);
-  const rig = { az: 0, pol: 1.22, r: 650 }; // lower, more oblique view (iter-116): towers read by their height, harbour wide below
+  const target = new THREE.Vector3(-5, 22, -64);
+  const rig = { az: 0, pol: 1.42, r: 560 }; // low, oblique view (iter-127): the towers rise against the sky; split adds -0.2 (see the loop)
   const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
   let scroll = 0, size = { w: 1, h: 1, top: 0 }, zoom = 1;
   // Hero layout (the page's A/B toggle): 'centred' puts the city under the copy; 'split' moves it right and closer.
@@ -601,15 +636,15 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     if (!w || !h) return;
     size = { w, h, top: canvas.offsetTop };
     const split = w >= 900 && layout === 'split';
-    zoom = w >= 900 ? (split ? 0.72 : 1) : 0.55; // phones/tablets: the city band is small, bring the Financial District closer
+    zoom = w >= 900 ? (split ? 0.72 : 1) : 0.68; // phones: a little further back at the low angle, so the skyline fits the band // phones/tablets: the city band is small, bring the Financial District closer
     renderer.setSize(w, h, false);
     // Desktop: the framing is set for a 1040 px stage; a taller hero extends the view downward (more harbour under the
     // island) at the same scale, instead of shrinking the city.
     const H0 = w >= 900 ? Math.min(h, 1040) : h;
     camera.aspect = w / H0;
     if (split) camera.setViewOffset(w, H0, -w * 0.22, H0 * 0.1, w, h); // split layout: the city fills the right of the hero
-    else if (w >= 900) camera.setViewOffset(w, H0, 0, -H0 * 0.02, w, h); // centred layout: the city sits under the copy
-    else camera.setViewOffset(w, h, 0, h * 0.22, w, h); // phones: lift the city so the NYSE label sits mid-band
+    else if (w >= 900) camera.setViewOffset(w, H0, 0, -H0 * 0.22, w, h); // centred layout: the low skyline rises just under the copy (and its highlights)
+    else camera.setViewOffset(w, h, 0, h * 0.05, w, h); // phones: the skyline sits in the band, the NYSE label mid-band
     camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(canvas);
