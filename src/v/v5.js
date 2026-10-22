@@ -40,7 +40,7 @@ const html = `${header()}
       </aside>
       <ol class="jr-steps">${C.steps.items.map(([t, d], i) => `<li class="jr-step" data-step="${i}">
         <span class="jr-ico">${STEP_ICONS[i]}</span><p class="jr-n">Step ${i + 1}</p><h3>${t}</h3><p class="jr-d">${d}</p>
-        ${i === 0 ? `<dl class="jr-who">${C.who.items.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl>` : ''}
+        ${i === 0 ? `<details class="jr-more"><summary>${C.who.title}</summary><dl class="jr-who">${C.who.items.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl></details>` : ''}
         ${i === 2 ? route(C.routes[0]) : ''}
         ${i === 3 ? `${route(C.routes[1])}<a class="btn btn-primary" href="#lead">${C.steps.cta}</a>` : ''}
       </li>`).join('')}</ol>

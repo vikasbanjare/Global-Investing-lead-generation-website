@@ -209,3 +209,21 @@
   .jr-step { padding: 26px; }
 }
 @media (max-width: 560px) { .points { flex-direction: column; align-items: flex-start; text-align: left; } }
+/* iter-135 (review P2): step 1 keeps eligibility one tap away; why as cards; a readable two-row skyline on phones */
+.jr-more { margin-top: 24px; border-top: 1px solid var(--line); }
+.jr-more summary { display: flex; justify-content: space-between; align-items: center; padding: 18px 0 4px; font-size: 16px; font-weight: 800; cursor: pointer; list-style: none; }
+.jr-more summary::-webkit-details-marker { display: none; }
+.jr-more summary::after { content: '+'; font-size: 22px; font-weight: 400; color: var(--orange-text); transition: transform 0.2s ease-out; }
+.jr-more[open] summary::after { transform: rotate(45deg); }
+.jr-more .jr-who { margin-top: 12px; padding-top: 0; border-top: 0; }
+.why-grid { gap: 20px; }
+.why-grid article { display: flex; flex-direction: column; padding: 34px; border-radius: var(--r); background: var(--page); }
+.why-grid .why-ico { width: 72px; height: 72px; border-radius: 22px; background: var(--cream); color: var(--orange-text); }
+.why-grid .why-ico svg { width: 36px; height: 36px; }
+.why-grid p { flex: 1; }
+@media (max-width: 900px) {
+  .towers { flex-wrap: wrap; row-gap: 28px; min-height: 0; border-bottom: 0; }
+  .towers li { flex: 0 0 calc(25% - 6px); border-bottom: 3px solid var(--navy); }
+  .t-body { height: calc(var(--h) * 0.55); }
+  .t-name { font-size: 11px; }
+}

@@ -80,6 +80,7 @@ const html = `${header()}
           <div class="frac-amts">${AMOUNTS.map((a, i) => `<button type="button" data-amt="${a}" aria-pressed="${i === 0}">$${a}</button>`).join('')}</div>
           <p class="frac-out"><b class="num" id="frac-n">${share(1)}</b> of 1 Apple share <span class="num">· ${usd.format(REF_PRICES.AAPL)} a share</span></p>
           <div class="frac-bar"><i id="frac-fill" style="--f:${1 / REF_PRICES.AAPL}"></i></div>
+          <p class="frac-scale" aria-hidden="true"><span>$0</span><span>1 share = ${usd.format(REF_PRICES.AAPL)}</span></p>
         </div>
       </article>
       <article class="card f-find rv" style="--i:1">

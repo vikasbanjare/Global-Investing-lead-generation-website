@@ -219,3 +219,10 @@ html { scroll-padding-top: 128px; }
 .co:hover { color: var(--orange-text); }
 @media (max-width: 900px) { .mstrip { position: static; } html { scroll-padding-top: 76px; } }
 @media (max-width: 560px) { .inv-col, .stbl thead th:last-child { display: none; } .co::after { content: '›'; margin-left: auto; color: var(--orange-text); font-weight: 800; } .co { width: 100%; } }
+/* iter-135 (review P2): clearer hierarchy — alternating section fields, bigger headings, a numbered index per section */
+main { counter-reset: sec; }
+.sec { counter-increment: sec; }
+.sec:nth-of-type(even) { background: #fff; }
+.sec:nth-of-type(even) .panel, .sec:nth-of-type(even) .spec, .sec:nth-of-type(even) .pipe li, .sec:nth-of-type(even) .flow { background: var(--page); }
+.head h2, .faq h2, .close-in h2 { font-size: clamp(32px, 3.8vw, 50px); letter-spacing: -0.03em; }
+.head h2::before, .faq-in > h2::before { content: counter(sec, decimal-leading-zero) ' —'; display: block; margin-bottom: 10px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--orange-text); }

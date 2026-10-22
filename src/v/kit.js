@@ -161,6 +161,21 @@ export function switcher(current) {
   document.body.append(nav);
 }
 
+// Phones: a sticky "Start investing" bar, hidden while either lead form is on screen (same idea as the live page's dock).
+function setupDock() {
+  const dock = document.createElement('div');
+  dock.className = 'vdock';
+  dock.setAttribute('aria-hidden', 'true'); // duplicate of the header CTA; kept out of the tab order
+  dock.innerHTML = `<p><strong>US stocks from $1</strong><span>₹0 account opening</span></p><a class="btn btn-primary btn-sm" href="#lead" tabindex="-1">${C.hero.cta}</a>`;
+  document.body.append(dock);
+  const shown = new Set();
+  const io = new IntersectionObserver((es) => {
+    es.forEach((e) => (e.isIntersecting ? shown.add(e.target) : shown.delete(e.target)));
+    dock.classList.toggle('is-on', shown.size === 0);
+  });
+  $$('#lead, #lead-sent, #lead-2, #lead-2-sent').forEach((el) => io.observe(el));
+}
+
 export function boot(variant, html) {
   const root = document.documentElement;
   root.classList.add('js');
@@ -171,5 +186,6 @@ export function boot(variant, html) {
   tickClocks();
   setInterval(tickClocks, 20000);
   setupMotion();
+  setupDock();
   switcher(variant);
 }

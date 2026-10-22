@@ -1443,3 +1443,8 @@ main > section:not(.hero):not(.how-dark):not(.pricing):not(.cta), body > .footer
 .hero-switch { bottom: 52px; }
 @media (max-width: 900px) { .vswitch { bottom: 84px; } }
 @media (max-width: 640px) { .vswitch { position: static; width: max-content; margin: 0 auto 96px; } } /* phones: at the end of the page, clear of the dock */
+/* iter-135 (review P2): the brands line is a real heading at every width; tax cards one per row on phones */
+.ticker-head { display: block; text-align: center; margin-bottom: 22px; }
+.ticker-head .ticker-title, .ticker-title { margin: 0; font-size: clamp(24px, 2.6vw, 32px); line-height: 1.15; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+.ticker-note { display: block; margin-top: 8px; font-size: 15px; font-weight: 500; line-height: 1.5; color: var(--slate); }
+@media (max-width: 560px) { .tax .grid-4 { grid-template-columns: minmax(0, 1fr); } }

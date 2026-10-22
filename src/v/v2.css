@@ -228,3 +228,11 @@
   .bento .card { padding: 24px; min-height: 0; }
   .fx-c { font-size: 16px; padding: 12px 14px; }
 }
+/* iter-135 (review P2): a $1 slice is always visible on the share bar; tighter section rhythm */
+.frac-bar { height: 16px; }
+.frac-bar i { transform: scaleX(max(var(--f), 0.03)); }
+.frac-scale { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sec { padding: 88px 0; }
+.head { margin-bottom: 40px; }
+.orders { margin-top: 64px; } .supports { margin-top: 48px; } .who { margin-top: 48px; } .charges-title { margin-top: 56px; }
+@media (max-width: 900px) { .sec { padding: 64px 0; } }
