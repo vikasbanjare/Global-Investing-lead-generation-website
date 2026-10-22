@@ -16,6 +16,13 @@ function spark(t, w = 96, h = 32) {
   });
   return `<svg class="spark ${quote(t).ch >= 0 ? 'up' : 'down'}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}"/></svg>`;
 }
+// The portfolio card's area chart: a gentle up-trending walk.
+function area(lineOnly) {
+  let y = 52, sd = 41; const pts = [];
+  for (let i = 0; i <= 26; i++) { sd = (sd * 7919 + 13) % 9973; y = Math.max(8, Math.min(62, y - 1.3 + ((sd / 9973) - 0.5) * 9)); pts.push([(i / 26) * 260, y]); }
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  return lineOnly ? d : `${d} L260 70 L0 70 Z`;
+}
 const priceCell = (t) => { const q = quote(t); return `<b class="num">${usd.format(q.px)}</b><span class="num ${q.ch >= 0 ? 'up' : 'down'}">${pct(q.ch)}</span>`; };
 
 const AMOUNTS = [1, 10, 50, 100];
@@ -35,27 +42,30 @@ const html = `${header()}
       <a class="tlink hero-how" href="#how">${C.hero.how}${icon.go}</a>
     </div>
     <div class="hero-art" aria-hidden="true">
-      <div class="phone loop">
-        <div class="phone-top"><span data-bind="ist">—</span><i></i></div>
-        <div class="app">
-          <p class="app-tab"><b>US stocks</b><span>Portfolio</span></p>
-          <div class="app-quote">
-            <span class="app-logo">${logo('apple')}</span>
-            <div><b>Apple Inc.</b><small>AAPL · Nasdaq</small></div>
-            <div class="app-px">${priceCell('AAPL')}</div>
+      <div class="stage3d" id="stage3d">
+        <div class="phone">
+          <span class="ph-btn ph-btn-a"></span><span class="ph-btn ph-btn-b"></span><span class="ph-btn ph-btn-c"></span>
+          <div class="screen">
+            <div class="sb"><span data-bind="ist">—</span><i class="island"></i><span class="sb-ico"><svg viewBox="0 0 18 10"><path d="M1 9h2V6H1zM5 9h2V4H5zM9 9h2V2H9zM13 9h2V0h-2z"/></svg><svg viewBox="0 0 24 11"><rect x="0.5" y="0.5" width="20" height="10" rx="3"/><rect x="2.5" y="2.5" width="14" height="6" rx="1.5"/><path d="M22 4v3"/></svg></span></div>
+            <div class="app-head"><p><small>Good evening</small><b>Your US portfolio</b></p><span class="avatar">IN</span></div>
+            <div class="pcard">
+              <p class="pc-k">Portfolio value</p>
+              <p class="pc-v num">$1,248.60</p>
+              <p class="pc-ch"><span class="num">▲ $29.40 (2.41%)</span> today</p>
+              <svg class="pc-chart" viewBox="0 0 260 70" preserveAspectRatio="none"><defs><linearGradient id="pcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5400" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5400" stop-opacity="0"/></linearGradient></defs><path class="pc-area" d="${area()}"/><path class="pc-line" d="${area(true)}"/></svg>
+            </div>
+            <div class="seg2"><span class="on">Stocks</span><span>ETFs</span><span>Orders</span></div>
+            <ul class="hold2">${[['apple', 'Apple', 'AAPL'], ['nvidia', 'NVIDIA', 'NVDA'], ['tesla', 'Tesla', 'TSLA']].map(([l, n, t]) => `<li><span class="h2-logo">${logo(l)}</span><span class="h2-name"><b>${n}</b><small>${t}</small></span>${spark(t, 54, 20)}<span class="h2-px">${priceCell(t)}</span></li>`).join('')}</ul>
+            <p class="buy1"><span>Buy <b>$1</b> of Apple</span><i>→ ${share(1)} sh</i></p>
+            <div class="tabbar"><i class="on"></i><i></i><i></i><i></i></div>
           </div>
-          ${spark('AAPL', 260, 90).replace('class="spark', 'class="spark spark-lg')}
-          <div class="ticket">
-            <p class="ticket-k">Buy by amount</p>
-            <p class="ticket-v num">$1.00</p>
-            <p class="ticket-k">You get <b class="num">${share(1)}</b> shares</p>
-            <span class="btn btn-primary btn-sm">Buy</span>
-          </div>
-          <ul class="app-list">${[['nvidia', 'NVDA'], ['microsoft', 'MSFT'], ['tesla', 'TSLA']].map(([l, t]) => `<li>${logo(l)}<b>${t}</b>${spark(t, 54, 18)}${priceCell(t)}</li>`).join('')}</ul>
+          <span class="glare"></span>
         </div>
+        <div class="float f-fill"><span class="f-ok">${icon.check}</span><p><b>Order filled</b><small class="num">${share(1)} AAPL for $1.00</small></p></div>
+        <div class="float f-fx"><span class="f-ico">₹→$</span><p><b>USD buying power</b><small>After conversion and credit</small></p></div>
+        <div class="float f-gift">${icon.shield}<p><b>GIFT City route</b><small>${C.highlights[3].note}</small></p></div>
       </div>
-      <p class="chip chip-a loop"><span class="chip-ico">₹→$</span>${C.features.items[3][0]}</p>
-      <p class="chip chip-b loop">${icon.shield}${C.highlights[3].note}</p>
+      <p class="art-note">Illustrative screen</p>
     </div>
   </div>
   <div class="vw"><ul class="hl" aria-label="Key investment highlights">${C.highlights.map((h, i) => `<li class="rv" style="--i:${i}"><b>${h.fig}</b><span>${h.label}</span><small>${h.note}</small></li>`).join('')}</ul></div>
@@ -181,6 +191,15 @@ const html = `${header()}
 ${footer()}`;
 
 boot('v2', html);
+
+// Hero: the phone and its floating cards tilt toward the pointer (depth from translateZ in CSS).
+const st = $('#stage3d'), art = $('.hero-art');
+if (st && matchMedia('(hover: hover)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+  const step = () => { cx += (tx - cx) * 0.12; cy += (ty - cy) * 0.12; st.style.setProperty('--rx', `${(-cy * 8).toFixed(2)}deg`); st.style.setProperty('--ry', `${(cx * 12).toFixed(2)}deg`); raf = Math.abs(tx - cx) + Math.abs(ty - cy) > 0.001 ? requestAnimationFrame(step) : 0; };
+  art.addEventListener('pointermove', (e) => { const r = art.getBoundingClientRect(); tx = (e.clientX - r.left) / r.width - 0.5; ty = (e.clientY - r.top) / r.height - 0.5; if (!raf) raf = requestAnimationFrame(step); });
+  art.addEventListener('pointerleave', () => { tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(step); });
+}
 
 // fractional amount chips
 const fracN = $('#frac-n'), fill = $('#frac-fill');

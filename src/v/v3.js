@@ -70,8 +70,7 @@ const html = `${header()}
 <section class="sec how" id="how">
   <div class="vw">
     <div class="head rv"><h2>${C.steps.title}</h2><a class="btn btn-ink" href="#lead">${C.steps.cta}</a></div>
-    <ol class="stack">${C.steps.items.map(([t, d], i) => `<li class="scard scard-${i}" style="--i:${i}">
-      <span class="scard-n num">0${i + 1}</span><div><h3>${t}</h3><p>${d}</p></div><span class="scard-ico">${STEP_ICONS[i]}</span></li>`).join('')}</ol>
+    <ol class="track rv">${C.steps.items.map(([t, d], i) => `<li style="--i:${i}"><span class="t-n num">0${i + 1}</span><span class="t-ico">${STEP_ICONS[i]}</span><h3>${t}</h3><p>${d}</p></li>`).join('')}</ol>
     <div class="who">
       <h3 class="h3 rv">${C.who.title}</h3>
       <dl>${C.who.items.map(([t, d], i) => `<div class="rv" style="--i:${i}"><dt>${t}</dt><dd>${d}</dd></div>`).join('')}</dl>

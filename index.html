@@ -136,8 +136,8 @@
             <p class="ex-k">Invest by amount</p>
             <p class="ex-amt">$<span id="ex-amt">25</span></p>
             <label class="ex-range"><span class="sr-only">Amount to invest, in US dollars</span><input type="range" id="ex-slider" min="1" max="500" step="1" value="25"></label>
-            <div class="ex-share"><div class="ex-share-bar"><i id="ex-fill"></i></div><p><b id="ex-qty">0.1378</b> of 1 NVIDIA share <span>· $181.40 a share</span></p></div>
-            <p class="ex-note">Drag to try any amount from $1. Reference price, for illustration.</p>
+            <div class="ex-share"><div class="ex-pies" id="ex-pies" aria-hidden="true"><span class="pie"><i></i><small>1 share</small></span><span class="pie"><i></i><small>2 shares</small></span><span class="pie"><i></i><small>3 shares</small></span></div><p><b id="ex-qty">0.1378</b> <span id="ex-unit">of 1 NVIDIA share</span> <span>· $181.40 a share</span></p></div>
+            <p class="ex-note">Each circle is one NVIDIA share; your amount fills it. Drag to try any amount from $1. Reference price, for illustration.</p>
           </div>
           <div class="ex-demo" data-k="1">
             <div class="ex-search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><span id="ex-typed"></span><i class="ex-caret"></i></div>
@@ -173,23 +173,15 @@
       <div class="orders-head">
         <h3 class="orders-title" id="orders-title">Choose how you place your US stocks’ order</h3>
       </div>
-      <div class="osim">
-        <div class="os-tabs" role="tablist" aria-label="Order types">
-          <button type="button" class="os-tab" role="tab" id="os-tab-0" aria-controls="os-panel" aria-selected="true" tabindex="0" data-k="0" data-do="Buys or sells at the available market price" data-best="Placing an order quickly">Market</button>
-          <button type="button" class="os-tab" role="tab" id="os-tab-1" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="1" data-do="Executes at your chosen price or better, if available" data-best="More control over price">Limit</button>
-          <button type="button" class="os-tab" role="tab" id="os-tab-2" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="2" data-do="Activates an order after a specified trigger" data-best="Setting conditional instructions">Stop / Stop-limit</button>
-          <button type="button" class="os-tab" role="tab" id="os-tab-3" aria-controls="os-panel" aria-selected="false" tabindex="-1" data-k="3" data-do="Invests a US dollar amount in an eligible security" data-best="Starting without buying a whole share">Fractional by amount</button>
-        </div>
-        <div class="os-panel" id="os-panel" role="tabpanel" aria-labelledby="os-tab-0">
-          <svg class="os-chart" viewBox="0 0 600 220" aria-hidden="true">
-            <g class="os-grid"><path d="M0 55h600M0 110h600M0 165h600"/></g>
-            <g class="os-level"><path id="os-level-line" d=""/><text id="os-level-text" x="8" y="0" text-anchor="start"></text></g>
-            <path class="os-line" id="os-line" d="" pathLength="1"/>
-            <g class="os-fill" id="os-fill"><circle r="7"/><circle class="os-halo" r="14"/><text id="os-fill-text" y="-18" text-anchor="middle"></text></g>
-          </svg>
-          <dl class="os-copy"><div><dt>What it does</dt><dd id="os-do">Buys or sells at the available market price</dd></div><div><dt>Best for</dt><dd id="os-best">Placing an order quickly</dd></div></dl>
-          <p class="ex-note">Illustrative price path, not market data.</p>
-        </div>
+      <div class="oring" id="oring">
+        <ul class="oring-src sr-only" aria-labelledby="orders-title">
+          <li data-icon="bolt"><b>Market</b><span>What it does: <em>Buys or sells at the available market price</em></span><span>Best for: <em>Placing an order quickly</em></span></li>
+          <li data-icon="target"><b>Limit</b><span>What it does: <em>Executes at your chosen price or better, if available</em></span><span>Best for: <em>More control over price</em></span></li>
+          <li data-icon="trigger"><b>Stop / Stop-limit</b><span>What it does: <em>Activates an order after a specified trigger</em></span><span>Best for: <em>Setting conditional instructions</em></span></li>
+          <li data-icon="pie"><b>Fractional by amount</b><span>What it does: <em>Invests a US dollar amount in an eligible security</em></span><span>Best for: <em>Starting without buying a whole share</em></span></li>
+        </ul>
+        <div class="oring-stage" aria-hidden="true"><div class="oring-cyl" id="oring-cyl"></div></div>
+        <p class="oring-hint" aria-hidden="true">Drag to turn</p>
       </div>
       <div class="supports" role="group" aria-labelledby="supports-title">
         <h3 class="supports-title" id="supports-title">What does m.Stock support?</h3>

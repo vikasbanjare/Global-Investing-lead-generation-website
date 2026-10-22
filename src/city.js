@@ -157,6 +157,24 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
 
   function build(d) {
     const rand = rng(7);
+    // The mapped district (real OSM footprints). Land beyond it dissolves into the harbour: no stand-in blocks, no bare
+    // untextured ground (user feedback, iter-136) — the real towers stand alone in the bay.
+    let mx0 = Infinity, mx1 = -Infinity, mz0 = Infinity, mz1 = -Infinity;
+    for (const row of d.b) for (let i = 5; i < row.length; i += 2) { mx0 = Math.min(mx0, row[i]); mx1 = Math.max(mx1, row[i]); mz0 = Math.min(mz0, row[i + 1]); mz1 = Math.max(mz1, row[i + 1]); }
+    const FADE_M = 4, FADE_W = 10; // margin past the last mapped building, then the width of the fade into water
+    const uBox = { value: new THREE.Vector4(mx0 - FADE_M, mx1 + FADE_M, mz0 - FADE_M, mz1 + FADE_M) };
+    const outside = (x, z) => Math.max(uBox.value.x - x, x - uBox.value.y, uBox.value.z - z, z - uBox.value.w);
+    const fadeBeyondDistrict = (sh) => {
+      sh.uniforms.uBox = uBox;
+      if (!sh.vertexShader.includes('varying vec3 vWPos')) {
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <project_vertex>', '#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;');
+      }
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uBox;')
+        .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+          { float dd = max(max(uBox.x - vWPos.x, vWPos.x - uBox.y), max(uBox.z - vWPos.z, vWPos.z - uBox.w));
+            gl_FragColor.a *= 1.0 - smoothstep(0.0, ${FADE_W.toFixed(1)}, dd); }`);
+    };
     // ---- Land and parks (flat clay slabs on the water)
     // Flat ground pieces, tessellated so the curved horizon bends them smoothly (long triangles would sink).
     const tessellate = (geo, maxEdge) => {
@@ -184,8 +202,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       scene.add(m);
     };
     // Ground: the real aerial photo (streets, parks, piers, the shores' real buildings seen from above).
-    const ground = new THREE.MeshStandardMaterial({ color: 0xbdbab3, roughness: 0.95 });
-    ground.onBeforeCompile = (sh) => patchOrtho(sh, 1.0, false);
+    const ground = new THREE.MeshStandardMaterial({ color: 0xbdbab3, roughness: 0.95, transparent: true });
+    ground.onBeforeCompile = (sh) => { patchOrtho(sh, 1.0, false); fadeBeyondDistrict(sh); };
     d.land.forEach((l) => slab(l, GROUND - 0.25, ground, 0));
     // Seawalls: the island's stone edge from the waterline up to the street, instead of a paper-thin cut.
     { const wall = [], wn = [];
@@ -193,7 +211,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
         const nx = z1 - z0, nz = -(x1 - x0), L = Math.hypot(nx, nz) || 1; const y = GROUND - 0.25;
         wall.push(x0, 0, z0, x1, 0, z1, x1, y, z1, x0, 0, z0, x1, y, z1, x0, y, z0); for (let k = 0; k < 6; k++) wn.push(nx / L, 0, nz / L); } }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(wall, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(wn, 3));
-      scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x9a968c, roughness: 0.95, side: THREE.DoubleSide }))); }
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x9a968c, roughness: 0.95, side: THREE.DoubleSide, transparent: true });
+      wallMat.onBeforeCompile = fadeBeyondDistrict;
+      scene.add(new THREE.Mesh(g, wallMat)); }
 
     // ---- Buildings: one merged mesh of real footprints, extruded to real heights.
     const PAL = d.palette.map((h) => new THREE.Color(h)); // real OSM building:colour / roof:colour (sRGB → linear)
@@ -352,82 +372,9 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     edges.frustumCulled = false;
     scene.add(edges);
 
-    // ---- Context beyond the mapped area (north Manhattan, Brooklyn, Jersey City): low-detail blocks that fade
-    // into the haze, so the real Financial District doesn't end in an empty plain. Not real buildings.
-    let mx0 = Infinity, mx1 = -Infinity, mz0 = Infinity, mz1 = -Infinity;
-    for (const row of d.b) for (let i = 5; i < row.length; i += 2) { mx0 = Math.min(mx0, row[i]); mx1 = Math.max(mx1, row[i]); mz0 = Math.min(mz0, row[i + 1]); mz1 = Math.max(mz1, row[i + 1]); }
-    const lands = d.land.map(pairs);
-    // Real positions from latitude/longitude, in the same projection as the data.
+    // (iter-136: the stand-in context blocks beyond the mapped district are gone; that land fades into the water.)
+    // Real positions from latitude/longitude, in the same projection as the data (boats and wakes use it).
     const ll = (lat, lon) => [((lon - d.origin[1]) * 111320 * Math.cos((d.origin[0] * Math.PI) / 180)) / d.unit, (-(lat - d.origin[0]) * 110540) / d.unit];
-    const esb = ll(40.7484, -73.9857);
-    const fill = [];
-    for (let x = -330; x <= 440; x += 7) {
-      for (let z = -880; z <= 260; z += 7) {
-        if (rand() < 0.22) continue; // open lots, so the blocks don't read as a grid
-        const inMapped = x > mx0 - 3 && x < mx1 + 3 && z > mz0 - 3 && z < mz1 + 3;
-        if (inMapped || !lands.some((l) => inside(l, x, z))) continue;
-        { const lon = d.origin[1] + x * d.unit / (111320 * Math.cos((d.origin[0] * Math.PI) / 180)), lat = d.origin[0] - z * d.unit / 110540;
-          if (lon > ob.west && lon < ob.east && lat > ob.south && lat < ob.north) continue; } // the photo shows the real city here
-        const north = Math.max(0, -(z - mz0)) / 120; // Manhattan rises again towards Midtown
-        const onManhattan = inside(lands[0], x, z);
-        if (!onManhattan && (Math.hypot(x, z) < 650 || rand() < 0.45)) continue; // keep the near sides open water and low shore: Manhattan is the subject
-        const midtown = onManhattan ? Math.exp(-((x - esb[0]) ** 2 + (z - esb[1]) ** 2) / (2 * 130 ** 2)) : 0;
-        const h = 1.6 + rand() * 5 + (onManhattan ? rand() * 9 * Math.min(1, 0.4 + north) : rand() * 4) + midtown * rand() * rand() * 34;
-        fill.push({ x: x + (rand() - 0.5) * 4, z: z + (rand() - 0.5) * 4, w: 2.5 + rand() * 5, d: 2.5 + rand() * 5, r: onManhattan ? 0.5 + (rand() - 0.5) * 0.08 : (rand() - 0.5) * 0.3, h: h * (0.5 + rand() * 0.5), delay: 0.4 + Math.hypot(x, z) * 0.0012 + rand() * 0.2 });
-      }
-    }
-    const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
-    // Context blocks get a facade like the real towers: floor bands, punched windows (glass blocks: spandrels and
-    // mullions), a darker roof and a street-level shadow, all from world position, so every block is detailed for free.
-    const ctxMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
-    ctxMat.onBeforeCompile = (sh) => {
-      sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vCW;\nvarying vec3 vCN;')
-        .replace('#include <project_vertex>', `#include <project_vertex>
-          { vec4 w_ = vec4(transformed, 1.0);
-            #ifdef USE_INSTANCING
-              w_ = instanceMatrix * w_; vCN = normalize(mat3(instanceMatrix) * objectNormal);
-            #else
-              vCN = objectNormal;
-            #endif
-            vCW = (modelMatrix * w_).xyz; }`);
-      sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vCW;\nvarying vec3 vCN;')
-        .replace('#include <color_fragment>', `#include <color_fragment>
-          { float side = 1.0 - step(0.5, abs(vCN.y));
-            float u = abs(vCN.x) > 0.5 ? vCW.z : vCW.x;
-            // Distance-aware grid: the floor/bay period doubles until a band spans ≥ 5 px, so far blocks still show
-            // window bands instead of an averaged-out blank face.
-            float py = 0.45 * exp2(max(0.0, ceil(log2(fwidth(vCW.y) * 5.0 / 0.45))));
-            float pu = 0.42 * exp2(max(0.0, ceil(log2(fwidth(u) * 5.0 / 0.42))));
-            float fy = fract((vCW.y - ${GROUND.toFixed(2)}) / py), fu = fract(u / pu);
-            float aa = 0.8;
-            float glassy = step(0.5, diffuseColor.b - diffuseColor.r + 0.5);                     // the cool blue-grey tones read as glass
-            float win = step(0.3, fy) * step(fy, 0.78) * step(0.22, fu) * step(fu, 0.78);
-            vec3 pane = vec3(0.17, 0.21, 0.28);
-            diffuseColor.rgb = mix(diffuseColor.rgb, pane, win * side * (1.0 - glassy) * mix(0.18, 0.55, aa));
-            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.25 + 0.03, step(0.86, fy) * side * glassy * mix(0.2, 0.7, aa));
-            diffuseColor.rgb = mix(diffuseColor.rgb, pane * 1.4, step(0.94, fu) * side * glassy * mix(0.1, 0.5, aa));
-            diffuseColor.rgb *= mix(1.0, 0.82, 1.0 - side);                                     // roofs a shade darker
-            diffuseColor.rgb *= mix(1.0, mix(0.72, 1.0, smoothstep(0.6, 6.0, vCW.y)), side);    // grounded at street level
-          }`);
-    };
-    const ctxMesh = new THREE.InstancedMesh(boxGeo, ctxMat, fill.length);
-    ctxMesh.castShadow = false; ctxMesh.receiveShadow = true; // no shadow clutter from context blocks
-    const CTX = ['#b9a48c', '#a7856c', '#c8b9a3', '#9fa6ad', '#8d9fb2', '#c3ad94', '#a8968a'].map((h) => new THREE.Color(h)); // brownstone, brick, limestone, glass
-    const bgC = new THREE.Color(PAGE_BG), tc = new THREE.Color();
-    // Atmospheric perspective: context blocks fade toward the page colour with distance, so the real island stays the subject.
-    fill.forEach((bk, i) => ctxMesh.setColorAt(i, tc.copy(CTX[(i * 7 + (i >> 3)) % CTX.length]).lerp(bgC, Math.min(0.55, 0.08 + Math.hypot(bk.x, bk.z) / 1400)))); // less wash-out, so the detail reads (the fog still hazes the far ones)
-    scene.add(ctxMesh);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), yAxis = new THREE.Vector3(0, 1, 0);
-    placeContext = (time) => {
-      fill.forEach((bk, i) => {
-        const e = easeOut(clamp01((time - bk.delay) / 0.9));
-        ctxMesh.setMatrixAt(i, m4.compose(pv.set(bk.x, GROUND, bk.z), q.setFromAxisAngle(yAxis, bk.r), sv.set(bk.w, Math.max(0.001, bk.h * e), bk.d)));
-      });
-      ctxMesh.instanceMatrix.needsUpdate = true;
-    };
-    placeContext(0);
 
     // ---- Street and park trees at their real positions (NYC Parks Forestry Tree Points), crown size from trunk diameter.
     treesData.then((t) => {
@@ -441,7 +388,8 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
       for (let i = 0; i < n; i++) {
         const r = Math.max(0.25, t[i * 3 + 2]);
         q4.setFromAxisAngle(up, tr() * Math.PI);
-        m4.compose(new THREE.Vector3(t[i * 3], GROUND - 0.25 + 0.35 + r * 0.85, t[i * 3 + 1]), q4, new THREE.Vector3(r, r * (0.9 + tr() * 0.3), r));
+        const gone = outside(t[i * 3], t[i * 3 + 1]) > 0 ? 0.0001 : 1; // no trees over the faded-out land
+        m4.compose(new THREE.Vector3(t[i * 3], GROUND - 0.25 + 0.35 + r * 0.85, t[i * 3 + 1]), q4, new THREE.Vector3(r * gone, r * (0.9 + tr() * 0.3) * gone, r * gone));
         trees.setMatrixAt(i, m4);
         const k = tr();
         trees.setColorAt(i, LEAF[k < 0.84 ? Math.floor(tr() * 4) : 4 + Math.floor(tr() * 3)]);
@@ -469,17 +417,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     scene.add(wtc);
     grow.push({ obj: wtc, delay: 0.3 });
 
-    // Empire State Building, at its real position and height (381 m roof, 443 m tip): setbacks, crown, mast.
-    const esbG = new THREE.Group();
-    const tiers = [[13, 6.5, 8], [10, 5.5, 10], [7, 4.8, 22], [4.6, 3.6, 4], [3, 2.6, 3]];
-    let y = 0;
-    for (const [w, dd, h] of tiers) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, dd).translate(0, y + h / 2, 0), mat.clay); m.castShadow = m.receiveShadow = true; esbG.add(m); y += h; }
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.8, 8.4, 8).translate(0, y + 4.2, 0), mat.clay);
-    esbG.add(mast);
-    esbG.position.set(esb[0], GROUND, esb[1]);
-    esbG.rotation.y = 0.5; // the Midtown grid runs 29° off true north
-    scene.add(esbG);
-    grow.push({ obj: esbG, delay: 0.7 });
+    // (iter-136: the Empire State stand-in is gone with the rest of Midtown; only the mapped district remains.)
 
     // New York Stock Exchange: block, six columns, pediment, facing Broad Street.
     const nyse = new THREE.Group();
@@ -740,7 +678,7 @@ export function createCity({ canvas, label, reducedMotion = false, withClouds = 
     }))
     .then((d) => { build(d); return renderer.compileAsync ? renderer.compileAsync(scene, camera).catch(() => {}) : null; })
     .then(() => { built = true; performance.mark('city:built'); clock.start(); wake(); })
-    .catch(() => hero?.classList.add('no-webgl')); // no data: the poster stands in
+    .catch((e) => { console.error('city build failed', e); hero?.classList.add('no-webgl'); }); // no data: the poster stands in
 
   if (new URLSearchParams(location.search).has('debug')) window.__city = { scene, renderer, camera, rig, target, wake: () => { introDone && wake(); } }; // dev inspection only
   return {

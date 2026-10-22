@@ -7,6 +7,9 @@ import { C, BASE, boot, header, footer, leadForm, faqList, logo, icon, quote, pc
 const STEP_ICONS = [icon.user, icon.shield, icon.wallet, icon.chart];
 // brand skyline: tower height grows with share price (log scale), so the row reads like a skyline
 const towerH = (t) => Math.round(90 + Math.log10(REF_PRICES[t]) * 70);
+// Each tower wears its brand's own colours (identification only), with a lit-window texture.
+const BRAND = { apple: ['#4a4a4f', '#1d1d1f'], microsoft: ['#2b88d8', '#0f5ea8'], google: ['#4285f4', '#1a5fd0'], amazon: ['#37475a', '#232f3e', '#ff9900'],
+  tesla: ['#e82127', '#a3161b'], nvidia: ['#76b900', '#4e7f00'], meta: ['#0866ff', '#0550c7'], netflix: ['#e50914', '#9b0610'] };
 
 const html = `${header()}
 <main id="main" tabindex="-1">
@@ -40,7 +43,7 @@ const html = `${header()}
       </aside>
       <ol class="jr-steps">${C.steps.items.map(([t, d], i) => `<li class="jr-step" data-step="${i}">
         <span class="jr-ico">${STEP_ICONS[i]}</span><p class="jr-n">Step ${i + 1}</p><h3>${t}</h3><p class="jr-d">${d}</p>
-        ${i === 0 ? `<details class="jr-more"><summary>${C.who.title}</summary><dl class="jr-who">${C.who.items.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl></details>` : ''}
+        ${i === 0 ? `<p class="jr-sub">${C.who.title}</p><dl class="jr-who">${C.who.items.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl>` : ''}
         ${i === 2 ? route(C.routes[0]) : ''}
         ${i === 3 ? `${route(C.routes[1])}<a class="btn btn-primary" href="#lead">${C.steps.cta}</a>` : ''}
       </li>`).join('')}</ol>
@@ -51,9 +54,9 @@ const html = `${header()}
 <section class="sec skyline" id="brands">
   <div class="vw">
     <div class="head rv"><h2>${C.brands.title}</h2><p>${C.brands.sub}</p></div>
-    <ul class="towers rv">${C.brands.list.map(([n, t, l], i) => { const q = quote(t); return `<li style="--h:${towerH(t)}px; --i:${i}"><a href="#lead" aria-label="Invest in ${n} (${t}), ${usd.format(q.px)}">
+    <ul class="towers rv">${C.brands.list.map(([n, t, l], i) => { const q = quote(t); return `<li style="--h:${towerH(t)}px; --i:${i}; --c1:${BRAND[l][0]}; --c2:${BRAND[l][1]}; --acc:${BRAND[l][2] || 'rgba(255,255,255,0.5)'}"><a href="#lead" aria-label="Invest in ${n} (${t}), ${usd.format(q.px)}">
       <span class="t-tip"><b class="num">${usd.format(q.px)}</b><span class="num ${q.ch >= 0 ? 'up' : 'down'}">${pct(q.ch)}</span></span>
-      <span class="t-logo">${logo(l)}</span><span class="t-body"><span class="t-name">${t}</span></span></a></li>`; }).join('')}</ul>
+      <span class="t-body"><span class="t-logo">${logo(l)}</span></span><span class="t-name">${t}</span></a></li>`; }).join('')}</ul>
   </div>
 </section>
 

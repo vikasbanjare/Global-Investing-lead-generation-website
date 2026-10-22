@@ -14,6 +14,8 @@
   --orange: #ff5400;
   --orange-text: #bf3f00;
   --orange-soft: #ff8a4c;
+  --orange-grad: linear-gradient(135deg, #ff6d24 0%, #ff5400 55%, #f24b00 100%); /* exact brand orange in the middle */
+  --orange-glow: 0 12px 26px -12px rgba(255, 84, 0, 0.75);
   --cream: #fff4ec;
   --cloud: #f3f8ff;
   --tint: #e8f0fc;
@@ -46,8 +48,8 @@ p, li, dd { text-wrap: pretty; }
 /* buttons */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 52px; padding: 0 24px; border: 0; border-radius: 12px; font: 700 16px/1 var(--font); text-decoration: none; cursor: pointer; white-space: nowrap; transition: background-color 0.15s ease-out, transform 0.15s ease-out; }
 .btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--orange); color: var(--ink); }
-.btn-primary:hover { background: #ff6a1f; color: var(--ink); }
+.btn-primary { background: var(--orange-grad); color: #fff; box-shadow: var(--orange-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25); text-shadow: 0 1px 1px rgba(150, 40, 0, 0.35); font-weight: 800; }
+.btn-primary:hover { background: linear-gradient(135deg, #ff7a36 0%, #ff5f10 55%, #ff5400 100%); color: #fff; }
 .btn-ink { background: var(--ink); color: #fff; }
 .btn-ink:hover { background: var(--navy); color: #fff; }
 .btn-ghost { background: transparent; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--line-strong); }

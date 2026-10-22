@@ -332,13 +332,15 @@ if (ex) {
     if (d) { e.preventDefault(); stop(); show((k + d + tabs.length) % tabs.length, true); }
   });
   ex.addEventListener('pointerenter', stop, { once: true });
-  // Fractional: the slider sets the amount; the bar fills to the fraction of one share.
-  const slider = ex.querySelector('#ex-slider');
+  // Fractional: the slider sets the amount; each circle is one whole NVIDIA share and fills by the part you'd own
+  // ($25 → a 14% wedge of the first; $500 → two full circles and most of a third).
+  const slider = ex.querySelector('#ex-slider'), pies = [...ex.querySelectorAll('#ex-pies .pie')];
   const paintAmt = () => {
     const v = Number(slider.value), q = v / REF_PRICES.NVDA;
     ex.querySelector('#ex-amt').textContent = v;
     ex.querySelector('#ex-qty').textContent = q < 1 ? q.toFixed(4) : q.toFixed(3);
-    ex.querySelector('#ex-fill').style.transform = `scaleX(${Math.min(1, q % 1 || 1)})`;
+    ex.querySelector('#ex-unit').textContent = q < 1 ? 'of 1 NVIDIA share' : 'NVIDIA shares';
+    pies.forEach((pie, i) => { const f = Math.min(1, Math.max(0, q - i)); pie.style.setProperty('--p', f.toFixed(4)); pie.classList.toggle('is-full', f >= 1); pie.classList.toggle('is-empty', f <= 0); });
     slider.style.setProperty('--v', `${((v - 1) / 499) * 100}%`);
   };
   slider.addEventListener('input', () => { stop(); paintAmt(); });
@@ -356,47 +358,51 @@ if (ex) {
   new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); show(0); } }, { threshold: 0.4 }).observe(ex);
 }
 
-// ---------- Order types: a small simulator. Each order type replays an illustrative price path and marks where the
-// order fills (market: now; limit: when price comes down to your price; stop: when price crosses the trigger).
-const osim = document.querySelector('.osim');
-if (osim) {
-  const tabs = [...osim.querySelectorAll('.os-tab')];
-  const W = 600, H = 220, lo = 176.5, hi = 187, Y = (p) => 18 + ((hi - p) / (hi - lo)) * (H - 36), X = (i, n) => 12 + (i / (n - 1)) * (W - 24);
-  const noise = (i) => Math.sin(i * 0.9) * 0.55 + Math.sin(i * 2.3 + 1) * 0.35;
-  const N = 60;
-  const series = {
-    0: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.8 + i * 0.01),
-    1: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.6 - 3.6 * Math.sin(Math.min(1, i / 40) * Math.PI / 2) + Math.max(0, i - 44) * 0.12),
-    2: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.6 + 4.6 * Math.sin(Math.min(1, i / 42) * Math.PI / 2)),
-    3: () => Array.from({ length: N }, (_, i) => 181.4 + noise(i) * 0.8 + i * 0.01),
+// ---------- Order types: a 3D ring of bent cards (the earlier card-ring design) that turns on its own while on screen,
+// can be dragged left or right, and pauses on hover. The four types (from the screen-reader list in the HTML) each
+// appear twice so the ring stays full. Each card is cut into thin vertical slices on a cylinder, so it curves.
+const oring = document.querySelector('#oring');
+if (oring) {
+  const ICON = {
+    bolt: '<path d="M13 2.5 5.5 13H11l-1 8.5L17.5 11H12l1-8.5Z"/>',
+    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+    trigger: '<path d="M4 17l5-5 4 4 7-8"/><path d="M4 7h7" stroke-dasharray="2 2.5"/><circle cx="20" cy="8" r="1.6"/>',
+    pie: '<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5A8.5 8.5 0 0 1 20.5 12Z"/>',
   };
-  const levels = { 1: [178, 'Your limit $178.00'], 2: [185, 'Trigger $185.00'] };
-  const play = (n) => {
-    const pts = series[n](), level = levels[n];
-    let fi = 40; // market and fractional: the moment you place the order
-    if (n === 1) fi = pts.findIndex((p) => p <= level[0]);
-    if (n === 2) fi = pts.findIndex((p) => p >= level[0]);
-    if (fi < 0) fi = 40;
-    osim.querySelector('#os-line').setAttribute('d', pts.map((p, i) => `${i ? 'L' : 'M'}${X(i, N).toFixed(1)} ${Y(p).toFixed(1)}`).join(' '));
-    const lv = osim.querySelector('#os-level-line'), lt = osim.querySelector('#os-level-text');
-    lv.setAttribute('d', level ? `M0 ${Y(level[0]).toFixed(1)}H600` : ''); lt.textContent = level ? level[1] : ''; lt.setAttribute('y', level ? (Y(level[0]) + (n === 1 ? 18 : -8)).toFixed(1) : 0);
-    const f = osim.querySelector('#os-fill');
-    f.setAttribute('transform', `translate(${X(fi, N).toFixed(1)} ${Y(pts[fi]).toFixed(1)})`);
-    osim.querySelector('#os-fill-text').textContent = n === 2 ? 'Order activates' : n === 3 ? '$25 → 0.1378 sh' : `Filled at $${(n === 1 ? level[0] : pts[fi]).toFixed(2)}`;
-    osim.style.setProperty('--fill-at', `${(fi / (N - 1)).toFixed(3)}`);
-    osim.classList.remove('is-play'); void osim.offsetWidth; osim.classList.add('is-play');
-    tabs.forEach((t, i) => { const on = i === n; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
-    osim.querySelector('#os-do').textContent = tabs[n].dataset.do;
-    osim.querySelector('#os-best').textContent = tabs[n].dataset.best;
-    osim.querySelector('.os-panel').setAttribute('aria-labelledby', tabs[n].id);
+  const items = [...oring.querySelectorAll('.oring-src li')].map((li) => ({ icon: li.dataset.icon, name: li.querySelector('b').textContent, rows: [...li.querySelectorAll('span')].map((sp) => [sp.firstChild.textContent.replace(':', '').trim(), sp.querySelector('em').textContent]) }));
+  const cards = [...items, ...items];
+  const STEP = (2 * Math.PI) / cards.length;
+  const cyl = oring.querySelector('#oring-cyl'), stage = oring.querySelector('.oring-stage');
+  const geo = () => (innerWidth < 700 ? { r: 300, w: 230, h: 230, n: 10 } : { r: 470, w: 330, h: 236, n: 14 });
+  const cardHTML = (c) => `<div class="ocard"><span class="oc-ico"><svg viewBox="0 0 24 24">${ICON[c.icon]}</svg></span><b class="oc-name">${c.name}</b><dl>${c.rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
+  let g = null, rot = 0, vel = 0, dragging = false, hover = false, visible = false, raf = 0, last = 0, lastX = 0;
+  const build = () => {
+    g = geo();
+    const { r, w, h, n } = g, d = w / r / n, sw = 2 * r * Math.tan(d / 2) + 0.6;
+    cyl.innerHTML = cards.map((c, i) => `<div class="ogroup" style="transform: rotateY(${((i * STEP * 180) / Math.PI).toFixed(3)}deg)">${Array.from({ length: n }, (_, j) => `<div class="oslice" style="width:${sw.toFixed(2)}px;height:${h}px;margin:${-h / 2}px 0 0 ${(-sw / 2).toFixed(2)}px;transform: rotateY(${(((j - (n - 1) / 2) * d * 180) / Math.PI).toFixed(3)}deg) translateZ(${r}px)"><div style="position:absolute;top:0;left:${(-j * (w / n)).toFixed(2)}px;width:${w}px;height:${h}px">${cardHTML(c)}</div></div>`).join('')}</div>`).join('');
+    stage.style.setProperty('--r', `${r}px`);
+    paint();
   };
-  tabs.forEach((t, i) => t.addEventListener('click', () => { play(i); track('order_type_tab', { type: t.textContent }); }));
-  osim.querySelector('.os-tabs').addEventListener('keydown', (e) => {
-    const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!d) return; e.preventDefault();
-    const n = (tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true') + d + tabs.length) % tabs.length;
-    play(n); tabs[n].focus();
-  });
-  play(0);
-  new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); play(0); } }, { threshold: 0.4 }).observe(osim);
+  const paint = () => {
+    cyl.style.transform = `translateZ(${-g.r}px) rotateX(-6deg) rotateY(${((-rot * 180) / Math.PI).toFixed(3)}deg)`;
+    cyl.querySelectorAll('.ogroup').forEach((el, i) => { const th = Math.atan2(Math.sin(i * STEP - rot), Math.cos(i * STEP - rot)); el.classList.toggle('is-front', Math.abs(th) < STEP / 2); });
+  };
+  const SPEED = 0.16; // radians per second when idle: one card every ~5 s
+  const tick = (now) => {
+    raf = 0;
+    const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+    if (!dragging) { vel += ((hover ? 0 : SPEED) - vel) * Math.min(1, dt * 3); rot += vel * dt; }
+    paint();
+    if (visible && !reducedMotion) raf = requestAnimationFrame(tick); else last = 0;
+  };
+  const run = () => { if (!raf && visible && !reducedMotion) raf = requestAnimationFrame(tick); };
+  stage.addEventListener('pointerenter', () => { hover = true; });
+  stage.addEventListener('pointerleave', () => { hover = false; });
+  stage.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; stage.setPointerCapture(e.pointerId); stage.classList.add('is-drag'); });
+  stage.addEventListener('pointermove', (e) => { if (!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; rot -= dx / g.r; vel = -dx / g.r * 30; paint(); });
+  const end = () => { if (!dragging) return; dragging = false; stage.classList.remove('is-drag'); track('order_ring_drag'); };
+  stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(stage);
+  addEventListener('resize', () => { if (geo().r !== g.r) build(); }, { passive: true });
+  build();
 }
