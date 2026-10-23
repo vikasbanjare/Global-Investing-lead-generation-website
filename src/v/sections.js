@@ -1,17 +1,12 @@
 // Shared, visual-first sections for the reference-inspired options (/v6/–/v9/): big rounded gradient panels, UI renders
 // inside cards, bento layouts, app-screen sequences. Same reviewed copy everywhere; each option themes it in CSS
 // (--panel, --panel-2, --glow, --heading …) and brings its own hero.
-import { C, leadForm, faqList, logo, icon, quote, pct, usd, esc, $, $$, track, REF_PRICES } from './kit.js';
+import { C, leadForm, faqList, logo, icon, quote, pct, usd, esc, $, $$, track, REF_PRICES, chartSVG, sparkFor, curvePath, pricePath } from './kit.js';
 
 const qCell = (t) => { const q = quote(t); return `<span class="q"><b class="num">${usd.format(q.px)}</b><em class="num ${q.ch >= 0 ? 'up' : 'down'}">${pct(q.ch)}</em></span>`; };
 const share = (t, amt = 1) => (amt / REF_PRICES[t]).toFixed(4);
-function walk(w, h, seed, drift = -0.02) {
-  let y = h * 0.7, s = seed; const pts = [];
-  for (let i = 0; i <= 26; i++) { s = (s * 7919 + 13) % 9973; y = Math.max(6, Math.min(h - 4, y + h * drift + ((s / 9973) - 0.5) * h * 0.18)); pts.push([(i / 26) * w, y]); }
-  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-  return { line: d, area: `${d} L${w} ${h} L0 ${h} Z` };
-}
-const chart = (w = 240, h = 70, seed = 41) => { const a = walk(w, h, seed); return `<svg class="mini-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path class="ar" d="${a.area}"/><path class="ln" d="${a.line}"/></svg>`; };
+// Portfolio charts: brand tone, smooth, from kit.js.
+const chart = (w = 240, h = 70, seed = 41, ch = 2.41) => chartSVG(`pf${seed}`, ch, w, h, { cls: 'mini-chart', tone: 'brand', baseline: false });
 
 // ---------- hero bits
 export const heroCopy = () => `<p class="eyebrow">${C.hero.eyebrow}</p>
@@ -25,41 +20,66 @@ export const heroCopy = () => `<p class="eyebrow">${C.hero.eyebrow}</p>
 export const highlights = (cls = '') => `<section class="s-hl ${cls}" aria-label="Key investment highlights"><ul class="vw hl-grid">${C.highlights.map((h, i) => `<li class="rv" style="--i:${i}"><b>${h.fig}</b><span>${h.label}</span><small>${h.note}</small></li>`).join('')}</ul></section>`;
 
 // ---------- phone + screens (decorative)
+// Tab icons are CSS masks on the <i> (sections.css), so any tab bar built this way gets real glyphs.
+const tabbar = (on) => `<div class="app-tabs">${['Home', 'Search', 'Orders', 'Account'].map((t, i) => `<span${i === on ? ' class="on"' : ''}><i></i>${t}</span>`).join('')}</div>`;
+// iOS-style signal + battery glyphs for the status bar.
+const STATUS = '<svg class="dp-st" viewBox="0 0 40 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="3.5" width="3" height="8.5" rx="1"/><rect x="15" y="1" width="3" height="11" rx="1"/><rect x="22.5" y="1.5" width="15" height="9" rx="2.6" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="24.5" y="3.5" width="10" height="5" rx="1.2"/><rect x="38.6" y="4.5" width="1.4" height="3" rx=".7" fill-opacity=".45"/></svg>';
 export const screens = {
   dashboard: () => `<div class="app-top"><small>Good evening</small><b>US portfolio</b></div>
     <div class="app-card"><small>Portfolio value</small><b class="num">$1,248.60</b><em class="num">▲ 2.41% today</em>${chart(240, 60, 41)}</div>
-    <ul class="app-list">${[['apple', 'AAPL'], ['nvidia', 'NVDA'], ['microsoft', 'MSFT']].map(([l, t]) => `<li><span class="al-logo">${logo(l)}</span><b>${t}</b>${qCell(t)}</li>`).join('')}</ul>`,
+    <ul class="app-list">${[['apple', 'AAPL'], ['nvidia', 'NVDA'], ['microsoft', 'MSFT'], ['amazon', 'AMZN']].map(([l, t]) => `<li><span class="al-logo">${logo(l)}</span><b>${t}</b>${sparkFor(t, 54, 20, { dot: false, baseline: false })}${qCell(t)}</li>`).join('')}</ul>${tabbar(0)}`,
   buy: () => `<div class="app-top"><small>Buy by amount</small><b>Apple Inc. · AAPL</b></div>
     <div class="app-amt"><b class="num">$1.00</b><small>≈ <span class="num">${share('AAPL')}</span> shares</small></div>
     <div class="app-keys">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '⌫'].map((k) => `<i>${k}</i>`).join('')}</div>
     <p class="app-cta">Review order</p>`,
   activity: () => `<div class="app-top"><small>Activity</small><b>Orders</b></div>
     <ul class="app-list">${[['apple', 'AAPL', 'Bought $1.00'], ['nvidia', 'NVDA', 'Bought $25.00'], ['tesla', 'TSLA', 'Limit $310.00']].map(([l, t, s]) => `<li><span class="al-logo">${logo(l)}</span><b>${t}<small>${s}</small></b><span class="al-ok">Filled</span></li>`).join('')}</ul>
-    <div class="app-card app-card-alt"><small>USD buying power</small><b class="num">$297.62</b><em>After conversion and credit</em></div>`,
-  open: () => `<div class="app-top"><small>Step 1</small><b>Open your account</b></div>
+    <div class="app-card app-card-alt"><small>USD buying power</small><b class="num">$297.62</b><em>After conversion and credit</em></div>${tabbar(2)}`,
+  // Step screens carry app-like headers; the step titles are printed under each phone already.
+  open: () => `<div class="app-top"><small>Sign up</small><b>Your details</b></div>
     <div class="ui-field"><small>Mobile</small><span>+91 98•••• ••10</span></div><div class="ui-field"><small>PAN</small><span>ABCDE••••F</span></div><div class="ui-field"><small>Email</small><span>you@email.com</span></div><p class="app-cta">Continue</p>`,
-  verify: () => `<div class="app-top"><small>Step 2</small><b>Get verified</b></div>
+  verify: () => `<div class="app-top"><small>KYC</small><b>Verification</b></div>
     <div class="ui-badge">${icon.shield}</div><ul class="ui-checks"><li>PAN ✓</li><li>Identity ✓</li><li>Address ✓</li></ul><p class="ui-note">Awaiting account approval</p>`,
-  fund: () => `<div class="app-top"><small>Step 3</small><b>Add USD buying power</b></div>
+  fund: () => `<div class="app-top"><small>Wallet</small><b>Add funds</b></div>
     <div class="ui-fx"><div><small>You send</small><b class="num">₹25,000</b></div><i>↓</i><div class="hot"><small>Buying power</small><b class="num">$297.62</b></div></div><p class="ui-note">Illustrative, at ₹84 per dollar</p>`,
-  track: () => `<div class="app-top"><small>Step 4</small><b>Find, invest, track</b></div>
-    <div class="app-card"><small>Portfolio value</small><b class="num">$312.40</b><em class="num">▲ 1.12% today</em>${chart(240, 54, 77)}</div>
+  track: () => `<div class="app-top"><small>Home</small><b>Portfolio</b></div>
+    <div class="app-card"><small>Portfolio value</small><b class="num">$312.40</b><em class="num">▲ 1.12% today</em>${chart(240, 54, 77, 1.12)}</div>
     <ul class="app-list">${[['apple', 'AAPL'], ['nvidia', 'NVDA']].map(([l, t]) => `<li><span class="al-logo">${logo(l)}</span><b>${t}</b>${qCell(t)}</li>`).join('')}</ul>`,
 };
-export const phone = (screen, cls = '') => `<div class="dphone ${cls}" aria-hidden="true"><div class="dp-screen"><div class="dp-sb"><span data-bind="ist">—</span><i></i><span>●●●</span></div>${screens[screen]()}</div></div>`;
+export const phone = (screen, cls = '') => `<div class="dphone ${cls}" data-screen="${screen}" aria-hidden="true"><div class="dp-screen"><div class="dp-sb"><span data-bind="ist">—</span><i></i>${STATUS}</div>${screens[screen]()}</div></div>`;
 
-// ---------- brands: an app-icon wall in a gradient panel
+// ---------- brands: an app-icon wall in a gradient panel (tiles bob by column, paused off-screen)
 export const brands = () => `<section class="sec s-brands" id="brands"><div class="vw">
   <div class="head rv"><h2>${C.brands.title}</h2><p>${C.brands.sub}</p></div>
-  <div class="panel icon-wall rv">${C.brands.list.map(([n, t, l], i) => `<a class="app-icon" href="#lead" style="--i:${i}" aria-label="Invest in ${n} (${t})"><span class="ai-tile">${logo(l)}</span><b>${n}</b>${qCell(t)}</a>`).join('')}</div>
+  <div class="panel icon-wall rv">${C.brands.list.map(([n, t, l], i) => `<a class="app-icon" href="#lead" style="--i:${i};--c:${i % 4}" aria-label="Invest in ${n} (${t})"><span class="ai-tile loop">${logo(l)}</span><b>${n}</b>${qCell(t)}</a>`).join('')}</div>
 </div></section>`;
 
 // ---------- product: a bento with live UI inside each card, then order types and support
-const ORDER_ART = [
-  '<path class="o-ln" d="M10 70 L60 52 L100 60 L150 34 L200 42 L250 18"/><circle class="o-dot" cx="250" cy="18" r="7"/>',
-  '<path class="o-lvl" d="M0 58 H260"/><path class="o-ln" d="M10 22 L60 34 L100 46 L140 58 L190 50 L250 30"/><circle class="o-dot" cx="140" cy="58" r="7"/>',
-  '<path class="o-lvl" d="M0 30 H260"/><path class="o-ln" d="M10 70 L60 62 L110 50 L150 30 L200 22 L250 14"/><circle class="o-dot" cx="150" cy="30" r="7"/>',
-  '<circle cx="130" cy="44" r="34" class="o-pie-bg"/><path class="o-pie" d="M130 44 V10 A34 34 0 0 1 158 63 Z"/>',
+// Order types: one mini trading chart per type, read at a glance. The price curve (kit.js curvePath) stretches to its
+// tile; the order line, fill dot and axis tag are HTML placed in %, so they stay round and readable at any size.
+let otN = 0;
+const at = ([x, y]) => `left:${(x / 2).toFixed(1)}%;top:${y.toFixed(1)}%`;         // chart space is 200 × 100
+const otChart = ({ vals, w = 200, fill, kind, tag }) => {
+  const P = 14, c = curvePath(vals, w + 2 * P, 100, P), id = ++otN;
+  const raw = fill === undefined ? c.end : c.pts[fill], dot = [raw[0] - P, raw[1]];
+  const area = `<linearGradient class="ot-ar" id="otg${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".16"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient>`;
+  const on = kind === 'stop' ? `<clipPath id="otc${id}"><rect x="${raw[0]}" y="0" width="${w + 2 * P}" height="100"/></clipPath>` : '';
+  // A chart that stops at "now" fades its fill out toward the last price instead of ending in a hard edge.
+  const fade = w < 200 ? `<linearGradient id="otf${id}" x1="0" y1="0" x2="1" y2="0"><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="otm${id}" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#otf${id})"/></mask>` : '';
+  return `<svg viewBox="0 0 200 100" preserveAspectRatio="none"><defs>${area}${on}${fade}</defs><path class="ot-grid" d="M0 25H200M0 50H200M0 75H200"/>`
+    + `<g transform="translate(-${P} 0)"><path d="${c.area}" fill="url(#otg${id})"${fade ? ` mask="url(#otm${id})"` : ''}/><path class="ot-ln" d="${c.line}"/>`
+    + (on ? `<path class="ot-ln is-on" d="${c.line}" clip-path="url(#otc${id})"/>` : '') + '</g></svg>'
+    + (kind === 'limit' ? `<i class="ot-zone" style="top:${dot[1].toFixed(1)}%"></i>` : '')
+    + `<i class="ot-lvl${kind === 'market' ? ' is-guide' : ''}" style="${kind === 'market' ? `${at(dot)}` : `top:${dot[1].toFixed(1)}%`}"></i>`
+    + `<i class="ot-dot${kind === 'market' ? ' is-live loop' : ''}" style="${at(dot)}"></i><b class="ot-tag" style="top:${dot[1].toFixed(1)}%">${tag}</b>`;
+};
+const ORDER_VIS = [
+  // dots sit at ≤ 64% across, clear of the axis tag on the right
+  otChart({ vals: [0.18, 0.34, 0.3, 0.5, 0.45, 0.66, 0.6, 0.74], w: 112, kind: 'market', tag: 'Market' }),   // a calm uptrend: reads cleanly even squeezed into the phone tile
+  otChart({ vals: [1.5, 1.38, 1.44, 1.2, 1.06, 1.12, 0.78, 0.36, 0.6, 0.92, 1.1, 1.2], fill: 7, kind: 'limit', tag: 'Limit' }),
+  otChart({ vals: [0, 0.2, 0.12, 0.38, 0.3, 0.55, 0.8, 1.02, 1.2, 1.36, 1.56, 1.7], fill: 6, kind: 'stop', tag: 'Trigger' }),
+  // $1 into one Apple share, as an amount ticket; the bar is the whole share, filled true to scale.
+  `<div class="ot-frac"><p class="ot-seg"><span class="on">$</span><span>Shares</span></p><b class="num">$1.00</b><small>≈ <span class="num">${share('AAPL')}</span> AAPL</small><i class="ot-bar" style="--f:${(1 / REF_PRICES.AAPL).toFixed(4)}"><i></i></i><small class="ot-bar-k"><span>$1</span><span>1 share</span></small></div>`,
 ];
 export const product = () => `<section class="sec s-product" id="product"><div class="vw">
   <div class="head rv"><p class="eyebrow">${C.features.eyebrow}</p><h2>${C.features.title}</h2></div>
@@ -81,9 +101,9 @@ export const product = () => `<section class="sec s-product" id="product"><div c
       <div class="ui-flow" aria-hidden="true"><span>₹ INR</span><i class="loop"></i><span class="hot">$ USD</span></div></article>
   </div>
   <h3 class="h3 rv">${C.orders.title}</h3>
-  <div class="orders-row">${C.orders.rows.map(([t, d, b], i) => `<article class="o-card rv" style="--i:${i}">
-    <svg class="o-art" viewBox="0 0 260 88" aria-hidden="true">${ORDER_ART[i]}</svg>
-    <h4>${t}</h4><dl><div><dt>${C.orders.cols[1]}</dt><dd>${d}</dd></div><div><dt>${C.orders.cols[2]}</dt><dd>${b}</dd></div></dl></article>`).join('')}</div>
+  <div class="orders-row ot">${C.orders.rows.map(([t, d, b], i) => `<article class="ot-card rv" style="--i:${i}">
+    <div class="ot-vis${i === 3 ? ' is-frac' : ''}" aria-hidden="true">${ORDER_VIS[i]}</div>
+    <div class="ot-txt"><h4>${t}</h4><p><span class="sr-only">${C.orders.cols[1]}: </span>${d}</p><p class="ot-best"><span>${C.orders.cols[2]}</span> ${b}</p></div></article>`).join('')}</div>
   <div class="sup-strip rv"><h3>${C.supports.title}</h3><dl>${C.supports.items.map(([t, d]) => `<div><dt>${t}</dt><dd>${d}</dd></div>`).join('')}</dl></div>
 </div></section>`;
 
@@ -129,7 +149,8 @@ export const tax = () => `<section class="sec s-tax" id="tax"><div class="vw">
 
 export const faq = () => `<section class="sec s-faq" id="faq"><div class="vw faq-in"><h2 class="rv">${C.faq.title}</h2>${faqList()}</div></section>`;
 
-export const closing = (art = '') => `<section class="s-closing" id="start"><div class="vw">
+// The closing art carries its phone's screen name so the mobile crop (sections.css) can cut where that screen is blank.
+export const closing = (art = '', scr = art ? /data-screen="(\w+)"/.exec(art)?.[1] : 'dashboard') => `<section class="s-closing" id="start"><div class="vw">
   <div class="close-panel panel rv">
     <div class="close-copy">
       <h2>${C.closing.title}</h2>
@@ -139,7 +160,7 @@ export const closing = (art = '') => `<section class="s-closing" id="start"><div
       <a class="tlink" href="#lead-2">${C.closing.expert}${icon.go}</a>
       <p class="fine">${C.closing.fine}</p>
     </div>
-    <div class="close-art" aria-hidden="true">${art || phone('dashboard')}</div>
+    <div class="close-art"${scr ? ` data-screen="${scr}"` : ''} aria-hidden="true">${art || phone('dashboard')}</div>
   </div>
 </div></section>`;
 
@@ -158,7 +179,7 @@ export function setupSections() {
   const show = (i, focus) => {
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
     panel.setAttribute('aria-labelledby', tabs[i].id);
-    panel.innerHTML = C.sectors.list[names[i]].map(([nm, t, l], k) => `<a class="sx-row" href="#lead" style="--i:${k}" aria-label="Invest in ${esc(nm)} (${t})"><span class="sx-logo">${logo(l, t)}</span><span class="sx-name"><b>${esc(nm)}</b><small>${t}</small></span><svg class="sx-spark" viewBox="0 0 90 26" aria-hidden="true"><path d="${walk(90, 26, t.charCodeAt(0) * 7 + k, quote(t).ch >= 0 ? -0.03 : 0.03).line}" class="${quote(t).ch >= 0 ? 'up' : 'down'}"/></svg>${qCell(t)}<span class="sx-go" aria-hidden="true">Invest${icon.go}</span></a>`).join('');
+    panel.innerHTML = C.sectors.list[names[i]].map(([nm, t, l], k) => `<a class="sx-row" href="#lead" style="--i:${k}" aria-label="Invest in ${esc(nm)} (${t})"><span class="sx-logo">${logo(l, t)}</span><span class="sx-name"><b>${esc(nm)}</b><small>${t}</small></span>${sparkFor(t, 176, 36, { cls: 'sx-spark' })}${qCell(t)}<span class="sx-go" aria-hidden="true">Invest${icon.go}</span></a>`).join('');
     if (focus) tabs[i].focus();
   };
   tabs.forEach((t, i) => t.addEventListener('click', () => { show(i); track('sector_tab', { sector: names[i] }); }));

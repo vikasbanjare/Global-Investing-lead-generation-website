@@ -57,12 +57,15 @@ function patchGrowth(shader, uT) {
 
 export function createCity({ canvas, label, reducedMotion = false, withClouds = true }) {
   let renderer;
+  // three r169 needs WebGL2: check on a throwaway canvas first, so no-GPU browsers skip THREE's console errors.
+  try { if (!document.createElement('canvas').getContext('webgl2')) return null; } catch { return null; }
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   } catch (e) {
     return null; // caller shows the static fallback
   }
   const hero = canvas.closest('.hero');
+  canvas.addEventListener('webglcontextlost', () => hero?.classList.add('no-webgl')); // a dropped GPU context falls back to the poster
   const data = fetch(`${import.meta.env.BASE_URL}data/manhattan.json`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
   // Real aerial photography of the harbour (NYS ITS orthoimagery, colour-graded): draped on land and roofs.
   const treesData = fetch(`${import.meta.env.BASE_URL}data/trees.json`).then((r) => r.json()).catch(() => []);

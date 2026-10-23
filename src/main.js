@@ -1,11 +1,13 @@
 import './style.css';
 import { marketStatus, cityTime, REF_PRICES } from './market.js';
+import { sparkFor } from './v/kit.js'; // the shared smooth chart helper
 
 const $ = (s, root = document) => root.querySelector(s);
 const bind = (key, value) => document.querySelectorAll(`[data-bind="${key}"]`).forEach((el) => { el.textContent = value; });
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root = document.documentElement;
 document.documentElement.classList.add('js'); // reveal styles only apply when JS can undo them
+document.addEventListener('touchstart', () => {}, { passive: true }); // lets :active fire on iOS (the leaders board)
 
 // ---------- Hero city
 // Desktop: live 3D (Three.js), started after load when the main thread is idle.
@@ -24,7 +26,7 @@ function placePosterLabel() {
   label.style.left = `${pb.left - hb.left + POSTER_LABEL.x * dw - (dw - pb.width) / 2}px`;
   label.style.top = `${pb.top - hb.top + POSTER_LABEL.y * dh - (dh - pb.height) / 2}px`;
 }
-const narrow = matchMedia('(max-width: 900px)');
+const narrow = matchMedia('(width <= 900px)');
 const forceLive = new URLSearchParams(location.search).has('live');
 let live = false;
 // Start downloading the 3D code as soon as the page parses (desktop only); it is only run after load, when idle.
@@ -48,7 +50,7 @@ const whenIdle = (fn) => ('requestIdleCallback' in window ? requestIdleCallback(
 if (narrow.matches && !forceLive) {
   placePosterLabel();
   window.addEventListener('resize', () => { if (!live) placePosterLabel(); }, { passive: true });
-  label.style.transform = 'translate(-50%, calc(-100% - 14px))';
+  label.style.transform = 'translate(-50%, calc(-100% - 2px))'; // sits just above the pin, clear of the map credit chip
   label.classList.add('is-on');
   narrow.addEventListener('change', (e) => { if (!e.matches) whenIdle(startCity); });
 } else if (document.readyState === 'complete') whenIdle(startCity);
@@ -170,8 +172,8 @@ const dockObserver = new IntersectionObserver((entries) => {
 [$('.hero-copy'), $('.cta'), $('.footer')].forEach((el) => dockObserver.observe(el));
 dockLink.addEventListener('click', (e) => {
   e.preventDefault();
+  input.focus({ preventScroll: true }); // inside the tap, so iOS opens the keyboard
   window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
-  setTimeout(() => input.focus({ preventScroll: true }), reducedMotion ? 0 : 500);
 });
 
 // ---------- Diagrams (money routes, the four-step journey) reveal when first seen
@@ -181,9 +183,8 @@ const laneObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.lane, .journey, .sector-cols').forEach((el) => laneObserver.observe(el)); // diagrams reveal in sequence when first seen
 
 // ---------- The page unfolds: every block rises in as it enters the viewport, staggered within its group.
-const REVEAL = ['.section-head', '.stats > .stat', '.ticker', '.product-copy .features > li', '.orders > *', '.bento > .tile',
-  '.eligibility', '.trust-head', '.popular-foot', '.pricing-head', '.pricing-body > *', '.prices',
-  '.tax-item', '.faq .split-top > div:first-child', '.faq-item', '.cta-inner > *'].join(', ');
+const REVEAL = ['.section-head', '.ticker', '.explorer', '.orders > *', '.bento > .tile', '.eligibility', '.popular-foot',
+  '.pricing-head', '.benefits > li', '.charges', '.tax-item', '.faq-item', '.cta-inner > *'].join(', ');
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-up'); revealObserver.unobserve(e.target); } });
 }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
@@ -198,13 +199,15 @@ document.querySelectorAll(REVEAL).forEach((el) => {
 const sectors = {
   Technology: [['Apple', 'AAPL', 'apple'], ['Microsoft', 'MSFT', 'microsoft'], ['NVIDIA', 'NVDA', 'nvidia'], ['Alphabet', 'GOOGL', 'google'], ['Amazon', 'AMZN', 'amazon']],
   Healthcare: [['Eli Lilly', 'LLY'], ['Johnson & Johnson', 'JNJ'], ['UnitedHealth', 'UNH'], ['AbbVie', 'ABBV'], ['Merck', 'MRK']],
-  Financials: [['Visa', 'V', 'visa'], ['Mastercard', 'MA', 'mastercard'], ['Goldman Sachs', 'GS', 'goldmansachs'], ['Bank of America', 'BAC', 'bankofamerica'], ['American Express', 'AXP', 'americanexpress']],
+  Financials: [['Visa', 'V', 'visa'], ['Mastercard', 'MA', 'mastercard'], ['Goldman Sachs', 'GS'], ['Bank of America', 'BAC', 'bankofamerica'], ['American Express', 'AXP']],
   Consumer: [['Tesla', 'TSLA', 'tesla'], ['Netflix', 'NFLX', 'netflix'], ['Coca-Cola', 'KO', 'cocacola'], ['Starbucks', 'SBUX', 'starbucks'], ['McDonald’s', 'MCD', 'mcdonalds']],
   Energy: [['Exxon Mobil', 'XOM'], ['Chevron', 'CVX'], ['ConocoPhillips', 'COP'], ['NextEra Energy', 'NEE'], ['SLB', 'SLB']],
   ETFs: [['S&P 500 ETF', 'SPY'], ['Nasdaq-100 ETF', 'QQQ'], ['Vanguard S&P 500', 'VOO'], ['Total Stock Market', 'VTI'], ['Core S&P 500', 'IVV']],
 };
 const esc = (s) => s.replace(/&/g, '&amp;');
-const WIDE = new Set(['visa', 'goldmansachs']); // wordmarks in square viewBoxes: size their mask by width
+const WIDE = new Set(['visa']); // wordmarks in square viewBoxes: size their mask by width
+// ponytail: no mark SVG yet (LLY, JNJ, UNH, ABBV, MRK, energy, ETF issuers; GS/AXP wordmarks are illegible at 36px) → the
+// disc shows the ticker. Add the slug as the 3rd item once public/logos has a square mark.
 const GO = '<svg class="link-go" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>';
 // One light column per sector (after Dhan's sector columns). Each row: Company, Ticker, Price (USD), 1D %, and the whole
 // row is the Invest link. Prices are illustrative reference values (REF_PRICES) with a stable pseudo day-change per ticker.
@@ -218,7 +221,7 @@ const SECTOR_ICON = {
 };
 const dayChange = (t) => { let h = 7; for (const c of t) h = (h * 31 + c.charCodeAt(0)) % 997; return ((h % 400) - 160) / 100; };
 function sectorRow([name, ticker, logo], i) {
-  const mark = logo ? `<span class="logo${WIDE.has(logo) ? ' logo-wide' : ''}" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span>` : `<span class="sc-mono">${ticker.slice(0, 2)}</span>`;
+  const mark = logo ? `<span class="logo${WIDE.has(logo) ? ' logo-wide' : ''}" style="--logo: url(${import.meta.env.BASE_URL}logos/${logo}.svg)"></span>` : `<span class="sc-mono">${ticker}</span>`;
   const px = REF_PRICES[ticker], ch = dayChange(ticker);
   return `<li style="--i: ${i}"><a class="sc-row" href="#lead" aria-label="Invest in ${esc(name)} (${ticker})">
     <span class="sc-mark" aria-hidden="true">${mark}</span>
@@ -277,9 +280,9 @@ document.addEventListener('click', (e) => {
 // ---------- Stale-page check (production). GitHub Pages lets browsers reuse the page for 10 minutes; after a deploy
 // that can show an old version. Ask once, bypassing the cache, and reload if the page has been rebuilt since.
 if (import.meta.env.PROD) {
-  const mine = document.querySelector('script[type="module"][src*="/assets/index-"]')?.getAttribute('src');
+  const mine = document.querySelector('script[type="module"][src*="/assets/main-"]')?.getAttribute('src');
   setTimeout(() => fetch(location.pathname, { cache: 'no-store' }).then((r) => r.text()).then((html) => {
-    const latest = /<script[^>]+type="module"[^>]+src="([^"]*\/assets\/index-[^"]+)"/.exec(html)?.[1];
+    const latest = /<script[^>]+type="module"[^>]+src="([^"]*\/assets\/main-[^"]+)"/.exec(html)?.[1];
     if (mine && latest && latest !== mine && !sessionStorage.getItem('reloaded-for')) { sessionStorage.setItem('reloaded-for', latest); location.reload(); }
   }).catch(() => {}), 1500);
 }
@@ -306,7 +309,8 @@ document.querySelector('.map-ctrl')?.addEventListener('click', (e) => {
 // 6 s while on screen until the visitor takes over (click, key, slider, hover).
 const ex = document.querySelector('.explorer');
 if (ex) {
-  const tabs = [...ex.querySelectorAll('.ex-tab')], demos = [...ex.querySelectorAll('.ex-demo')], panel = ex.querySelector('.ex-stage');
+  const tabs = [...ex.querySelectorAll('.ex-tab')], demos = [...ex.querySelectorAll('.ex-demo')], panel = ex.querySelector('.ex-stage'), list = ex.querySelector('.ex-list');
+  ex.querySelectorAll('[data-spark]').forEach((el) => { el.innerHTML = sparkFor(el.dataset.spark, 120, 32, { baseline: false }); });
   let k = 0, auto = !reducedMotion, timer = 0, typing = 0;
   const typeSearch = () => { // the search demo types its query
     clearInterval(typing);
@@ -320,6 +324,7 @@ if (ex) {
     tabs.forEach((t, i) => { const on = i === n; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; t.classList.toggle('is-auto', on && auto); });
     demos.forEach((d, i) => d.classList.toggle('is-on', i === n));
     panel.setAttribute('aria-labelledby', tabs[n].id);
+    if (list.scrollWidth > list.clientWidth) list.scrollTo({ left: tabs[n].offsetLeft - 8, behavior: reducedMotion ? 'auto' : 'smooth' });
     if (n === 1) typeSearch();
     if (focus) tabs[n].focus();
     clearTimeout(timer);
@@ -331,7 +336,9 @@ if (ex) {
     const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
     if (d) { e.preventDefault(); stop(); show((k + d + tabs.length) % tabs.length, true); }
   });
-  ex.addEventListener('pointerenter', stop, { once: true });
+  ex.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') stop(); });
+  list.addEventListener('pointerdown', stop, { passive: true });
+  list.addEventListener('touchstart', stop, { passive: true });
   // Fractional: the slider sets the amount; each circle is one whole NVIDIA share and fills by the part you'd own
   // ($25 → a 14% wedge of the first; $500 → two full circles and most of a third).
   const slider = ex.querySelector('#ex-slider'), pies = [...ex.querySelectorAll('#ex-pies .pie')];
@@ -358,9 +365,11 @@ if (ex) {
   new IntersectionObserver(([e], obs) => { if (e.isIntersecting) { obs.disconnect(); show(0); } }, { threshold: 0.4 }).observe(ex);
 }
 
-// ---------- Order types: a 3D ring of bent cards (the earlier card-ring design) that turns on its own while on screen,
-// can be dragged left or right, and pauses on hover. The four types (from the screen-reader list in the HTML) each
-// appear twice so the ring stays full. Each card is cut into thin vertical slices on a cylinder, so it curves.
+// ---------- Order types: a 3D ring of bent cards that turns on its own while on screen, can be dragged left or right,
+// and pauses on hover. The four types (from the screen-reader list in the HTML) each appear three times, so the ring is
+// wide (gentle bend, near neighbours) and only the front card and its two neighbours ever show (narrow screens: the front
+// card). It rests on each card, then turns to the next, so the visible cards are always whole and readable.
+// Each card is cut into a few vertical slices on a cylinder, so it curves.
 const oring = document.querySelector('#oring');
 if (oring) {
   const ICON = {
@@ -370,39 +379,77 @@ if (oring) {
     pie: '<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5A8.5 8.5 0 0 1 20.5 12Z"/>',
   };
   const items = [...oring.querySelectorAll('.oring-src li')].map((li) => ({ icon: li.dataset.icon, name: li.querySelector('b').textContent, rows: [...li.querySelectorAll('span')].map((sp) => [sp.firstChild.textContent.replace(':', '').trim(), sp.querySelector('em').textContent]) }));
-  const cards = [...items, ...items];
+  const cards = [...items, ...items, ...items];
   const STEP = (2 * Math.PI) / cards.length;
   const cyl = oring.querySelector('#oring-cyl'), stage = oring.querySelector('.oring-stage');
-  const geo = () => (innerWidth < 700 ? { r: 300, w: 230, h: 230, n: 10 } : { r: 470, w: 330, h: 236, n: 14 });
   const cardHTML = (c) => `<div class="ocard"><span class="oc-ico"><svg viewBox="0 0 24 24">${ICON[c.icon]}</svg></span><b class="oc-name">${c.name}</b><dl>${c.rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
-  let g = null, rot = 0, vel = 0, dragging = false, hover = false, visible = false, raf = 0, last = 0, lastX = 0;
+  const RAD = Math.PI / 180;
+  const geo = () => {
+    // widest card that keeps both resting neighbours wholly inside the stage (their projected outer edge is ≈1.4 card widths
+    // from the centre); below 260px there is no room for neighbours, so only the front card shows
+    const half = stage.clientWidth / 2, both = Math.floor((half - 48) / 1.4), phone = both < 260;
+    const w = phone ? Math.round(Math.min(330, stage.clientWidth - 64)) : Math.min(330, both);
+    // fade window (degrees from the front): fully opaque inside `full`, gone by `gone`
+    return { w, r: Math.round((cards.length * (w + 40)) / (2 * Math.PI)), n: phone ? 6 : 8, full: (phone ? 8 : 30) * RAD, gone: (phone ? 24 : 54) * RAD };
+  };
+  // every card gets the height of the tallest one (measured at the real width, so no line is ever cut)
+  const measure = (w) => {
+    const box = document.createElement('div');
+    box.innerHTML = items.map((c) => cardHTML(c).replace('class="ocard"', `class="ocard ocard-measure" style="width:${w}px"`)).join('');
+    stage.append(box);
+    const h = Math.max(...[...box.children].map((el) => el.offsetHeight));
+    box.remove();
+    return Math.ceil(h / 8) * 8;
+  };
+  let g = null, groups = [], rot = 0, target = 0, dwell = 0, painted = NaN, vel = 0, dragging = false, moved = 0, hover = false, visible = false, raf = 0, last = 0, lastX = 0;
   const build = () => {
     g = geo();
-    const { r, w, h, n } = g, d = w / r / n, sw = 2 * r * Math.tan(d / 2) + 0.6;
-    cyl.innerHTML = cards.map((c, i) => `<div class="ogroup" style="transform: rotateY(${((i * STEP * 180) / Math.PI).toFixed(3)}deg)">${Array.from({ length: n }, (_, j) => `<div class="oslice" style="width:${sw.toFixed(2)}px;height:${h}px;margin:${-h / 2}px 0 0 ${(-sw / 2).toFixed(2)}px;transform: rotateY(${(((j - (n - 1) / 2) * d * 180) / Math.PI).toFixed(3)}deg) translateZ(${r}px)"><div style="position:absolute;top:0;left:${(-j * (w / n)).toFixed(2)}px;width:${w}px;height:${h}px">${cardHTML(c)}</div></div>`).join('')}</div>`).join('');
-    stage.style.setProperty('--r', `${r}px`);
+    const { r, w, n } = g, h = (g.h = measure(w)), d = w / r / n, sw = 2 * r * Math.tan(d / 2) + 0.6;
+    cyl.innerHTML = cards.map((c, i) => `<div class="ogroup" style="transform: rotateY(${((i * STEP) / RAD).toFixed(3)}deg)">${Array.from({ length: n }, (_, j) => `<div class="oslice" style="width:${sw.toFixed(2)}px;height:${h}px;margin:${-h / 2}px 0 0 ${(-sw / 2).toFixed(2)}px;transform: rotateY(${(((j - (n - 1) / 2) * d) / RAD).toFixed(3)}deg) translateZ(${r}px)"><div style="position:absolute;top:0;left:${(-j * (w / n)).toFixed(2)}px;width:${w}px;height:${h}px">${cardHTML(c)}</div></div>`).join('')}</div>`).join('');
+    groups = [...cyl.children];
+    stage.style.setProperty('--card-h', `${h}px`);
+    painted = NaN;
     paint();
   };
   const paint = () => {
-    cyl.style.transform = `translateZ(${-g.r}px) rotateX(-6deg) rotateY(${((-rot * 180) / Math.PI).toFixed(3)}deg)`;
-    cyl.querySelectorAll('.ogroup').forEach((el, i) => { const th = Math.atan2(Math.sin(i * STEP - rot), Math.cos(i * STEP - rot)); el.classList.toggle('is-front', Math.abs(th) < STEP / 2); });
+    if (rot === painted) return; // nothing moved since the last frame
+    painted = rot;
+    cyl.style.transform = `translateZ(${-g.r}px) rotateY(${(-rot / RAD).toFixed(3)}deg)`; // no tilt: it would drop the front card r·sin(tilt) px into the clip
+    groups.forEach((el, i) => {
+      const th = Math.abs(Math.atan2(Math.sin(i * STEP - rot), Math.cos(i * STEP - rot)));
+      const o = Math.min(1, Math.max(0, (g.gone - th) / (g.gone - g.full)));
+      el.style.setProperty('--o', o.toFixed(3)); // opacity on the flat slices only (CSS): the 3D groups never flatten
+      el.style.visibility = o > 0 ? '' : 'hidden';
+      el.classList.toggle('is-front', th < STEP / 2);
+    });
   };
-  const SPEED = 0.16; // radians per second when idle: one card every ~5 s
+  const DWELL = 3.2; // seconds each card rests at the front before the ring turns on (hover holds it)
   const tick = (now) => {
     raf = 0;
     const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
-    if (!dragging) { vel += ((hover ? 0 : SPEED) - vel) * Math.min(1, dt * 3); rot += vel * dt; }
+    if (!dragging) {
+      if (Math.abs(target - rot) < 0.001) { rot = target; if (!hover && (dwell += dt) > DWELL) { dwell = 0; target += STEP; } }
+      else rot += (target - rot) * Math.min(1, dt * 5); // eased turn, ~0.7 s
+    }
     paint();
     if (visible && !reducedMotion) raf = requestAnimationFrame(tick); else last = 0;
   };
   const run = () => { if (!raf && visible && !reducedMotion) raf = requestAnimationFrame(tick); };
   stage.addEventListener('pointerenter', () => { hover = true; });
   stage.addEventListener('pointerleave', () => { hover = false; });
-  stage.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; stage.setPointerCapture(e.pointerId); stage.classList.add('is-drag'); });
-  stage.addEventListener('pointermove', (e) => { if (!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; rot -= dx / g.r; vel = -dx / g.r * 30; paint(); });
-  const end = () => { if (!dragging) return; dragging = false; stage.classList.remove('is-drag'); track('order_ring_drag'); };
+  stage.addEventListener('pointerdown', (e) => { dragging = true; moved = 0; lastX = e.clientX; stage.setPointerCapture(e.pointerId); stage.classList.add('is-drag'); });
+  stage.addEventListener('pointermove', (e) => { if (!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; moved += Math.abs(dx); rot -= dx / g.r; vel = (-dx / g.r) * 8; paint(); });
+  const end = (e) => {
+    if (!dragging) return;
+    dragging = false; stage.classList.remove('is-drag');
+    target = Math.round((rot + vel) / STEP) * STEP; dwell = 0; vel = 0; // settle on the nearest card (a flick carries on)
+    if (reducedMotion) { rot = target; paint(); }
+    if (e.type === 'pointerup' && moved > 8) track('order_ring_drag'); // a vertical swipe that starts here ends in pointercancel: not a drag
+  };
   stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(stage);
-  addEventListener('resize', () => { if (geo().r !== g.r) build(); }, { passive: true });
+  let resizing = 0;
+  addEventListener('resize', () => { cancelAnimationFrame(resizing); resizing = requestAnimationFrame(() => { if (geo().w !== g.w) build(); }); }, { passive: true });
   build();
+  document.fonts?.ready.then(() => { if (measure(g.w) !== g.h) build(); }); // remeasure once the web font is in
 }

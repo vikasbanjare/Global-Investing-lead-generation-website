@@ -1,29 +1,21 @@
 // v2 · Light editorial: airy white pages, an app phone in the hero, brand price cards, live feature cards.
 import './base.css';
 import './v2.css';
-import { C, boot, header, footer, leadForm, faqList, orderTable, logo, icon, quote, pct, usd, esc, $, $$, track, REF_PRICES } from './kit.js';
+import { C, boot, header, footer, leadForm, faqList, orderTable, logo, icon, quote, pct, usd, esc, $, $$, track, REF_PRICES, sparkFor, chartSVG } from './kit.js';
 
-// A small deterministic sparkline per ticker (decoration for the illustrative quotes).
-function spark(t, w = 96, h = 32) {
-  let s = 0; for (const c of t) s = (s * 33 + c.charCodeAt(0)) % 9973;
-  // a random walk that drifts toward the day's direction
-  const up = quote(t).ch >= 0, n = 28;
-  let y = up ? 0.7 : 0.3;
-  const pts = Array.from({ length: n }, (_, i) => {
-    s = (s * 7919 + 13) % 9973;
-    if (i) y = Math.min(0.92, Math.max(0.08, y + ((s / 9973) - 0.5) * 0.22 + (up ? -0.02 : 0.02)));
-    return [i * (w / (n - 1)), y * h];
-  });
-  return `<svg class="spark ${quote(t).ch >= 0 ? 'up' : 'down'}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}"/></svg>`;
-}
-// The portfolio card's area chart: a gentle up-trending walk.
-function area(lineOnly) {
-  let y = 52, sd = 41; const pts = [];
-  for (let i = 0; i <= 26; i++) { sd = (sd * 7919 + 13) % 9973; y = Math.max(8, Math.min(62, y - 1.3 + ((sd / 9973) - 0.5) * 9)); pts.push([(i / 26) * 260, y]); }
-  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
-  return lineOnly ? d : `${d} L260 70 L0 70 Z`;
-}
+// Sparklines and the portfolio chart come from kit.js (smooth, start at the previous close, end at the quote's 1D %).
+const spark = (t, w = 96, h = 32) => sparkFor(t, w, h, { cls: 'spark', dot: w >= 90, baseline: w >= 60 });
 const priceCell = (t) => { const q = quote(t); return `<b class="num">${usd.format(q.px)}</b><span class="num ${q.ch >= 0 ? 'up' : 'down'}">${pct(q.ch)}</span>`; };
+
+const keep = (s) => s.replace(/ (?=\S+$)/, '&nbsp;'); // no lone last word, even without text-wrap: balance
+const noHyphenBreak = (s) => s.replace(/\S+-\S+/g, (w) => `<span class="nw">${w}</span>`); // 'Nasdaq-100', 'Coca-Cola' never split at the hyphen
+const HOME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4Z"/></svg>';
+// Why-cards: a small real-data visual each (logos, a 1D sparkline, the currency pair) instead of an icon tile.
+const WHY_VIZ = [
+  `<span class="why-viz viz-stack" aria-hidden="true">${['apple', 'microsoft', 'google', 'amazon', 'nvidia'].map((l) => `<i>${logo(l)}</i>`).join('')}</span>`,
+  `<span class="why-viz viz-tk" aria-hidden="true"><span class="b-logo">${logo('google')}</span><span class="b-name"><b>GOOGL</b><small>Alphabet</small></span>${sparkFor('GOOGL', 96, 32, { cls: 'spark' })}</span>`,
+  `<span class="why-viz viz-fx" aria-hidden="true"><b>₹</b>${icon.swap}<b>$</b></span>`,
+];
 
 const AMOUNTS = [1, 10, 50, 100];
 const share = (amt) => (amt / REF_PRICES.AAPL).toFixed(4);
@@ -34,7 +26,7 @@ const html = `${header()}
   <div class="vw hero-in">
     <div class="hero-copy">
       <p class="pill"><span class="pill-dot"></span>${C.hero.eyebrow}</p>
-      <h1>${C.hero.h1} <span>${C.hero.h1b}</span></h1>
+      <h1>${C.hero.h1} <span>${keep(C.hero.h1b)}</span></h1>
       <p class="lead">${C.hero.lead.replace('$1', '<b>$1</b>')}</p>
       <ul class="points">${C.hero.points.map((p) => `<li>${icon.check}${p}</li>`).join('')}</ul>
       <p class="form-title" id="form-title">${C.hero.formTitle}</p>
@@ -52,23 +44,23 @@ const html = `${header()}
               <p class="pc-k">Portfolio value</p>
               <p class="pc-v num">$1,248.60</p>
               <p class="pc-ch"><span class="num">▲ $29.40 (2.41%)</span> today</p>
-              <svg class="pc-chart" viewBox="0 0 260 70" preserveAspectRatio="none"><defs><linearGradient id="pcg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5400" stop-opacity="0.55"/><stop offset="1" stop-color="#ff5400" stop-opacity="0"/></linearGradient></defs><path class="pc-area" d="${area()}"/><path class="pc-line" d="${area(true)}"/></svg>
+              ${chartSVG('portfolio', 2.41, 260, 58, { cls: 'pc-chart', tone: 'brand', baseline: false })}
             </div>
             <div class="seg2"><span class="on">Stocks</span><span>ETFs</span><span>Orders</span></div>
-            <ul class="hold2">${[['apple', 'Apple', 'AAPL'], ['nvidia', 'NVIDIA', 'NVDA'], ['tesla', 'Tesla', 'TSLA']].map(([l, n, t]) => `<li><span class="h2-logo">${logo(l)}</span><span class="h2-name"><b>${n}</b><small>${t}</small></span>${spark(t, 54, 20)}<span class="h2-px">${priceCell(t)}</span></li>`).join('')}</ul>
+            <ul class="hold2">${[['google', 'Alphabet', 'GOOGL'], ['netflix', 'Netflix', 'NFLX'], ['microsoft', 'Microsoft', 'MSFT']].map(([l, n, t]) => `<li><span class="h2-logo">${logo(l)}</span><span class="h2-name"><b>${n}</b><small>${t}</small></span>${spark(t, 44, 20)}<span class="h2-px">${priceCell(t)}</span></li>`).join('')}</ul>
             <p class="buy1"><span>Buy <b>$1</b> of Apple</span><i>→ ${share(1)} sh</i></p>
-            <div class="tabbar"><i class="on"></i><i></i><i></i><i></i></div>
+            <div class="tabbar"><i class="on">${HOME}</i><i>${icon.search}</i><i>${icon.wallet}</i><i>${icon.user}</i></div>
           </div>
           <span class="glare"></span>
         </div>
-        <div class="float f-fill"><span class="f-ok">${icon.check}</span><p><b>Order filled</b><small class="num">${share(1)} AAPL for $1.00</small></p></div>
-        <div class="float f-fx"><span class="f-ico">₹→$</span><p><b>USD buying power</b><small>After conversion and credit</small></p></div>
-        <div class="float f-gift">${icon.shield}<p><b>GIFT City route</b><small>${C.highlights[3].note}</small></p></div>
+        <div class="float fl-fill"><span class="f-ok">${icon.check}</span><p><b>Order filled</b><small class="num">${share(1)} AAPL for $1.00</small></p></div>
+        <div class="float fl-fx"><span class="f-ico">₹→$</span><p><b>USD buying power</b><small>After conversion and credit</small></p></div>
+        <div class="float fl-gift"><span class="f-shield">${icon.shield}</span><p><b>GIFT City route</b><small>${C.highlights[3].note}</small></p></div>
       </div>
       <p class="art-note">Illustrative screen</p>
     </div>
+    <ul class="hl" aria-label="Key investment highlights">${C.highlights.map((h) => `<li><b>${h.fig}</b><span>${h.label}</span><small>${h.note}</small></li>`).join('')}</ul>
   </div>
-  <div class="vw"><ul class="hl" aria-label="Key investment highlights">${C.highlights.map((h, i) => `<li class="rv" style="--i:${i}"><b>${h.fig}</b><span>${h.label}</span><small>${h.note}</small></li>`).join('')}</ul></div>
 </section>
 
 <section class="sec brands" id="brands">
@@ -88,7 +80,7 @@ const html = `${header()}
         <div class="f-text"><h3>${C.features.items[0][0]}</h3><p>${C.features.items[0][1]}</p></div>
         <div class="frac" role="group" aria-label="Try an amount">
           <div class="frac-amts">${AMOUNTS.map((a, i) => `<button type="button" data-amt="${a}" aria-pressed="${i === 0}">$${a}</button>`).join('')}</div>
-          <p class="frac-out"><b class="num" id="frac-n">${share(1)}</b> of 1 Apple share <span class="num">· ${usd.format(REF_PRICES.AAPL)} a share</span></p>
+          <p class="frac-out"><b class="num" id="frac-n">${share(1)}</b> of 1 Apple share</p>
           <div class="frac-bar"><i id="frac-fill" style="--f:${1 / REF_PRICES.AAPL}"></i></div>
           <p class="frac-scale" aria-hidden="true"><span>$0</span><span>1 share = ${usd.format(REF_PRICES.AAPL)}</span></p>
         </div>
@@ -97,16 +89,17 @@ const html = `${header()}
         <div class="f-text"><h3>${C.features.items[1][0]}</h3><p>${C.features.items[1][1]}</p></div>
         <div class="find" aria-hidden="true">
           <p class="find-box">${icon.search}<span class="find-typed loop">AI and semiconductors</span></p>
-          <p class="find-chips">${Object.keys(C.sectors.list).slice(0, 5).map((s) => `<span>${s}</span>`).join('')}</p>
+          <p class="find-chips">${Object.keys(C.sectors.list).slice(0, 3).map((s) => `<span>${s}</span>`).join('')}</p>
+          <p class="find-hit"><span class="b-logo">${logo('nvidia')}</span><span class="b-name"><b>NVIDIA</b><small>NVDA</small></span>${spark('NVDA', 72, 24)}<span class="h-px">${priceCell('NVDA')}</span></p>
         </div>
       </article>
       <article class="card f-hold rv" style="--i:2">
         <div class="f-text"><h3>${C.features.items[2][0]}</h3><p>${C.features.items[2][1]}</p></div>
-        <ul class="hold" aria-hidden="true">${[['apple', 'AAPL'], ['nvidia', 'NVDA'], ['amazon', 'AMZN']].map(([l, t]) => `<li>${logo(l)}<b>${t}</b>${spark(t, 64, 22)}${priceCell(t)}</li>`).join('')}</ul>
+        <ul class="hold" aria-hidden="true">${[['google', 'GOOGL'], ['microsoft', 'MSFT'], ['amazon', 'AMZN']].map(([l, t]) => `<li><span class="b-logo">${logo(l)}</span><b>${t}</b>${spark(t, 160, 28)}<span class="h-px">${priceCell(t)}</span></li>`).join('')}</ul>
       </article>
-      <article class="card f-fx rv" style="--i:3">
+      <article class="card f-usd rv" style="--i:3">
         <div class="f-text"><h3>${C.features.items[3][0]}</h3><p>${C.features.items[3][1]}</p></div>
-        <div class="fx" aria-hidden="true"><span class="fx-c">₹ INR</span><span class="fx-line"><i class="loop"></i></span><span class="fx-c fx-usd">$ USD</span></div>
+        <div class="fx" aria-hidden="true"><span class="fx-end"><span class="fx-c">₹<span class="fx-cur">&nbsp;INR</span></span><small>Your bank</small></span><span class="fx-line"><i class="loop"></i></span><span class="fx-node">${icon.shield}<small>GIFT City</small></span><span class="fx-line"><i class="loop"></i></span><span class="fx-end"><span class="fx-c fx-usd">$<span class="fx-cur">&nbsp;USD</span></span><small>Buying power</small></span></div>
       </article>
     </div>
     <div class="orders rv">
@@ -123,14 +116,15 @@ const html = `${header()}
 <section class="sec why" id="why">
   <div class="vw">
     <div class="head rv"><h2>${C.why.title}</h2></div>
-    <div class="why-grid">${C.why.items.map(([t, d], i) => `<article class="card rv" style="--i:${i}"><span class="why-ico">${[icon.globe, icon.star, icon.swap][i]}</span><h3>${t}</h3><p>${d}</p><a class="tlink" href="#faq">${C.why.more}${icon.go}</a></article>`).join('')}</div>
+    <div class="why-grid">${C.why.items.map(([t, d], i) => `<article class="card rv" style="--i:${i}">${WHY_VIZ[i]}<h3>${keep(t)}</h3><p>${d}</p><a class="tlink" href="#faq">${C.why.more}${icon.go}</a></article>`).join('')}</div>
   </div>
 </section>
 
 <section class="sec how" id="how">
   <div class="vw">
-    <div class="head rv"><h2>${C.steps.title}</h2><a class="btn btn-ink" href="#lead">${C.steps.cta}</a></div>
-    <ol class="steps">${C.steps.items.map(([t, d], i) => `<li class="rv" style="--i:${i}"><span class="step-n">${i + 1}</span><span class="step-ico">${[icon.user, icon.shield, icon.wallet, icon.chart][i]}</span><h3>${t}</h3><p>${d}</p></li>`).join('')}</ol>
+    <div class="head rv"><h2>${C.steps.title}</h2></div>
+    <ol class="steps">${C.steps.items.map(([t, d], i) => `<li class="rv" style="--i:${i}"><span class="step-ico">${[icon.user, icon.shield, icon.wallet, icon.chart][i]}<span class="step-n">${i + 1}</span></span><h3>${keep(t)}</h3><p>${d}</p></li>`).join('')}</ol>
+    <p class="steps-cta rv"><a class="btn btn-primary" href="#lead">${C.steps.cta}</a></p>
     <div class="who card rv"><h3>${C.who.title}</h3><dl>${C.who.items.map(([t, d]) => `<div><dt>${icon.check}${t}</dt><dd>${d}</dd></div>`).join('')}</dl></div>
     <div class="routes">${C.routes.map((r, k) => `<article class="card route rv" style="--i:${k}">
       <p class="route-head"><b>${r.title}</b><span>${r.tag}</span></p>
@@ -155,7 +149,7 @@ const html = `${header()}
     <h3 class="h3 charges-title rv">${C.charges.title}</h3>
     <div class="charges">${C.charges.items.map((c, i) => `<article class="card charge${c.hot ? ' is-hot' : ''} rv" style="--i:${i}">${c.tag ? `<span class="charge-tag">${c.tag}</span>` : ''}
       <span class="charge-ico">${[icon.chart, icon.user, icon.wallet][i]}</span>
-      <p class="charge-k">${c.label}</p><p class="charge-v num">${c.fig.replace('*', '<sup>*</sup>')}</p><p class="charge-n">${c.note}</p>
+      <p class="charge-k">${c.label}</p><p class="charge-v num">${c.fig.replace('*', '<sup>*</sup>')}</p><p class="charge-n">${c.note.replace(' · ', '&nbsp;· ')}</p>
       <a class="btn ${c.hot ? 'btn-primary' : 'btn-ghost'} btn-sm" href="#lead">${c.cta}</a></article>`).join('')}</div>
     <p class="fine center">${C.charges.foot}</p>
   </div>
@@ -211,6 +205,10 @@ $$('[data-amt]').forEach((b) => b.addEventListener('click', () => {
   track('fraction_amount', { amount: a });
 }));
 
+// FAQ: the first answer starts open
+$('.faq-q')?.setAttribute('aria-expanded', 'true');
+$('#faq-0')?.classList.add('is-open');
+
 // sector tabs → five stock cards
 const names = Object.keys(C.sectors.list);
 const tabs = $$('.seg [role="tab"]');
@@ -218,9 +216,9 @@ function showSector(i, focus) {
   tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
   $('#sec-panel').setAttribute('aria-labelledby', tabs[i].id);
   $('#stock-cards').innerHTML = C.sectors.list[names[i]].map(([n, t, l], k) => `<li style="--i:${k}"><a href="#lead" aria-label="Invest in ${esc(n)} (${t})">
-    <span class="sc-top"><span class="b-logo">${logo(l, t)}</span><span class="b-name"><b>${esc(n)}</b><small>${t}</small></span></span>
+    <span class="sc-top"><span class="b-logo">${l ? logo(l) : `<span class="logo-mono" aria-hidden="true">${t}</span>`}</span><span class="b-name"><b>${noHyphenBreak(esc(n))}</b><small>${t}</small></span></span>
     ${spark(t, 120, 36)}
-    <span class="sc-bot">${priceCell(t)}</span><span class="sc-go">Invest${icon.go}</span></a></li>`).join('');
+    <span class="sc-bot">${priceCell(t)}</span></a></li>`).join('');
   if (focus) tabs[i].focus();
 }
 tabs.forEach((t, i) => t.addEventListener('click', () => { showSector(i); track('sector_tab', { sector: names[i] }); }));
