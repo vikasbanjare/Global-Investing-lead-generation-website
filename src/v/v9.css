@@ -93,9 +93,13 @@ main > section > .vw { position: relative; z-index: 1; }
 /* the city landscape (hero and closing), aspect-correct, fading into the sky at top and bottom */
 .land { position: relative; height: 460px; margin-top: -40px; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 70%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 28%, #000 70%, transparent 100%); }
 .land img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+.land-canvas { position: absolute; left: 0; bottom: -9%; z-index: 1; width: 100%; height: calc(100% / 0.425); } /* same framing as v5: the city is framed for a ~1040 px stage */
+.land img { transition: opacity 0.6s ease-out; }
+.hero.is-live .land-hero img { opacity: 0; }
+.hero.no-webgl .land-canvas { display: none; }
 .land-end { height: clamp(240px, 30vw, 440px); margin-top: -72px; }
 .land-end img { object-position: 50% 58%; }
-.chip { position: absolute; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.92);
+.chip { position: absolute; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--ring), 0 24px 40px -24px rgba(4, 33, 63, 0.55); animation: float9 7s ease-in-out infinite; }
 .chip-a { left: 6%; top: 30%; } .chip-b { right: 6%; top: 16%; animation-delay: -3.5s; }
 .chip-logo { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--r-sm); background: #fff; box-shadow: 0 0 0 1px var(--line); color: var(--ink); }   /* 20 − 8 */
@@ -239,6 +243,8 @@ main > section > .vw { position: relative; z-index: 1; }
   .hero-hl li:nth-child(odd) { border-left: 0; }
   .hero-hl b { font-size: 28px; }
   .land { height: 280px; margin-top: -24px; }
+  .land-canvas { display: none; }
+  .hero.is-live .land-hero img { opacity: 1; }
   .chip-a { left: 16px; top: 30%; } .chip-b { display: none; }
   .h3 { margin-top: 72px; }
   .whyus { grid-template-columns: minmax(0, 560px); }

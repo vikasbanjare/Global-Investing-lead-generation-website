@@ -3,7 +3,7 @@
 import './base.css';
 import './sections.css';
 import './v9.css';
-import { boot, header, footer, BASE, C, logo, icon, quote, pct, usd, chartSVG, sparkFor, $$ } from './kit.js';
+import { boot, header, footer, BASE, C, logo, icon, quote, pct, usd, chartSVG, sparkFor, $, $$, reducedMotion } from './kit.js';
 import * as S from './sections.js';
 
 // Clouds. CSS has no modulo, so each cloud's place is worked out here and handed over as custom properties:
@@ -71,7 +71,7 @@ const html = `${header()}
     <div class="hero-form"><p class="form-title"${heroForm.replace('<a class="tlink hero-how"', `${trust}${pt1}<a class="tlink hero-how"`)}</div>
     ${heroHL}
   </div></div>
-  ${land('', chip('GOOGL', 'Alphabet', 'google', 'chip-a') + chip('NVDA', 'NVIDIA', 'nvidia', 'chip-b'))}
+  ${land(' land-hero', '<canvas class="land-canvas"></canvas>' + chip('GOOGL', 'Alphabet', 'google', 'chip-a') + chip('NVDA', 'NVIDIA', 'nvidia', 'chip-b'))}
 </section>
 ${sky(brands, 4, 3, 24, 44)}
 ${S.product()}
@@ -87,6 +87,21 @@ ${footer()}`;
 
 boot('v9', html);
 S.setupSections();
+
+// ---------- live 3D city in the hero band on desktop (same module as Live/v5); phones and no-WebGL keep the render
+const hero = $('.hero'), mq = matchMedia('(max-width: 900px)');
+let started = false;
+function startCity() {
+  if (started || mq.matches) return;
+  started = true;
+  try { new PerformanceObserver((l, o) => { if (l.getEntriesByName('city:built').length) { hero.classList.add('is-live'); o.disconnect(); } }).observe({ type: 'mark', buffered: true }); } catch { /* canvas paints over the image */ }
+  import('../city.js')
+    .then(({ createCity }) => { if (!createCity({ canvas: $('.land-canvas'), reducedMotion, withClouds: false })) hero.classList.add('no-webgl'); })
+    .catch(() => hero.classList.add('no-webgl'));
+}
+const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(startCity, { timeout: 1500 }) : setTimeout(startCity, 200));
+if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
+mq.addEventListener('change', idle);
 
 // One primary action per view: the header's "Start investing" steps aside while a lead form is on screen.
 const inView = new Set();
