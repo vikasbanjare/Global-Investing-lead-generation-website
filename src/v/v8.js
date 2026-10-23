@@ -44,8 +44,7 @@ ${S.tax()}
 ${S.faq()}
 ${S.closing(S.phone('activity'))}
 </main>
-${footer()}
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><linearGradient id="v8-of" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#072d5e" stop-opacity=".14"/><stop offset="1" stop-color="#072d5e" stop-opacity="0"/></linearGradient></svg>`;
+${footer()}`;
 
 boot('v8', html);
 

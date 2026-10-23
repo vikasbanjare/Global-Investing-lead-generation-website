@@ -1,4 +1,4 @@
-// v4 · "Wall Street, built from candles": the skyline is a price chart. Candles stand as navy towers with lit windows and
+// v4 · "Wall Street, built from candles": the hero rests on a real candlestick chart (wicks, green/red bodies) and
 // the smooth price line (kit curvePath) threads every close over the rooftops. The rest of the page keeps to the idea: a
 // live opening-bell clock, a ticker tape, product screens, numbered step cards, trade tickets for order types.
 // Light page, exact brand navy and orange; green/red only for market data.
@@ -16,7 +16,7 @@ const hash = (a, b) => (((a * 7919 + b * 104729 + 13) % 997) + 997) % 997 / 997;
 const nb = (s) => s.replace(/ (\S+)$/, ' $1');                                // no orphan last word (same wording)
 const IST = (m) => istClock(m).toUpperCase();
 
-// The candle skyline. Closes come from kit pricePath; curvePath maps them so that the curve's x for candle i is that
+// The candle chart. Closes come from kit pricePath; curvePath maps them so that the curve's x for candle i is that
 // tower's centre (pad = gap + bw/2), and the same y-map sets the candle body (open = previous close) on each roof.
 let skyId = 0;
 function skyline({ w, h, n, seed, change = 3, cls = '', dot = 0 }) {
@@ -24,32 +24,29 @@ function skyline({ w, h, n, seed, change = 3, cls = '', dot = 0 }) {
   const base = h - 8, roof = h * 0.16, minH = h * 0.2;
   const c = curvePath(pricePath(seed, change, n), w, base - minH - roof + 2 * pad, pad), off = roof - pad;
   const Y = c.pts.map((p) => p[1] + off);
-  const ww = Math.max(3, bw * 0.14), wh = ww * 1.5, cols = Math.max(1, Math.floor((bw - ww) / (ww * 2)));
+  const cw = Math.max(3, bw * 0.5);                                   // candle body: half the slot, like a real chart
   let nu = 0, nd = 0;
   const towers = Y.map((yc, i) => {
     const yo = i ? Y[i - 1] : yc + 3, up = yc <= yo, top = Math.min(yo, yc), cap = Math.max(3, Math.abs(yo - yc));
-    const x = gap + i * (bw + gap), cx = x + bw / 2, spire = top - h * (0.025 + hash(i, 1) * 0.045);
+    const x = gap + i * (bw + gap), cx = x + bw / 2;
+    const hi = top - h * (0.02 + hash(i, 1) * 0.05), lo = top + cap + h * (0.02 + hash(i, 2) * 0.05); // wick: session high/low
     const st = up ? UP[nu++ % UP.length] : DOWN[nd++ % DOWN.length];   // the hover quote moves the same way as its candle
-    const x0 = x + (bw - (cols * 2 - 1) * ww) / 2;
-    let win = '', r = 0;
-    for (let wy = top + cap + wh; wy < base - wh * 1.5; wy += wh * 2, r++) for (let q = 0; q < cols; q++) {
-      const lit = hash(i * 131 + r, q) < 0.22, tw = lit && r === 1 && hash(i, 5) < 0.3;
-      win += `<rect x="${f1(x0 + q * ww * 2)}" y="${f1(wy)}" width="${f1(ww)}" height="${f1(wh)}" class="w${lit ? ' on' : ''}${tw ? ' tw loop' : ''}"${tw ? ` style="--d:${f1((i * 0.37) % 4)}s"` : ''}/>`;
-    }
-    return `<g class="tower" style="--i:${i}" data-t="${st.t}" data-n="${esc(st.n)}"><line x1="${f1(cx)}" x2="${f1(cx)}" y1="${f1(spire)}" y2="${f1(top)}"/>`
-      + `<rect class="body" x="${f1(x)}" y="${f1(top)}" width="${f1(bw)}" height="${f1(base - top)}" rx="${f1(bw * 0.08)}"/>`
-      + `<rect class="cap ${up ? 'up' : 'down'}" x="${f1(x)}" y="${f1(top)}" width="${f1(bw)}" height="${f1(cap)}" rx="${f1(Math.min(cap / 2, bw * 0.08))}"/>${win}</g>`;
+    return `<g class="tower ${up ? 'up' : 'down'}" style="--i:${i}" data-t="${st.t}" data-n="${esc(st.n)}">`
+      + `<rect class="hit" x="${f1(x)}" y="0" width="${f1(bw + gap)}" height="${h}"/>`
+      + `<line x1="${f1(cx)}" x2="${f1(cx)}" y1="${f1(hi)}" y2="${f1(Math.min(lo, base))}"/>`
+      + `<rect class="body" x="${f1(cx - cw / 2)}" y="${f1(top)}" width="${f1(cw)}" height="${f1(cap)}" rx="${f1(Math.min(cap / 2, cw * 0.2))}"/></g>`;
   }).join('');
+  const grid = [0.3, 0.5, 0.7, 0.9].map((k) => `<line x1="0" x2="${w}" y1="${f1(h * k)}" y2="${f1(h * k)}"/>`).join('');
   const area = `${c.line} L${c.end[0]} ${f1(base - off)} L${c.pts[0][0]} ${f1(base - off)} Z`;
   return `<svg class="sky ${cls}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
-    <defs><linearGradient id="skT${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d4384"/><stop offset=".7" stop-color="#072d5e"/></linearGradient>
-    <linearGradient id="skL${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb07a"/><stop offset="1" stop-color="#ff5400"/></linearGradient>
+    <defs><linearGradient id="skL${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffb07a"/><stop offset="1" stop-color="#ff5400"/></linearGradient>
     <linearGradient id="skA${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a4c" stop-opacity=".26"/><stop offset="1" stop-color="#ffd2b8" stop-opacity="0"/></linearGradient></defs>
     <path class="parea" transform="translate(0 ${f1(off)})" d="${area}" fill="url(#skA${id})"/>
-    <g class="towers" fill="url(#skT${id})">${towers}</g>
+    <g class="grid">${grid}</g>
+    <g class="towers">${towers}</g>
     <path class="pline" transform="translate(0 ${f1(off)})" d="${c.line}" stroke="url(#skL${id})"/>
     ${dot ? `<g class="last" transform="translate(${c.end[0]} ${f1(c.end[1] + off)})"><circle class="pring loop" r="${dot * 2.2}"/><circle class="pdot" r="${dot}"/></g>` : ''}
-    <rect class="street" x="0" y="${base}" width="${w}" height="8"/>
+    <line class="street" x1="0" x2="${w}" y1="${base}" y2="${base}"/>
   </svg>`;
 }
 

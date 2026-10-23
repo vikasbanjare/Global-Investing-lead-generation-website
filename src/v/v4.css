@@ -1,4 +1,4 @@
-/* v4 · "Wall Street, built from candles". Light page; towers in exact navy (#072d5e) with lit windows, the price line and
+/* v4 · "Wall Street, built from candles". Light page; a green/red candlestick chart under the hero, the price line and
    accents in exact orange (#ff5400); green/red only for market data.
    Scale: radius 8 / 16 / 24 / 32 (nested surfaces concentric: inner = outer − padding), spacing on an 8px grid.
    Light comes from the top left (as on the shared orange gradient): washes run 135deg from a cool near-white to a pale
@@ -81,22 +81,20 @@
 .sky-wrap { grid-area: sky; position: relative; z-index: 1; margin: calc(-1 * clamp(56px, 8vw, 120px)) calc(50% - 50vw) 0; }
 .sky { display: block; width: 100%; height: auto; }
 .sky-m { display: none; }
-.towers .w { fill: rgba(255, 255, 255, 0.09); }
-.towers .w.on { fill: #ffd9b8; }
-.towers line { stroke: #2b5b9b; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
-.towers .cap.up { fill: #3fbf7f; } .towers .cap.down { fill: #ff5a5f; }
+.sky .grid line, .sky .street { stroke: rgba(7, 45, 94, 0.08); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.towers .hit { fill: transparent; }
+.towers line { stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.tower.up line { stroke: #2fa86c; } .tower.up .body { fill: #3fbf7f; }
+.tower.down line { stroke: #e5484d; } .tower.down .body { fill: #ff5a5f; }
 .tower { transform-box: fill-box; transform-origin: 50% 100%; transition: opacity 0.15s ease-out; }
 .js .tower { animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i) * 25ms); }
 @keyframes rise { from { transform: scaleY(0); } }
-.tw { animation: tw 5s ease-in-out infinite; animation-delay: var(--d); }
-@keyframes tw { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 .pline { fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .js .pline, .js .parea, .js .last { animation: fade 0.8s ease-out 0.9s both; }
 @keyframes fade { from { opacity: 0; } }
 .pdot { fill: #fff; stroke: var(--orange); stroke-width: 3; vector-effect: non-scaling-stroke; }
 .pring { fill: rgba(255, 84, 0, 0.28); transform-box: fill-box; transform-origin: center; animation: ping 2.4s ease-out infinite; }
 @keyframes ping { from { transform: scale(0.45); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
-.street { fill: var(--navy); }
 @media (hover: hover) { .towers:hover .tower { opacity: 0.6; } .towers .tower:hover { opacity: 1; } }
 .sky-tip { position: absolute; z-index: 3; left: 0; top: 0; transform: translate(-50%, -100%); margin: 0; padding: 8px 12px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line), 0 12px 24px -12px rgba(4, 33, 63, 0.45); font-size: 13px; white-space: nowrap; pointer-events: none; }
 .sky-tip b { color: var(--navy); } .sky-tip span { margin-left: 4px; color: var(--slate); } .sky-tip em { margin-left: 4px; font-style: normal; font-weight: 700; }
@@ -347,7 +345,7 @@
   .hero h1 { font-size: 36px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .js .tower, .js .pline, .js .parea, .js .last, .tw { animation: none; }
+  .js .tower, .js .pline, .js .parea, .js .last { animation: none; }
   .pring { display: none; }
   .tower, .ls-n, .lift-steps li::after { transition: none; }
   .ticker { overflow-x: auto; } .tk-track { animation: none; }
