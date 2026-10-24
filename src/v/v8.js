@@ -50,7 +50,7 @@ boot('v8', html);
 
 // Two-weight section titles, like the hero: each title's closing clause drops to the light weight. Words unchanged;
 // a title that no longer ends with its clause simply stays one weight.
-const LIGHT = ['Now own the stock', 'made simple', 'Indian markets?', 'markets in 4 steps', 'by sector', 'for US investing?', 'with tax questions', 'with m.Stock'];
+const LIGHT = ['Now own the stock', 'made simple', 'Indian markets?', 'markets in 4 steps', 'by sector', 'for US investing?', 'with tax questions', 'with MAPS'];
 $$('.head h2, .close-copy h2').forEach((h) => {
   const t = h.textContent, tail = LIGHT.find((s) => t.endsWith(` ${s}`));
   if (!tail) return;

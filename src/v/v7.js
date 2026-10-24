@@ -39,7 +39,7 @@ ${footer()}`;
 boot('v7', html);
 S.setupSections();
 
-// Trust next to both forms, in reviewed words only (highlight notes + the Mirae Asset line from "Why m.Stock").
+// Trust next to both forms, in reviewed words only (highlight notes + the Mirae Asset line from "Why MAPS").
 // ponytail: the hero's "How it works" link gives way to it; the header nav and the scroll already lead there.
 const trust = (items) => `<ul class="trust">${items.map((s) => `<li>${icon.shield}<span>${s}</span></li>`).join('')}</ul>`;
 $('.hero .hero-how').outerHTML = trust([C.highlights[3].note, C.whyUs.items[3]]);

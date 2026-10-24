@@ -113,7 +113,7 @@ setInterval(tick, 20_000);
 // ---------- Lead capture (hero + closing band share the same behaviour)
 // ponytail: front-end only. POST { mobile } to the lead endpoint (CRM) where marked.
 // ---------- Funnel analytics. Events go to window.dataLayer (Google Tag Manager's standard queue), so whichever
-// analytics/A-B tool m.Stock uses can read them; no third-party script is loaded here. Never includes the number.
+// analytics/A-B tool MAPS uses can read them; no third-party script is loaded here. Never includes the number.
 window.dataLayer = window.dataLayer || [];
 const track = (event, props = {}) => window.dataLayer.push({ event, ...props, variant: document.documentElement.dataset.variant || 'default' });
 const seen = new Set();

@@ -54,7 +54,7 @@ export const why = {
 };
 
 export const whyUs = {
-  title: 'Why m.Stock for US investing?',
+  title: 'Why MAPS for US investing?',
   items: ['A clear route from India to US markets', 'Straightforward charges you can check upfront', 'A dedicated US investing portal to track your holdings', 'Access backed by the Mirae Asset Group'],
 };
 
@@ -79,9 +79,9 @@ export const orders = {
 };
 
 export const supports = {
-  title: 'What does m.Stock support?',
+  title: 'What does MAPS support?',
   items: [
-    ['Order types', 'Market, limit, stop and fractional orders are supported with m.Stock'],
+    ['Order types', 'Market, limit, stop and fractional orders are supported with MAPS'],
     ['Execution', 'Orders are handled through ViewTrade’s US-market execution arrangements, subject to market conditions & order eligibility'],
     ['Custody', 'Holdings are maintained through the appointed custody and clearing arrangements'],
   ],
@@ -150,7 +150,7 @@ export const charges = {
 };
 
 export const closing = {
-  title: 'Go global with m.Stock',
+  title: 'Go global with MAPS',
   sub: 'Investing in US stocks is just a start…',
   benefits: ['Digital onboarding', 'Fractional entry from USD 1*', 'GIFT City route'],
   cta: 'Open account',

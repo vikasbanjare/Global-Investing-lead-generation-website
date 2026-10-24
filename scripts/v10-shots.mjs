@@ -4,7 +4,7 @@ import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
 
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
-const ids = ['top', 'fractional', 'product', 'brands', 'why', 'how', 'pricing', 'tax', 'faq', 'start'];
+const ids = ['top', 'product', 'brands', 'why', 'how', 'pricing', 'tax', 'faq', 'start'];
 const server = await preview({ preview: { port: 4194, strictPort: true }, logLevel: 'silent' });
 const browser = await chromium.launch({ channel: 'chrome' });
 for (const [tag, w, h] of [['desktop', 1440, 900], ['phone', 390, 844]]) {

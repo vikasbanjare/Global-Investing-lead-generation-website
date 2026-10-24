@@ -1,6 +1,6 @@
 // v10 · Fluid (after Apple's "Designing Fluid Interfaces" and the apple-design skill): system type with size-specific
-// tracking, apple.com-style white and grey bands, a translucent header, its own fewer sections, a $1 hero that is a window
-// onto the 3D city, and one signature interaction —
+// tracking, apple.com-style white and grey bands, a translucent header, its own fewer sections, a centred hero over a
+// product stage of three white UI cards, and one signature interaction at its centre —
 // the amount dial. Drag or flick the ruler: it tracks 1:1 from where you grabbed it, momentum projects where it lands,
 // it rubber-bands past the ends and settles on a critically damped spring that can be grabbed again mid-flight.
 import './base.css';
@@ -72,24 +72,35 @@ const close = `<section class="sec s-close10" id="start"><div class="vw">
 
 const html = `${header()}
 <main id="main" tabindex="-1">
-<section class="hero" id="top"><div class="vw hero-in">
-  <div class="hero-copy">
-    <p class="eyebrow">${C.hero.eyebrow}</p>
-    <h1>${C.hero.h1} <span>${C.hero.h1b}</span></h1>
-    <p class="lead">${C.hero.lead}</p>
-    <p class="form-title" id="form-title">${C.hero.formTitle}</p>
-    ${leadForm('lead', C.hero.cta, 'form-title')}
-    <a class="tlink" href="#how">${C.hero.how}${icon.go}</a>
+<section class="hero" id="top">
+  <div class="hx-panel">
+    <div class="spark" aria-hidden="true">${[[12, 62, 18], [86, 54, 22], [74, 80, 12], [22, 86, 10], [52, 92, 8]].map(([x, y, z]) => `<i style="left:${x}%;top:${y}%;--z:${z}px"></i>`).join('')}</div>
+    <div class="vw hero-copy">
+      <p class="eyebrow">${C.hero.eyebrow}</p>
+      <h1><span class="ring">${C.hero.h1}<svg viewBox="0 0 300 110" preserveAspectRatio="none" aria-hidden="true"><path d="M58 18C124 2 238 6 279 30c34 20 4 56-70 66-92 13-188 6-199-27C2 44 40 24 98 14"/></svg></span> <span class="l2">${C.hero.h1b}</span></h1>
+      <p class="lead">${C.hero.lead}</p>
+      <p class="form-title" id="form-title">${C.hero.formTitle}</p>
+      ${leadForm('lead', C.hero.cta, 'form-title')}
+      <a class="tlink" href="#how">${C.hero.how}${icon.go}</a>
+    </div>
   </div>
-  <div class="hero-art"><b class="dollar loop" aria-hidden="true">$1</b><i class="floor" aria-hidden="true"></i>
-    <p class="dollar-cap">${logo('apple', 'AAPL')}<span><b class="num">$1</b> buys <b class="num">≈ ${(1 / REF_PRICES.AAPL).toFixed(4)}</b> Apple share</span></p>
-    <p class="credit">City: buildings © OpenStreetMap contributors · trees: NYC Parks · reference price</p></div>
-</div></section>
-${S.highlights()}
-<section class="sec s-dial" id="fractional"><div class="vw">
-  <div class="head rv"><h2>${F[0][0]}</h2><p>${F[0][1]}</p></div>
-  ${dial}
-</div></section>
+  <ul class="stats" aria-label="Key investment highlights">${C.highlights.map((h, i) => `<li><span class="st-ico" aria-hidden="true">${[icon.globe, icon.chart, icon.wallet, icon.shield][i]}</span><span><b class="num">${h.fig}</b><small>${h.label}</small></span></li>`).join('')}</ul>
+  <div class="vw stage">
+    <div class="side s-left" aria-hidden="true">
+      <span class="side-ico ok">${icon.check}</span>
+      <p class="side-k">Order filled</p>
+      <p class="side-v num">${(1 / REF_PRICES.AAPL).toFixed(4)} AAPL</p>
+      <p class="side-s">Bought for $1.00 · fractional</p>
+    </div>
+    ${dial}
+    <div class="side s-right" aria-hidden="true">
+      <span class="side-ico fx">₹<i>→</i>$</span>
+      <p class="side-k">USD buying power</p>
+      <p class="side-v num">$297.62</p>
+      <p class="side-s">${F[3][1].split('. ')[1]}</p>
+    </div>
+  </div>
+</section>
 ${bento}
 ${wall}
 ${why}
@@ -102,15 +113,6 @@ ${close}
 ${footer()}`;
 
 boot('v10', html);
-
-// ---------- the hero $1: the city drifts inside the letters toward the pointer (CSS eases --mx/--my)
-const hero = $('.hero'), dollar = $('.dollar');
-if (!reducedMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
-  let mx = 0, my = 0, f = 0;   // one style write per frame, however fast the pointer reports
-  const put = () => { f = 0; dollar.style.setProperty('--mx', mx); dollar.style.setProperty('--my', my); };
-  hero.addEventListener('pointermove', (e) => { const r = hero.getBoundingClientRect(); mx = ((e.clientX - r.left) / r.width - 0.5) * 2; my = ((e.clientY - r.top) / r.height - 0.5) * 2; f ||= requestAnimationFrame(put); });
-  hero.addEventListener('pointerleave', () => { mx = my = 0; f ||= requestAnimationFrame(put); });
-}
 
 // ---------- the amount dial
 const el = $('.dial'), track = $('.dial-track'), out = $('#dial-v'), shares = $$('.dial-picks em');
