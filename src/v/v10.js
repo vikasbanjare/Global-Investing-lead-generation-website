@@ -66,9 +66,8 @@ const close = `<section class="sec s-close10" id="start"><div class="vw">
   <h2 class="rv" id="close-title">${C.closing.title}</h2>
   <p class="sub rv">${C.closing.sub}</p>
   <ul class="benefits rv">${C.closing.benefits.map((b) => `<li>${icon.check}${b}</li>`).join('')}</ul>
-  <div class="close-form rv">${leadForm('lead-2', C.closing.cta, 'close-title')}</div>
+  <div class="close-form rv">${leadForm('lead-2', C.closing.cta, 'close-title')}<p class="fine">${C.closing.fine}</p></div>
   <ul class="trust10 rv">${C.whyUs.items.map((t) => `<li>${t}</li>`).join('')}</ul>
-  <p class="fine">${C.closing.fine}</p>
 </div></section>`;
 
 const html = `${header()}
@@ -82,13 +81,13 @@ const html = `${header()}
     ${leadForm('lead', C.hero.cta, 'form-title')}
     <a class="tlink" href="#how">${C.hero.how}${icon.go}</a>
   </div>
-  <div class="hero-art"><b class="dollar" aria-hidden="true">$1</b><i class="floor" aria-hidden="true"></i>
+  <div class="hero-art"><b class="dollar loop" aria-hidden="true">$1</b><i class="floor" aria-hidden="true"></i>
     <p class="dollar-cap">${logo('apple', 'AAPL')}<span><b class="num">$1</b> buys <b class="num">≈ ${(1 / REF_PRICES.AAPL).toFixed(4)}</b> Apple share</span></p>
     <p class="credit">City: buildings © OpenStreetMap contributors · trees: NYC Parks · reference price</p></div>
 </div></section>
 ${S.highlights()}
 <section class="sec s-dial" id="fractional"><div class="vw">
-  <div class="head rv"><p class="eyebrow">${C.features.eyebrow}</p><h2>${F[0][0]}</h2><p>${F[0][1]}</p></div>
+  <div class="head rv"><h2>${F[0][0]}</h2><p>${F[0][1]}</p></div>
   ${dial}
 </div></section>
 ${bento}
@@ -106,9 +105,11 @@ boot('v10', html);
 
 // ---------- the hero $1: the city drifts inside the letters toward the pointer (CSS eases --mx/--my)
 const hero = $('.hero'), dollar = $('.dollar');
-if (!reducedMotion && matchMedia('(hover: hover)').matches) {
-  hero.addEventListener('pointermove', (e) => { const r = hero.getBoundingClientRect(); dollar.style.setProperty('--mx', ((e.clientX - r.left) / r.width - 0.5) * 2); dollar.style.setProperty('--my', ((e.clientY - r.top) / r.height - 0.5) * 2); });
-  hero.addEventListener('pointerleave', () => { dollar.style.setProperty('--mx', 0); dollar.style.setProperty('--my', 0); });
+if (!reducedMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  let mx = 0, my = 0, f = 0;   // one style write per frame, however fast the pointer reports
+  const put = () => { f = 0; dollar.style.setProperty('--mx', mx); dollar.style.setProperty('--my', my); };
+  hero.addEventListener('pointermove', (e) => { const r = hero.getBoundingClientRect(); mx = ((e.clientX - r.left) / r.width - 0.5) * 2; my = ((e.clientY - r.top) / r.height - 0.5) * 2; f ||= requestAnimationFrame(put); });
+  hero.addEventListener('pointerleave', () => { mx = my = 0; f ||= requestAnimationFrame(put); });
 }
 
 // ---------- the amount dial
@@ -150,9 +151,13 @@ function settle() {
   };
   raf = requestAnimationFrame(step);
 }
-const goTo = (i) => { target = -Math.max(0, Math.min(AMTS.length - 1, i)) * STEP; settle(); };
+const goTo = (i, instant = false) => {
+  target = -Math.max(0, Math.min(AMTS.length - 1, i)) * STEP;
+  if (instant) { cancelAnimationFrame(raf); x = target; v = 0; render(); } else settle();
+};
 
 el.addEventListener('pointerdown', (e) => {
+  if (drag) return;                                            // a second finger never hijacks the drag
   el.setPointerCapture(e.pointerId);
   cancelAnimationFrame(raf);                                   // interruptible: take over from wherever it is now
   drag = { x0: e.clientX, start: x, moved: false, hist: [[e.timeStamp, e.clientX]], hit: e.target.closest('[data-i]') };
@@ -170,8 +175,10 @@ const release = () => {
   if (!drag) return;
   el.classList.remove('is-held');
   if (!drag.moved && drag.hit) { const i = Number(drag.hit.dataset.i); drag = null; goTo(i); return; }   // tap a label to jump there
-  const h = drag.hist, [t0, p0] = h[0], [t1, p1] = h[h.length - 1];
-  v = t1 > t0 ? ((p1 - p0) / (t1 - t0)) * 1000 : 0;          // release velocity, handed to the spring
+  // release velocity from the last 100ms only: a finger that paused before lifting carries no stale flick
+  const now = performance.now(), h = drag.hist.filter(([t]) => now - t < 100);
+  const [t0, p0] = h[0] || [0, 0], [t1, p1] = h[h.length - 1] || [0, 0];
+  v = t1 > t0 ? ((p1 - p0) / (t1 - t0)) * 1000 : 0;          // handed to the spring
   target = snap(x + project(v));
   drag = null;
   settle();
@@ -180,8 +187,9 @@ el.addEventListener('pointerup', release);
 el.addEventListener('pointercancel', release);
 el.addEventListener('keydown', (e) => {
   const k = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 }[e.key];
-  if (k) { e.preventDefault(); goTo(cur + k); }
-  if (e.key === 'Home') { e.preventDefault(); goTo(0); }
-  if (e.key === 'End') { e.preventDefault(); goTo(AMTS.length - 1); }
+  // keys step instantly: a repeated key action never waits on an animation
+  if (k) { e.preventDefault(); goTo(cur + k, true); }
+  if (e.key === 'Home') { e.preventDefault(); goTo(0, true); }
+  if (e.key === 'End') { e.preventDefault(); goTo(AMTS.length - 1, true); }
 });
 render();
