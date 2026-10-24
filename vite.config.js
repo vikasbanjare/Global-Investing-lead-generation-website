@@ -40,7 +40,7 @@ const site = process.env.SITE_URL || '';
 export default defineConfig({
   base: process.env.BASE_PATH || '/',
   // PAGES=main,v6 builds only those pages (parallel agents each build their own page into their own outDir).
-  build: { rollupOptions: { input: Object.fromEntries([['main', 'index.html'], ...variations.map((d) => [d, `${d}/index.html`])].filter(([k]) => !process.env.PAGES || process.env.PAGES.split(',').includes(k))) } },
+  build: { rollupOptions: { input: Object.fromEntries([['main', 'index.html'], ...variations.map((d) => [d, `${d}/index.html`]), ...(existsSync('heroes/index.html') ? [['heroes', 'heroes/index.html']] : [])].filter(([k]) => !process.env.PAGES || process.env.PAGES.split(',').includes(k))) } },
   // The NYS aerial photo ships only where it exists (it is held back from the hosted preview); skip its requests otherwise.
   define: { __HAS_ORTHO__: JSON.stringify(existsSync('public/data/ortho.webp')) },
   css: { postcss: { plugins: [smoothCorners()] } },

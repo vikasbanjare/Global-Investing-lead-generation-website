@@ -19,7 +19,7 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gi-site-'));
 const onAuth = () => ({ username: 'x-access-token', password: token });
 
 await git.clone({ fs, http, dir, url: REPO, singleBranch: true, depth: 1, onAuth });
-const variations = (d) => fs.readdirSync(d).filter((f) => /^v\d+$/.test(f)); // design variations: v2/, v3/ …
+const variations = (d) => fs.readdirSync(d).filter((f) => /^(v\d+|heroes)$/.test(f)); // design variations: v2/, v3/ … and the hero lab
 for (const p of ['src', 'public', 'scripts', ...variations(dir)]) fs.rmSync(path.join(dir, p), { recursive: true, force: true });
 for (const p of ['index.html', 'vite.config.js', 'src', 'public', 'scripts', ...variations(src)]) {
   fs.cpSync(path.join(src, p), path.join(dir, p), { recursive: true, filter: (f) => !/[\\/]public[\\/]data[\\/]ortho\./.test(f) });

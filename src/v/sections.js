@@ -174,8 +174,9 @@ export function setupSections() {
     n.textContent = share('AAPL', a); pie.style.setProperty('--p', (a / REF_PRICES.AAPL).toFixed(4));
     track('fraction_amount', { amount: a });
   }));
-  // sector tabs
+  // sector tabs (only on pages that include S.popular)
   const names = Object.keys(C.sectors.list), tabs = $$('.sx-tabs [role="tab"]'), panel = $('#sx-panel');
+  if (!panel) return;
   const show = (i, focus) => {
     tabs.forEach((t, k) => { t.setAttribute('aria-selected', String(k === i)); t.tabIndex = k === i ? 0 : -1; });
     panel.setAttribute('aria-labelledby', tabs[i].id);

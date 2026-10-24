@@ -1,0 +1,88 @@
+/* Hero lab. One shared copy block; each hero changes only its idea. Light only, exact navy/orange, 8px grid.
+   Radii: 32 panels · 20 cards · pills. No accent stripes; emphasis by size, weight and tinted fill. */
+:root { --r: 20px; --ease: cubic-bezier(0.22, 1, 0.36, 1); --lift: 0 1px 2px rgba(7, 45, 94, 0.05), 0 28px 56px -32px rgba(7, 45, 94, 0.35); }
+.hx { position: relative; isolation: isolate; overflow: hidden; min-height: calc(100svh - 72px); display: grid; align-items: center; padding: 88px 0 72px; }
+.hx-in { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; }
+
+/* review label (not part of any design) */
+.hx-tag { position: absolute; z-index: 5; top: 20px; left: 50%; translate: -50% 0; display: flex; gap: 8px; align-items: baseline; padding: 6px 14px; border-radius: 999px; background: rgba(4, 33, 63, 0.88); color: #fff; font-size: 12px; white-space: nowrap; }
+.hx-tag span { color: rgba(255, 255, 255, 0.72); }
+.hx-tag span::before { content: '— '; }
+
+/* shared copy block */
+.hx-eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange-text); }
+.hx h1 { margin-top: 16px; font-size: clamp(40px, 4.6vw, 68px); line-height: 1.02; font-weight: 800; letter-spacing: -0.04em; color: var(--navy); }
+.hx h1 span { display: block; font-weight: 600; letter-spacing: -0.035em; }
+.hx-lead { max-width: 32em; margin-top: 20px; font-size: clamp(17px, 1.4vw, 20px); line-height: 1.5; color: var(--slate); }
+.hx-ft { margin: 32px 0 12px; font-size: 15px; font-weight: 700; color: var(--navy); }
+.hx .capture { width: min(100%, 500px); box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.1), var(--lift); }
+.hx .capture-note { max-width: 500px; }
+.hx-proof { display: flex; gap: 32px; margin-top: 32px; }
+.hx-proof li { display: grid; gap: 2px; }
+.hx-proof b { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy); }
+.hx-proof span { font-size: 13px; color: var(--slate); }
+[data-market-dot] { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+[data-market-dot].is-open { background: var(--up); box-shadow: 0 0 0 4px rgba(23, 122, 66, 0.15); }
+
+/* ---------- A · the city inside the $1 */
+.hx-a { background: radial-gradient(60% 70% at 25% 55%, #fff4ec 0%, rgba(255, 244, 236, 0) 70%), #fff; }
+.hx-a .hx-in { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+.hx-a h1 { font-size: clamp(40px, 4vw, 60px); }   /* shares the screen with a 400px $1, so it steps down to stay on three lines */
+.hx-a .hx-art { display: grid; justify-items: center; }
+/* The $1 is a pair of glass windows onto the city. The crop puts the towers (24–85% of the render's height) inside the
+   glyphs: 175% of the box height, centred on the skyline; the baked-in credit (bottom right) stays out of view.
+   --rise lifts the city into the letters once on load, --px pans it slowly, --mx/--my follow the pointer. */
+@property --rise { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --px { syntax: '<number>'; inherits: true; initial-value: 61; }
+@property --mx { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --my { syntax: '<number>'; inherits: true; initial-value: 0; }
+.dollar { display: block; font-size: clamp(240px, 31vw, 480px); line-height: 0.82; font-weight: 800; letter-spacing: -0.07em;
+  color: var(--navy);   /* fallback where text clipping is unsupported */
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 38%),   /* glass sheen from the top left */
+    url(/city-poster.webp) calc((var(--px) + var(--mx) * 4) * 1%) calc(66% + var(--rise) * 0.32em + var(--my) * 0.03em) / auto 175% no-repeat,
+    linear-gradient(180deg, #cfe0ff, #fff4ec);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.006em rgba(255, 255, 255, 0.9);   /* the pane's lit edge */
+  filter: drop-shadow(0 2px 1px rgba(7, 45, 94, 0.18)) drop-shadow(0 34px 44px rgba(7, 45, 94, 0.24));
+  transition: --mx 1.2s var(--ease), --my 1.2s var(--ease); }
+.floor { display: block; width: 72%; height: 36px; margin-top: -8px; border-radius: 50%; background: radial-gradient(closest-side, rgba(7, 45, 94, 0.2), rgba(7, 45, 94, 0)); }
+@media (prefers-reduced-motion: no-preference) {
+  .js .dollar { animation: rise 1.8s var(--ease) 0.2s both, pan 22s ease-in-out 2s infinite alternate; }
+}
+@keyframes rise { from { --rise: 1; } to { --rise: 0; } }
+@keyframes pan { from { --px: 61; } to { --px: 72; } }
+.dollar-cap .logo { width: 18px; height: 18px; background: var(--navy); }
+.dollar-cap b { font-weight: 800; }
+.credit { margin-top: 12px; font-size: 11px; color: var(--muted); }
+.dollar-cap { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 16px; border-radius: 999px; background: #fff; box-shadow: var(--lift); font-size: 14px; font-weight: 600; color: var(--navy); }
+
+/* ---------- phones and tablets */
+@media (max-width: 900px) {
+  .hx { min-height: 0; padding: 64px 0 56px; }
+  .hx-in, .hx-a .hx-in { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .hx-proof { gap: 24px; } .hx-proof b { font-size: 20px; }
+  .hx-tag { font-size: 11px; } .hx-tag span { display: none; }
+  .dollar { font-size: min(44vw, 200px); }   /* keeps the form's button on the first phone screen */
+  .floor { height: 24px; }
+  .credit { text-align: center; }
+  .hx-a .hx-in { gap: 24px; }
+  .hx-a .hx-art { order: -1; }
+}
+
+/* better-ui polish (ui-skills.com · jakubkrehel/better-ui), exact values:
+   press scales to 0.96 over 150ms ease-out and never when disabled; a staged entrance staggers title, description and
+   actions 100ms apart (opacity + 4px blur + 12px rise, 300ms ease-out), motion only under no-preference, a cross-fade
+   otherwise; a transparent border keeps the field's edge in forced-colors mode, where box-shadow disappears. */
+.hx .btn { transition-property: scale, background-color; transition-duration: 150ms; transition-timing-function: ease-out; }
+.hx .btn:not(:disabled):active { scale: 0.96; }
+.hx .capture { border: 1px solid transparent; }
+.hx-copy > *, .hx-a .hx-art > :not(.dollar) { animation: hx-in 300ms ease-out both; }   /* the $1 keeps its own rise + pan */
+.hx-copy > :nth-child(2) { animation-delay: 100ms; } .hx-copy > :nth-child(3) { animation-delay: 200ms; }
+.hx-copy > :nth-child(n + 4) { animation-delay: 300ms; }
+.hx-a .hx-art > :nth-child(n + 3) { animation-delay: 600ms; }
+@keyframes hx-in { from { opacity: 0; filter: blur(4px); translate: 0 12px; } }
+@media (prefers-reduced-motion: reduce) {
+  @keyframes hx-in { from { opacity: 0; } }
+  .hx .btn:not(:disabled):active { scale: none; }
+}
