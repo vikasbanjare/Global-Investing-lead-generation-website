@@ -110,11 +110,11 @@ main > section { scroll-margin-top: 72px; }
 
 /* ---------- Hero ---------- */
 .hero { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; min-height: 1240px; padding: 104px 0 0; background: var(--bg); }
-.hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.hero-canvas { position: absolute; inset: 120px 0 auto; width: 100%; height: 100%; z-index: -2; } /* 120px lower: the skyline rises clear of the number cards */
 .hero-poster { display: none; }
 /* the copy holds clean Cloud White; the city rises below and melts into the page on an eased curve */
 .hero-fade { position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(180deg, var(--bg) 0, var(--bg) 400px, rgba(243, 248, 255, 0.92) 544px, rgba(243, 248, 255, 0) 728px),
+  background: linear-gradient(180deg, var(--bg) 0, var(--bg) 700px, rgba(243, 248, 255, 0.92) 800px, rgba(243, 248, 255, 0.5) 880px, rgba(243, 248, 255, 0) 980px), /* the copy and the number strip sit on clean sky; the water's horizon never shows as a dome */
     linear-gradient(0deg, var(--bg) 0, rgba(243, 248, 255, 0.95) 40px, rgba(243, 248, 255, 0.78) 88px, rgba(243, 248, 255, 0.48) 136px, rgba(243, 248, 255, 0.19) 184px, rgba(243, 248, 255, 0) 224px); }
 .hero-copy { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .hero-copy > * { max-width: 780px; animation: rise 0.9s var(--ease) both; }

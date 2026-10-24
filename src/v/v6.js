@@ -51,7 +51,6 @@ const hero = `<section class="hero" id="top">
     <div class="stage" aria-hidden="true">
       <div class="ph ph-l loop">${S.phone('buy')}</div>
       <div class="ph ph-c loop">${S.phone('dashboard')}</div>
-      <div class="ph ph-r loop">${S.phone('activity')}</div>
     </div>
   </div>
 </section>`;

@@ -64,7 +64,7 @@ const closing = S.closing()
 const html = `${header()}
 <main id="main" tabindex="-1">
 <section class="hero" id="top">
-  ${clouds(6, 0, 4, 56)}
+  ${clouds(3, 0, 4, 56)}
   <div class="vw hero-in"><div class="hero-card">
     <div class="hero-copy">${heroIntro}</div>
     <ul class="points">${heroPoints.trim()}
@@ -73,15 +73,15 @@ const html = `${header()}
   </div></div>
   ${land(' land-hero', '<canvas class="land-canvas"></canvas>' + chip('GOOGL', 'Alphabet', 'google', 'chip-a') + chip('NVDA', 'NVIDIA', 'nvidia', 'chip-b'))}
 </section>
-${sky(brands, 4, 3, 24, 44)}
+${sky(brands, 2, 3, 24, 44)}
 ${S.product()}
 ${why}
-${sky(how, 5, 13, 18, 64)}
+${sky(how, 2, 13, 18, 64)}
 ${S.popular()}
 ${S.pricing()}
 ${S.tax()}
 ${S.faq()}
-${sky(closing, 4, 31, 12, 40)}
+${sky(closing, 2, 31, 12, 40)}
 </main>
 ${footer()}`;
 

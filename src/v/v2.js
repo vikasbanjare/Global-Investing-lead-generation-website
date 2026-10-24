@@ -54,8 +54,6 @@ const html = `${header()}
           <span class="glare"></span>
         </div>
         <div class="float fl-fill"><span class="f-ok">${icon.check}</span><p><b>Order filled</b><small class="num">${share(1)} AAPL for $1.00</small></p></div>
-        <div class="float fl-fx"><span class="f-ico">₹→$</span><p><b>USD buying power</b><small>After conversion and credit</small></p></div>
-        <div class="float fl-gift"><span class="f-shield">${icon.shield}</span><p><b>GIFT City route</b><small>${C.highlights[3].note}</small></p></div>
       </div>
       <p class="art-note">Illustrative screen</p>
     </div>

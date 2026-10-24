@@ -107,13 +107,8 @@
 /* floating cards: anchored to the phone frame, they overlap only the 11px bezel or the screen's empty bottom edge */
 .float { position: absolute; z-index: 2; display: flex; align-items: center; gap: 10px; width: max-content; padding: 10px 14px 10px 10px; border-radius: var(--r-md); background: rgba(255, 255, 255, 0.96); box-shadow: 0 0 0 1px rgba(7, 45, 94, 0.08), 0 24px 40px -22px rgba(4, 33, 63, 0.5); animation: pop-in 0.6s ease-out both; }
 .float b { display: block; font-size: 14px; line-height: 1.3; color: var(--navy); } .float small { display: block; font-size: 12px; line-height: 1.35; color: var(--muted); }
-.f-ok, .f-shield { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: #e3f5ea; color: var(--up); }
-.f-shield { background: var(--tint); color: var(--navy); }
-.f-shield svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-.f-ico { display: grid; place-items: center; flex: none; height: 32px; padding: 0 8px; border-radius: 10px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 800; }
+.f-ok { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 50%; background: #e3f5ea; color: var(--up); }
 .fl-fill { right: calc(100% - 10px); top: 22%; transform: translateZ(40px); animation-delay: 0.5s; }
-.fl-gift { right: calc(100% - 10px); top: 56%; transform: translateZ(30px); animation-delay: 0.9s; }
-.fl-fx { right: -36px; top: calc(100% - 10px); transform: translateZ(50px); animation-delay: 0.7s; }
 @keyframes pop-in { from { opacity: 0; translate: 0 14px; } }
 
 .hl { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-radius: var(--r-lg); background: rgba(255, 255, 255, 0.92); box-shadow: inset 0 0 0 1px var(--line), var(--shadow); }
@@ -297,7 +292,6 @@
   /* not enough room beside the phone: one toast hangs from the phone's bottom edge, over the empty home-bar area */
   .hero-art { --shift: 0px; --glow: 600px; padding-bottom: 96px; }
   .art-note { left: 0; right: 0; bottom: 8px; text-align: center; } /* below the toast, never under it */
-  .fl-fx, .fl-gift { display: none; }
   .fl-fill { left: 0; right: 0; top: calc(100% - 10px); margin-inline: auto; }
   .stock-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } /* 5 across leaves ~90px for 'ConocoPhillips' */
 }

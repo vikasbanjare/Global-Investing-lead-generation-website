@@ -333,3 +333,29 @@
   .stats .hl-grid small { font-size: 11px; }
   .kpi-i { width: 24px; height: 24px; }
 }
+
+/* ---------- light hero (critique: no big dark panel above the fold). Same royal bloom, now a pale sky behind the cards;
+   navy copy, orange only on the CTA and the headline's second line. The cards stand flat (no tilt), no grid. */
+.hero-panel { --heading: var(--navy); --fg: var(--ink); --fg2: var(--slate); --fg3: var(--muted); --card: #fff; --card-line: rgba(7, 45, 94, 0.1); --accent: var(--orange-text);
+  color: var(--ink); box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.06), 0 40px 80px -64px rgba(7, 45, 94, 0.5);
+  background: radial-gradient(var(--bw) var(--bh) at var(--fx) var(--fy), rgb(31 95 214 / 0.16) 0%, rgb(31 95 214 / 0) 100%), linear-gradient(225deg, #eaf2ff 0%, #f7faff 60%, #fff 100%); }
+@supports (background: linear-gradient(in oklch, red, blue)) {
+  .hero-panel { background: radial-gradient(var(--bw) var(--bh) at var(--fx) var(--fy) in oklch, rgb(31 95 214 / 0.16) 0%, rgb(31 95 214 / 0) 100%), linear-gradient(in oklch 225deg, #eaf2ff 0%, #f7faff 60%, oklch(100% 0 262) 100%); }
+}
+.hero-panel::before, .hero-panel::after { display: none; }
+.hero .eyebrow { color: var(--orange-text); }
+.hero h1 { color: var(--navy); }
+.hero h1 span { color: var(--orange); }
+.hero .lead { color: var(--slate); }
+.hero .points li, .hero .form-title { color: var(--ink); }
+.hero-panel .trust li { color: var(--navy); }
+.hero-panel .trust svg { stroke: var(--orange-text); }
+.hero-panel .capture-note, .hero-panel .capture-note a { color: var(--muted); }
+.hero-panel .capture-error { color: #b42318; }
+.hero-panel :focus-visible { outline-color: var(--navy); }
+.hero-panel .tlink:hover { color: var(--orange-text); }
+.hero .capture { box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.12), 0 24px 48px -32px rgba(7, 45, 94, 0.4); }
+.hero .capture:focus-within { box-shadow: 0 0 0 3px rgba(31, 95, 214, 0.35), 0 24px 48px -32px rgba(7, 45, 94, 0.4); }
+.glass-stack { transform: none; }
+.gcard { box-shadow: inset 0 0 0 1px rgba(7, 45, 94, 0.08), 0 32px 60px -36px rgba(7, 45, 94, 0.45); }
+.hero .points .i-check { background: #fff1e8; color: var(--orange-text); }
