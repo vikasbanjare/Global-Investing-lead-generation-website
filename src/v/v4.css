@@ -350,3 +350,4 @@
   .tower, .ls-n, .lift-steps li::after { transition: none; }
   .ticker { overflow-x: auto; } .tk-track { animation: none; }
 }
+@media (hover: hover) { .filters button:not([aria-pressed="true"]):hover { background: var(--tint); } }

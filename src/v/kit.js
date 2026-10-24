@@ -93,9 +93,20 @@ export function footer() {
 window.dataLayer = window.dataLayer || [];
 export const track = (event, props = {}) => window.dataLayer.push({ event, ...props, variant: document.documentElement.dataset.variant });
 
+// Lead send with loading, failure and no double submit. ponytail: sendLead resolves at once until the CRM endpoint
+// exists; swap in the real POST and the states already work.
+const FAIL = 'We couldn’t send that. Check your connection and try again.';
+const sendLead = (mobile, source) => Promise.resolve({ mobile, source }); // TODO(lead-endpoint): POST { mobile, source } to the CRM
+function submitLead(form, mobile, source, done, fail) {
+  const btn = form.querySelector('[type=submit]');
+  if (btn.disabled) return;
+  btn.disabled = true; form.setAttribute('aria-busy', 'true');
+  sendLead(mobile, source).then(done, fail).finally(() => { btn.disabled = false; form.removeAttribute('aria-busy'); });
+}
+
 function setupCaptures() {
   $$('form.capture').forEach((form) => {
-    const id = form.id, field = form.querySelector('input'), error = $(`#${id}-err`), sent = $(`#${id}-sent`);
+    const id = form.id, field = form.querySelector('input'), error = $(`#${id}-err`), sent = $(`#${id}-sent`), BAD = error.textContent;
     field.addEventListener('focus', () => track('lead_focus', { form: id }), { once: true });
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -104,10 +115,8 @@ function setupCaptures() {
       error.hidden = valid;
       field.setAttribute('aria-invalid', String(!valid));
       track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: id });
-      if (!valid) { field.focus(); return; }
-      // TODO(lead-endpoint): POST { mobile: digits, source: id } to the CRM, as on the live page.
-      form.hidden = true;
-      sent.hidden = false;
+      if (!valid) { error.textContent = BAD; field.focus(); return; }
+      submitLead(form, digits, id, () => { form.hidden = true; sent.hidden = false; }, () => { error.textContent = FAIL; error.hidden = false; });
     });
     field.addEventListener('input', () => { error.hidden = true; field.removeAttribute('aria-invalid'); });
   });

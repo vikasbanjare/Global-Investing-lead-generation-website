@@ -776,3 +776,6 @@ main > section { scroll-margin-top: 72px; }
   .js .reveal, .js .journey li > *, .js .journey .j-ico, .js .lane .rail, .js .lane .node, .js .sector-cols .sc-list li { opacity: 1; transform: none; }
   .js .journey::after { transform: none; }
 }
+
+/* lead form while sending: the button holds its place, dims and shows progress */
+.capture[aria-busy="true"] .btn { opacity: 0.72; cursor: progress; }

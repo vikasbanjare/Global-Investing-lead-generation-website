@@ -121,8 +121,10 @@ const leadViews = new IntersectionObserver((entries) => entries.forEach((e) => {
   if (e.isIntersecting && !seen.has(e.target.id)) { seen.add(e.target.id); track('lead_view', { form: e.target.id }); }
 }), { threshold: 0.6 });
 leadViews.observe($('#lead')); leadViews.observe($('#lead-2'));
+// ponytail: resolves at once until the CRM endpoint exists; the loading/failure states below already work with a real POST.
+const sendLead = (mobile, source) => Promise.resolve({ mobile, source }); // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile, source }) })
 function setupCapture(formSel, sentSel, errorSel, editSel) {
-  const form = $(formSel), sent = $(sentSel), error = $(errorSel), field = form.querySelector('input');
+  const form = $(formSel), sent = $(sentSel), error = $(errorSel), field = form.querySelector('input'), BAD = error.textContent;
   field.addEventListener('focus', () => track('lead_focus', { form: form.id }), { once: true });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -131,10 +133,13 @@ function setupCapture(formSel, sentSel, errorSel, editSel) {
     error.hidden = valid;
     field.setAttribute('aria-invalid', String(!valid));
     track(valid ? 'lead_submit_valid' : 'lead_submit_invalid', { form: form.id });
-    if (!valid) { field.focus(); return; }
-    // TODO(lead-endpoint): fetch('/api/leads', { method: 'POST', body: JSON.stringify({ mobile: digits, source: form.id }) })
-    form.hidden = true;
-    sent.hidden = false;
+    if (!valid) { error.textContent = BAD; field.focus(); return; }
+    const btn = form.querySelector('[type=submit]');
+    if (btn.disabled) return; // no double submit while sending
+    btn.disabled = true; form.setAttribute('aria-busy', 'true');
+    sendLead(digits, form.id)
+      .then(() => { form.hidden = true; sent.hidden = false; }, () => { error.textContent = 'We couldn’t send that. Check your connection and try again.'; error.hidden = false; })
+      .finally(() => { btn.disabled = false; form.removeAttribute('aria-busy'); });
   });
   field.addEventListener('input', () => { error.hidden = true; field.removeAttribute('aria-invalid'); });
   $(editSel).addEventListener('click', () => { sent.hidden = true; form.hidden = false; field.focus(); });

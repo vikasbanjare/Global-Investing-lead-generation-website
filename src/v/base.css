@@ -48,7 +48,7 @@ p, li, dd { text-wrap: pretty; }
 [hidden] { display: none !important; }
 :focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; border-radius: 6px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.skip { position: absolute; left: 16px; top: -48px; z-index: 70; padding: 10px 14px; background: var(--navy); color: #fff; border-radius: 8px; text-decoration: none; }
+.skip { position: absolute; left: 16px; top: -56px; z-index: 70; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--navy); color: #fff; border-radius: 8px; text-decoration: none; }
 .skip:focus { top: 16px; }
 .vw { max-width: var(--wrap); margin: 0 auto; padding-inline: var(--gutter); }
 @media (max-width: 640px) { :root { --gutter: 20px; } }
@@ -212,3 +212,17 @@ p, li, dd { text-wrap: pretty; }
   .vf nav a { display: flex; align-items: center; min-height: 44px; padding: 0; }
   .vswitch { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 32px); border-radius: 24px; }
 }
+
+/* lead form while sending: the button holds its place, dims and shows progress */
+.capture[aria-busy="true"] .btn { opacity: 0.72; cursor: progress; }
+
+/* hover feedback on every control (mouse only). Gap check: tabs, amount chips, FAQ rows, sort headers, text links and
+   the ghost header CTA showed no change on hover. Selected/pressed states keep their own look. */
+@media (hover: hover) {
+  .tlink:hover { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+  .faq-q:hover { color: var(--orange-text); }
+  [role="tab"]:not([aria-selected="true"]):hover, .frac-amts button:not([aria-pressed="true"]):hover { background: var(--tint); color: var(--navy); }
+  th button:hover { color: var(--orange-text); }
+  :root.cta-on .vh .btn-primary:hover, .vh.form-on .btn-primary:hover { background: var(--tint); }
+}
+@media (hover: hover) and (max-width: 900px) { :root .vh .btn-primary:hover { background: var(--tint); } }
