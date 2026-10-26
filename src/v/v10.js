@@ -6,7 +6,7 @@
 import './base.css';
 import './sections.css';
 import './v10.css';
-import { boot, header, footer, C, icon, leadForm, logo, usd, sparkFor, $, $$, reducedMotion, REF_PRICES } from './kit.js';
+import { boot, header, footer, C, icon, leadForm, logo, usd, $, $$, reducedMotion, REF_PRICES } from './kit.js';
 import * as S from './sections.js';
 
 const AMTS = [1, 5, 10, 25, 50, 100, 250, 500];
@@ -24,42 +24,26 @@ const dial = `<div class="dial-card">
 </div>`;
 
 // ---------- v10's own sections: each one idea, big type, a real visual where it earns its place
-const tile = (cls, [t, d], art) => `<li class="tile ${cls} rv"><div class="tile-art" aria-hidden="true">${art}</div><h3>${t}</h3><p>${d}</p></li>`;
 const F = C.features.items;
-const bento = `<section class="sec s-bento" id="product"><div class="vw">
-  <div class="head rv"><h2>${C.features.title}</h2></div>
-  <ul class="bento">
-    ${tile('t-find', F[1], `<span class="search">${icon.search}<span>Apple</span><em>AAPL</em></span>`)}
-    ${tile('t-hold', F[2], `<span class="hold"><small>US holdings</small><b class="num">$1,248.60</b>${sparkFor('GOOGL', 220, 56, { baseline: false })}</span>`)}
-    ${tile('t-fx', F[3], '<b class="big fx"><span>₹</span><i>→</i><span>$</span></b>')}
-  </ul>
-</div></section>`;
-
 const wall = `<section class="sec s-wall" id="brands"><div class="vw">
   <div class="head rv"><h2>${C.brands.title}</h2><p>${C.brands.sub}</p></div>
-  <ul class="wall rv">${C.brands.list.map(([n, t, l]) => `<li title="${n}">${logo(l, t)}<span class="sr-only">${n}</span></li>`).join('')}</ul>
+  <ul class="wall rv">${C.brands.list.map(([n, t, l]) => `<li title="${n}">${logo(l, t)}<small>${t}</small><span class="sr-only">${n}</span></li>`).join('')}</ul>
 </div></section>`;
 
 const why = `<section class="sec s-why10" id="why"><div class="vw">
   <h2 class="rv">${C.why.title}</h2>
-  <ol class="stmts">${C.why.items.map(([t, d], i) => `<li class="rv" style="--i:${i}"><h3>${t}</h3><p>${d}</p></li>`).join('')}</ol>
-</div></section>`;
-
-const steps = `<section class="sec s-steps" id="how"><div class="vw">
-  <div class="head rv"><h2>${C.steps.title}</h2></div>
-  <ol class="steps4">${C.steps.items.map(([t, d], i) => `<li class="rv" style="--i:${i}"><span class="n num">${i + 1}</span><h3>${t}</h3><p>${d}</p></li>`).join('')}</ol>
-  <p class="steps-cta rv"><a class="btn btn-primary" href="#start">${C.steps.cta}</a></p>
+  <ol class="stmts">${C.why.items.map(([t, d], i) => `<li class="rv" style="--i:${i}"><h3>${t}</h3><p>${d}</p><a class="tlink" href="#faq">${C.why.more}${icon.go}</a></li>`).join('')}</ol>
 </div></section>`;
 
 const price = `<section class="sec s-price" id="pricing"><div class="vw">
   <div class="head rv"><h2>${C.charges.title}</h2></div>
-  <ul class="prices">${C.charges.items.map((c, i) => `<li class="rv${c.hot ? ' is-hot' : ''}" style="--i:${i}">${c.tag ? `<p class="p-tag">${c.tag}</p>` : ''}<p class="p-k">${c.label}</p><b class="p-fig num">${c.fig}</b><p class="p-note">${c.note}</p></li>`).join('')}</ul>
+  <ul class="prices">${C.charges.items.map((c, i) => `<li class="rv${c.hot ? ' is-hot' : ''}" style="--i:${i}">${c.tag ? `<p class="p-tag">${c.tag}</p>` : ''}<p class="p-k">${c.label}</p><b class="p-fig num">${c.fig}</b><p class="p-note">${c.note}</p><a class="btn ${c.hot ? 'btn-primary' : 'btn-ghost'} btn-sm" href="#start">${c.cta}</a></li>`).join('')}</ul>
   <p class="fine rv">${C.charges.foot}</p>
 </div></section>`;
 
 const taxes = `<section class="sec s-tax10" id="tax"><div class="vw tax-in">
   <div class="rv"><h2>${C.tax.title}</h2><p class="sub">${C.tax.sub}</p><a class="tlink" href="#tax">${icon.doc}${C.tax.cta}</a></div>
-  <dl class="tax-list">${C.tax.items.map(([t, d], i) => `<div class="rv" style="--i:${i}"><dt>${t}</dt><dd>${d}</dd></div>`).join('')}</dl>
+  <dl class="tax-list">${C.tax.items.map(([t, d], i) => `<div class="rv" style="--i:${i}"><dt>${t}</dt><dd>${d}</dd><dd><a class="tlink" href="#tax-guide">${C.tax.more}${icon.go}</a></dd></div>`).join('')}</dl>
 </div></section>`;
 
 const close = `<section class="sec s-close10" id="start"><div class="vw">
@@ -67,6 +51,8 @@ const close = `<section class="sec s-close10" id="start"><div class="vw">
   <p class="sub rv">${C.closing.sub}</p>
   <ul class="benefits rv">${C.closing.benefits.map((b) => `<li>${icon.check}${b}</li>`).join('')}</ul>
   <div class="close-form rv">${leadForm('lead-2', C.closing.cta, 'close-title')}<p class="fine">${C.closing.fine}</p></div>
+  <a class="tlink expert rv" href="#lead-2">${C.closing.expert}${icon.go}</a>
+  <h3 class="trust-h rv">${C.whyUs.title}</h3>
   <ul class="trust10 rv">${C.whyUs.items.map((t) => `<li>${t}</li>`).join('')}</ul>
 </div></section>`;
 
@@ -77,14 +63,15 @@ const html = `${header()}
     <div class="spark" aria-hidden="true">${[[12, 62, 18], [86, 54, 22], [74, 80, 12], [22, 86, 10], [52, 92, 8]].map(([x, y, z]) => `<i style="left:${x}%;top:${y}%;--z:${z}px"></i>`).join('')}</div>
     <div class="vw hero-copy">
       <p class="eyebrow">${C.hero.eyebrow}</p>
-      <h1><span class="ring">${C.hero.h1}<svg viewBox="0 0 300 110" preserveAspectRatio="none" aria-hidden="true"><path d="M58 18C124 2 238 6 279 30c34 20 4 56-70 66-92 13-188 6-199-27C2 44 40 24 98 14"/></svg></span> <span class="l2">${C.hero.h1b}</span></h1>
+      <h1>${C.hero.h1} <span class="l2">${C.hero.h1b}</span></h1>
       <p class="lead">${C.hero.lead}</p>
       <p class="form-title" id="form-title">${C.hero.formTitle}</p>
       ${leadForm('lead', C.hero.cta, 'form-title')}
+      <ul class="points">${C.hero.points.map((pt) => `<li>${pt}</li>`).join('')}</ul>
       <a class="tlink" href="#how">${C.hero.how}${icon.go}</a>
     </div>
   </div>
-  <ul class="stats" aria-label="Key investment highlights">${C.highlights.map((h, i) => `<li><span class="st-ico" aria-hidden="true">${[icon.globe, icon.chart, icon.wallet, icon.shield][i]}</span><span><b class="num">${h.fig}</b><small>${h.label}</small></span></li>`).join('')}</ul>
+  <ul class="stats" aria-label="Key investment highlights">${C.highlights.map((h) => `<li><b class="num">${h.fig}</b><span>${h.label}</span><small>${h.note}</small></li>`).join('')}</ul>
   <div class="vw stage">
     <div class="side s-left" aria-hidden="true">
       <span class="side-ico ok">${icon.check}</span>
@@ -101,10 +88,11 @@ const html = `${header()}
     </div>
   </div>
 </section>
-${bento}
+${S.product()}
 ${wall}
 ${why}
-${steps}
+${S.how()}
+${S.popular()}
 ${price}
 ${taxes}
 ${S.faq()}
@@ -113,6 +101,7 @@ ${close}
 ${footer()}`;
 
 boot('v10', html);
+S.setupSections();
 
 // ---------- the amount dial
 const el = $('.dial'), track = $('.dial-track'), out = $('#dial-v'), shares = $$('.dial-picks em');
