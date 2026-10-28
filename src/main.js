@@ -391,11 +391,12 @@ if (oring) {
   const RAD = Math.PI / 180;
   const geo = () => {
     // widest card that keeps both resting neighbours wholly inside the stage (their projected outer edge is ≈1.4 card widths
-    // from the centre); below 260px there is no room for neighbours, so only the front card shows
+    // from the centre); below 260px they can't fit whole, so the front card narrows and the neighbours peek in at the edges.
+    // Either way three cards always show.
     const half = stage.clientWidth / 2, both = Math.floor((half - 48) / 1.4), phone = both < 260;
-    const w = phone ? Math.round(Math.min(330, stage.clientWidth - 64)) : Math.min(330, both);
+    const w = phone ? Math.round(Math.min(330, stage.clientWidth - 112)) : Math.min(330, both);
     // fade window (degrees from the front): fully opaque inside `full`, gone by `gone`
-    return { w, r: Math.round((cards.length * (w + 40)) / (2 * Math.PI)), n: phone ? 6 : 8, full: (phone ? 8 : 30) * RAD, gone: (phone ? 24 : 54) * RAD };
+    return { w, r: Math.round((cards.length * (w + 40)) / (2 * Math.PI)), n: phone ? 6 : 8, full: 30 * RAD, gone: 54 * RAD };
   };
   // every card gets the height of the tallest one (measured at the real width, so no line is ever cut)
   const measure = (w) => {
@@ -452,6 +453,14 @@ if (oring) {
     if (e.type === 'pointerup' && moved > 8) track('order_ring_drag'); // a vertical swipe that starts here ends in pointercancel: not a drag
   };
   stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  // scrolling the page turns the ring too (one card per 320px, either direction), then it settles on the nearest card
+  let sy = scrollY, snapT = 0;
+  addEventListener('scroll', () => {
+    const dy = scrollY - sy; sy = scrollY;
+    if (!visible || reducedMotion || dragging) return;
+    target += (dy / 320) * STEP; dwell = 0; run();
+    clearTimeout(snapT); snapT = setTimeout(() => { target = Math.round(target / STEP) * STEP; run(); }, 140);
+  }, { passive: true });
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; run(); }).observe(stage);
   let resizing = 0;
   addEventListener('resize', () => { cancelAnimationFrame(resizing); resizing = requestAnimationFrame(() => { if (geo().w !== g.w) build(); }); }, { passive: true });
